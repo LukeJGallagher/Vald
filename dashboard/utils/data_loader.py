@@ -23,15 +23,22 @@ def _get_vald_credentials():
     """Get VALD API credentials from Streamlit secrets or environment."""
     try:
         if hasattr(st, 'secrets') and 'vald' in st.secrets:
-            return {
+            creds = {
                 'client_id': st.secrets['vald'].get('CLIENT_ID', ''),
                 'client_secret': st.secrets['vald'].get('CLIENT_SECRET', ''),
                 'tenant_id': st.secrets['vald'].get('TENANT_ID', ''),
                 'region': st.secrets['vald'].get('VALD_REGION', 'euw'),
                 'manual_token': st.secrets['vald'].get('MANUAL_TOKEN', ''),
             }
-    except Exception:
-        pass
+            # Check if we have minimum required credentials
+            if creds['tenant_id'] and (creds['manual_token'] or (creds['client_id'] and creds['client_secret'])):
+                return creds
+            else:
+                st.warning("VALD credentials incomplete - need TENANT_ID and either MANUAL_TOKEN or CLIENT_ID+CLIENT_SECRET")
+        else:
+            st.info("VALD secrets section [vald] not found in secrets")
+    except Exception as e:
+        st.warning(f"Error reading VALD credentials: {e}")
     return None
 
 
@@ -85,19 +92,25 @@ def _fetch_athlete_profiles(token: str, region: str, tenant_id: str) -> Dict[str
 def fetch_from_github_repo(device: str = 'forcedecks') -> pd.DataFrame:
     """
     Fetch data from a private GitHub repository.
-    Requires GITHUB_TOKEN and GITHUB_DATA_REPO in Streamlit secrets.
+    Requires GITHUB_TOKEN and DATA_REPO in Streamlit secrets.
 
     This allows storing historical data in a private repo while
     hosting the dashboard publicly.
     """
     try:
-        if not hasattr(st, 'secrets') or 'github' not in st.secrets:
+        if not hasattr(st, 'secrets'):
+            st.info("No secrets configured - using API fallback")
+            return pd.DataFrame()
+
+        if 'github' not in st.secrets:
+            st.info("GitHub secrets not found - trying VALD API")
             return pd.DataFrame()
 
         github_token = st.secrets['github'].get('GITHUB_TOKEN', '')
         data_repo = st.secrets['github'].get('DATA_REPO', '')  # e.g., "username/vald-data"
 
         if not github_token or not data_repo:
+            st.info("GitHub token or repo not configured")
             return pd.DataFrame()
 
         # File mapping for each device
