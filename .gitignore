@@ -1,0 +1,55 @@
+# Environment and secrets
+.env
+.env.local
+.env.production
+*.env
+secrets.toml
+.streamlit/secrets.toml
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.eggs/
+*.egg
+.venv/
+venv/
+ENV/
+
+# Cache and temp files
+*.pkl
+*.pickle
+data/cache/
+*.tmp
+*.tmp.*
+.cache/
+
+# Logs (keep structure, ignore contents)
+logs/*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Backups
+data/backups/
+
+# Cleanup folder
+_TO_DELETE/
+
+# Large binary files (if any)
+*.zip
+
+# Keep data files for deployment
+!dashboard/data/*.csv
+!dashboard/data/*.json
+nul

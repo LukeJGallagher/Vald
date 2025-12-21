@@ -1,0 +1,100 @@
+# Environment Variables - CRITICAL: Never commit these files
+.env
+.env.local
+.env.*.local
+../.env
+../vald_api_pulls-main/forcedecks/.env
+
+# API Keys and Secrets
+*.key
+*.pem
+credentials.json
+secrets.json
+
+# Data Files - Keep CSVs for Streamlit deployment
+# Only exclude Excel files and raw exports
+data/*.xlsx
+data/*.xls
+*.xlsx
+*.xls
+
+# Keep these data files for deployment (override above)
+!data/forcedecks_allsports_with_athletes.csv
+!data/forceframe_allsports.csv
+!data/nordbord_allsports.csv
+!data/profile_athlete_mapping.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Streamlit
+.streamlit/secrets.toml
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+nul
+
+# Development documentation (not needed for production)
+FIXES_NEEDED.md
+COMPLETED_FIXES.md
+SHINY_APP_COMPARISON.md
+FINAL_DELIVERABLES.md
+
+# OS
+Thumbs.db
+desktop.ini
+
+# Helper/utility scripts (not needed for production)
+add_device_tabs.py
+add_api_refresh.py
+*_backup.py
+
+# Backup files
+*.bak
+
+# Styling guide
+STYLING_GUIDE.md

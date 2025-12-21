@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(taskkill:*)",
+      "Bash(timeout:*)",
+      "Bash(xcopy:*)",
+      "Bash(del convert_to_tabs.py)",
+      "Bash(nul)",
+      "Bash(python -m py_compile:*)",
+      "Bash(streamlit run:*)",
+      "Bash(python:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

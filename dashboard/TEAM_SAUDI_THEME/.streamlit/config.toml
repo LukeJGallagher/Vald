@@ -1,0 +1,46 @@
+# Team Saudi Streamlit Theme Configuration
+# Copy this .streamlit folder to any new Streamlit project for consistent branding
+
+[theme]
+# Primary accent color - Saudi Green
+primaryColor = "#1D4D3B"
+
+# Background color for the main content area
+backgroundColor = "#FFFFFF"
+
+# Background color for sidebar and secondary areas
+secondaryBackgroundColor = "#F0F2F6"
+
+# Text color
+textColor = "#262730"
+
+# Font family
+font = "sans serif"
+
+[server]
+# Enable file watcher for development
+fileWatcherType = "auto"
+
+# Max upload size (200MB for large CSV files)
+maxUploadSize = 200
+
+# Enable XSRF protection (security)
+enableXsrfProtection = true
+
+[browser]
+# Gather usage stats
+gatherUsageStats = false
+
+# Server address (for cloud deployment)
+serverAddress = "0.0.0.0"
+
+[runner]
+# Fast reruns
+fastReruns = true
+
+[client]
+# Show error details
+showErrorDetails = true
+
+# Toolbar mode
+toolbarMode = "auto"

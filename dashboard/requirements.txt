@@ -1,0 +1,21 @@
+# Team Saudi VALD Performance Dashboard
+# Streamlit Cloud Deployment Requirements
+
+# Core Dashboard
+streamlit>=1.28.0
+pandas>=2.0.0
+plotly>=5.17.0
+numpy>=1.24.0
+
+# Date/Time Handling
+python-dateutil>=2.8.2
+
+# API and HTTP (for VALD API integration)
+requests>=2.31.0
+
+# Statistical Analysis
+scipy>=1.11.0
+statsmodels>=0.14.0
+
+# Environment Variables
+python-dotenv>=1.0.0
