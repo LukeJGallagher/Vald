@@ -139,6 +139,106 @@ def fetch_from_github_repo(device: str = 'forcedecks') -> pd.DataFrame:
     return pd.DataFrame()
 
 
+def push_to_github_repo(df: pd.DataFrame, device: str = 'forcedecks') -> bool:
+    """
+    Push updated data to the private GitHub repository.
+    Uses GitHub API to commit changes.
+
+    Returns True if successful, False otherwise.
+    """
+    try:
+        if not hasattr(st, 'secrets') or 'github' not in st.secrets:
+            st.warning("GitHub secrets not configured")
+            return False
+
+        github_token = st.secrets['github'].get('GITHUB_TOKEN', '')
+        data_repo = st.secrets['github'].get('DATA_REPO', '')
+
+        if not github_token or not data_repo:
+            st.warning("GitHub token or repo not configured")
+            return False
+
+        # File mapping for each device
+        file_mapping = {
+            'forcedecks': 'forcedecks_allsports_with_athletes.csv',
+            'forceframe': 'forceframe_allsports.csv',
+            'nordbord': 'nordbord_allsports.csv',
+        }
+
+        filename = file_mapping.get(device)
+        if not filename:
+            return False
+
+        file_path = f"data/{filename}"
+
+        # Convert DataFrame to CSV
+        csv_content = df.to_csv(index=False)
+
+        # GitHub API setup
+        import base64
+        api_url = f"https://api.github.com/repos/{data_repo}/contents/{file_path}"
+        headers = {
+            'Authorization': f'token {github_token}',
+            'Accept': 'application/vnd.github.v3+json'
+        }
+
+        # Get current file SHA (needed for updates)
+        response = requests.get(api_url, headers=headers, timeout=30)
+        sha = None
+        if response.status_code == 200:
+            sha = response.json().get('sha')
+
+        # Prepare commit
+        commit_message = f"Update {device} data - {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}"
+        content_base64 = base64.b64encode(csv_content.encode()).decode()
+
+        payload = {
+            'message': commit_message,
+            'content': content_base64,
+            'branch': 'main'
+        }
+
+        if sha:
+            payload['sha'] = sha
+
+        # Push to GitHub
+        response = requests.put(api_url, headers=headers, json=payload, timeout=60)
+
+        if response.status_code in [200, 201]:
+            return True
+        else:
+            st.warning(f"GitHub push failed: {response.status_code}")
+            return False
+
+    except Exception as e:
+        st.warning(f"Error pushing to GitHub: {e}")
+        return False
+
+
+def refresh_and_save_data(device: str = 'forcedecks') -> Tuple[pd.DataFrame, bool]:
+    """
+    Fetch fresh data from VALD API and save to private GitHub repo.
+
+    Returns:
+        Tuple of (DataFrame, success_bool)
+    """
+    # Clear cache for this device
+    fetch_from_vald_api.clear()
+    fetch_from_github_repo.clear()
+    load_vald_data.clear()
+
+    # Fetch fresh data from API
+    df = fetch_from_vald_api(device)
+
+    if df.empty:
+        return pd.DataFrame(), False
+
+    # Push to GitHub
+    success = push_to_github_repo(df, device)
+
+    return df, success
+
+
 @st.cache_data(ttl=1800, show_spinner="Fetching data from VALD API...")
 def fetch_from_vald_api(device: str = 'forcedecks') -> pd.DataFrame:
     """

@@ -68,9 +68,13 @@ try:
         calculate_asymmetry_index,
         get_metrics_from_test_type,
         filter_dataframe,
-        get_test_summary_stats
+        get_test_summary_stats,
+        push_to_github_repo,
+        refresh_and_save_data
     )
+    GITHUB_SYNC_AVAILABLE = True
 except ImportError:
+    GITHUB_SYNC_AVAILABLE = False
     st.warning("⚠️ Data loader utilities not found. Using basic loading...")
 
 # Import advanced visualization modules
@@ -1380,6 +1384,36 @@ with st.sidebar.expander("📁 Data Management", expanded=False):
                 st.rerun()
             else:
                 st.warning("No data returned from API")
+
+    # Sync to Private GitHub Repo
+    st.markdown("---")
+    st.markdown("**☁️ Sync to GitHub**")
+    st.caption("Save data to private repo for persistence")
+
+    if GITHUB_SYNC_AVAILABLE:
+        sync_device = st.selectbox(
+            "Device to sync:",
+            ["ForceDecks", "ForceFrame", "NordBord"],
+            key="sync_device_select"
+        )
+
+        if st.button("☁️ Refresh & Save to GitHub", help="Fetch from API and save to private GitHub repo", use_container_width=True):
+            device_map = {"ForceDecks": "forcedecks", "ForceFrame": "forceframe", "NordBord": "nordbord"}
+            device_key = device_map[sync_device]
+
+            with st.spinner(f"Fetching {sync_device} data and syncing to GitHub..."):
+                df_synced, success = refresh_and_save_data(device_key)
+
+                if success and not df_synced.empty:
+                    st.success(f"✅ Synced {len(df_synced)} records to GitHub!")
+                    st.cache_data.clear()
+                    st.rerun()
+                elif not df_synced.empty:
+                    st.warning("Data fetched but GitHub sync failed. Check secrets.")
+                else:
+                    st.error("Failed to fetch data from API. Check VALD credentials.")
+    else:
+        st.info("GitHub sync requires data_loader with push_to_github_repo function")
 
     # Historical Refresh section - fetches ALL data (no date limit)
     st.markdown("---")
