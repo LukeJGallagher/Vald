@@ -19,11 +19,17 @@ from plotly.subplots import make_subplots
 from typing import List, Dict, Optional, Tuple
 import requests
 
+try:
+    import streamlit as st
+    STREAMLIT_AVAILABLE = True
+except ImportError:
+    STREAMLIT_AVAILABLE = False
+
 # ============================================================================
 # FORCE TRACE API FUNCTIONS
 # ============================================================================
 
-def get_force_trace(test_id: str, trial_id: str, token: str, tenant_id: str, region: str = 'euw') -> pd.DataFrame:
+def _get_force_trace_impl(test_id: str, trial_id: str, token: str, tenant_id: str, region: str = 'euw') -> pd.DataFrame:
     """
     Download raw force-time trace from VALD API
 
@@ -78,6 +84,20 @@ def get_force_trace(test_id: str, trial_id: str, token: str, tenant_id: str, reg
     except Exception as e:
         print(f"Exception: {e}")
         return pd.DataFrame()
+
+
+def get_force_trace(test_id: str, trial_id: str, token: str, tenant_id: str, region: str = 'euw') -> pd.DataFrame:
+    """
+    Download raw force-time trace from VALD API with caching.
+    Wrapper that adds Streamlit caching when available.
+    """
+    if STREAMLIT_AVAILABLE:
+        @st.cache_data(ttl=3600, show_spinner=False)
+        def _cached_fetch(test_id, trial_id, token, tenant_id, region):
+            return _get_force_trace_impl(test_id, trial_id, token, tenant_id, region)
+        return _cached_fetch(test_id, trial_id, token, tenant_id, region)
+    else:
+        return _get_force_trace_impl(test_id, trial_id, token, tenant_id, region)
 
 
 def detect_phases(force_trace: pd.DataFrame, test_type: str = 'CMJ') -> Dict[str, Tuple[int, int]]:

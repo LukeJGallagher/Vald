@@ -11,18 +11,13 @@
 credentials.json
 secrets.json
 
-# Data Files - Keep CSVs for Streamlit deployment
-# Only exclude Excel files and raw exports
+# Data Files - Contains PII, fetch from API instead
+data/*.csv
 data/*.xlsx
 data/*.xls
+data/*.json
 *.xlsx
 *.xls
-
-# Keep these data files for deployment (override above)
-!data/forcedecks_allsports_with_athletes.csv
-!data/forceframe_allsports.csv
-!data/nordbord_allsports.csv
-!data/profile_athlete_mapping.json
 
 # Python
 __pycache__/

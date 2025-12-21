@@ -49,7 +49,11 @@ _TO_DELETE/
 # Large binary files (if any)
 *.zip
 
-# Keep data files for deployment
-!dashboard/data/*.csv
-!dashboard/data/*.json
+# Data files - Contains PII, excluded from git
+data/master_files/*.csv
+dashboard/data/*.csv
+dashboard/data/*.json
+*.csv
+
+# Windows artifacts
 nul

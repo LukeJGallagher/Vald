@@ -399,8 +399,9 @@ def load_env_credentials():
         return credentials, False
 
 
+@st.cache_data(ttl=3600, show_spinner=False)
 def get_force_trace(test_id, trial_id, token, tenant_id, region='euw'):
-    """Fetch force trace data from VALD API for a specific trial."""
+    """Fetch force trace data from VALD API for a specific trial. Cached for 1 hour."""
     import requests
 
     base_urls = {
