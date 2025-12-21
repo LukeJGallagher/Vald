@@ -1504,17 +1504,48 @@ df_forceframe = normalize_dataframe_columns(df_forceframe, athlete_mapping)
 df_nordbord = normalize_dataframe_columns(df_nordbord, athlete_mapping)
 
 if df.empty:
-    st.error("""
-    ### ⚠️ No Data Available
+    # Check if API credentials are configured
+    has_credentials = False
+    try:
+        if hasattr(st, 'secrets') and 'vald' in st.secrets:
+            has_credentials = bool(st.secrets['vald'].get('TENANT_ID'))
+    except Exception:
+        pass
 
-    **Option 1: Upload Data (Streamlit Cloud)**
-    Use the 📁 Data Management panel in the sidebar to upload your CSV.
+    if has_credentials:
+        st.warning("""
+        ### 🔄 Fetching Data from VALD API...
 
-    **Option 2: Local Data**
-    Ensure your VALD data file is in one of these locations:
-    - `forcedecks_allsports_with_athletes.csv`
-    - `data/forcedecks_allsports_with_athletes.csv`
-    """)
+        Data is being loaded from the VALD API. This may take a moment on first load.
+
+        If this persists, please check:
+        - Your API credentials in Streamlit secrets
+        - Your TENANT_ID is correct
+        - The VALD API is accessible
+        """)
+        st.info("💡 **Tip:** Refresh the page if data doesn't appear within 30 seconds.")
+    else:
+        st.error("""
+        ### ⚠️ API Credentials Required
+
+        Please configure your VALD API credentials in Streamlit secrets:
+
+        ```toml
+        [vald]
+        CLIENT_ID = "your_client_id"
+        CLIENT_SECRET = "your_client_secret"
+        TENANT_ID = "your_tenant_id"
+        VALD_REGION = "euw"
+        ```
+
+        Or use a manual token:
+        ```toml
+        [vald]
+        MANUAL_TOKEN = "your_bearer_token"
+        TENANT_ID = "your_tenant_id"
+        VALD_REGION = "euw"
+        ```
+        """)
     st.stop()
 
 # ============================================================================
