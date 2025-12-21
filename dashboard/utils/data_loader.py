@@ -1,20 +1,196 @@
 """
 Data Loading and Processing Utilities
 VALD Performance Dashboard - Saudi National Team
+
+Supports both local CSV files and VALD API fetching.
+On Streamlit Cloud, data is fetched from API using secrets.
 """
 
 import pandas as pd
 import numpy as np
 import os
+import requests
 from typing import Dict, List, Optional, Tuple
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 import streamlit as st
+
+
+# ============================================================================
+# API DATA FETCHING
+# ============================================================================
+
+def _get_vald_credentials():
+    """Get VALD API credentials from Streamlit secrets or environment."""
+    try:
+        if hasattr(st, 'secrets') and 'vald' in st.secrets:
+            return {
+                'client_id': st.secrets['vald'].get('CLIENT_ID', ''),
+                'client_secret': st.secrets['vald'].get('CLIENT_SECRET', ''),
+                'tenant_id': st.secrets['vald'].get('TENANT_ID', ''),
+                'region': st.secrets['vald'].get('VALD_REGION', 'euw'),
+                'manual_token': st.secrets['vald'].get('MANUAL_TOKEN', ''),
+            }
+    except Exception:
+        pass
+    return None
+
+
+def _get_oauth_token(client_id: str, client_secret: str) -> Optional[str]:
+    """Get OAuth token from VALD security endpoint."""
+    try:
+        response = requests.post(
+            'https://security.valdperformance.com/connect/token',
+            data={
+                'grant_type': 'client_credentials',
+                'client_id': client_id,
+                'client_secret': client_secret,
+                'scope': 'forcedecks forceframe nordbord athletes'
+            },
+            timeout=30
+        )
+        if response.status_code == 200:
+            return response.json().get('access_token')
+    except Exception:
+        pass
+    return None
+
+
+@st.cache_data(ttl=3600, show_spinner="Fetching athlete profiles...")
+def _fetch_athlete_profiles(token: str, region: str, tenant_id: str) -> Dict[str, dict]:
+    """Fetch athlete profiles from VALD API. Returns {profileId: {name, sport, etc}}"""
+    profiles_url = f'https://prd-{region}-api-externalprofile.valdperformance.com/api/v1/profiles'
+    headers = {'Authorization': f'Bearer {token}', 'Accept': 'application/json'}
+    params = {'TenantId': tenant_id}
+
+    try:
+        response = requests.get(profiles_url, headers=headers, params=params, timeout=60)
+        if response.status_code == 200:
+            profiles = response.json()
+            profile_map = {}
+            for p in profiles:
+                pid = p.get('id') or p.get('profileId')
+                if pid:
+                    profile_map[pid] = {
+                        'Name': p.get('fullName') or p.get('name') or p.get('displayName', 'Unknown'),
+                        'athlete_sport': p.get('sport') or p.get('primarySport') or 'Unknown',
+                        'Groups': p.get('groups', []),
+                    }
+            return profile_map
+    except Exception:
+        pass
+    return {}
+
+
+@st.cache_data(ttl=1800, show_spinner="Fetching data from VALD API...")
+def fetch_from_vald_api(device: str = 'forcedecks') -> pd.DataFrame:
+    """
+    Fetch data directly from VALD API.
+    Used when local CSV files are not available (e.g., Streamlit Cloud).
+    """
+    credentials = _get_vald_credentials()
+    if not credentials:
+        return pd.DataFrame()
+
+    # Get token
+    token = credentials.get('manual_token')
+    if not token and credentials.get('client_id') and credentials.get('client_secret'):
+        token = _get_oauth_token(credentials['client_id'], credentials['client_secret'])
+
+    if not token:
+        return pd.DataFrame()
+
+    region = credentials.get('region', 'euw')
+    tenant_id = credentials.get('tenant_id')
+
+    if not tenant_id:
+        return pd.DataFrame()
+
+    # API endpoints by device
+    endpoints = {
+        'forcedecks': f'https://prd-{region}-api-extforcedecks.valdperformance.com/v2019q3/teams/{tenant_id}/tests',
+        'forceframe': f'https://prd-{region}-api-externalforceframe.valdperformance.com/v2020q1/teams/{tenant_id}/tests',
+        'nordbord': f'https://prd-{region}-api-externalnordbord.valdperformance.com/v2019q3/teams/{tenant_id}/tests',
+    }
+
+    url = endpoints.get(device)
+    if not url:
+        return pd.DataFrame()
+
+    headers = {'Authorization': f'Bearer {token}', 'Accept': 'application/json'}
+
+    # Fetch last 90 days of data
+    from_date = (datetime.now(timezone.utc) - timedelta(days=90)).strftime('%Y-%m-%dT00:00:00.000Z')
+    params = {'modifiedFromUtc': from_date}
+
+    try:
+        all_tests = []
+        page = 1
+
+        while True:
+            params['page'] = page
+            response = requests.get(url, headers=headers, params=params, timeout=60)
+
+            if response.status_code != 200:
+                break
+
+            data = response.json()
+            tests = data if isinstance(data, list) else data.get('data', [])
+
+            if not tests:
+                break
+
+            all_tests.extend(tests)
+
+            # Check for more pages
+            if len(tests) < 100:  # Assuming page size of 100
+                break
+            page += 1
+
+            # Safety limit
+            if page > 50:
+                break
+
+        if not all_tests:
+            return pd.DataFrame()
+
+        # Convert to DataFrame
+        df = pd.DataFrame(all_tests)
+
+        # Fetch athlete profiles for names
+        profile_map = _fetch_athlete_profiles(token, region, tenant_id)
+
+        # Add athlete names and sports from profiles
+        if 'profileId' in df.columns and profile_map:
+            df['Name'] = df['profileId'].map(lambda pid: profile_map.get(pid, {}).get('Name', 'Unknown'))
+            df['athlete_sport'] = df['profileId'].map(lambda pid: profile_map.get(pid, {}).get('athlete_sport', 'Unknown'))
+
+        # Parse dates
+        date_columns = ['recordedDateUtc', 'testDateUtc', 'modifiedDateUtc']
+        for col in date_columns:
+            if col in df.columns:
+                df[col] = pd.to_datetime(df[col], errors='coerce')
+
+        df['data_source'] = device
+
+        return df
+
+    except Exception as e:
+        st.warning(f"Error fetching {device} data from API: {e}")
+        return pd.DataFrame()
+
+
+# ============================================================================
+# MAIN DATA LOADER
+# ============================================================================
 
 @st.cache_data(ttl=3600)
 def load_vald_data(device: str = 'forcedecks') -> pd.DataFrame:
     """
-    Load VALD data from master files
-    Supports ForceDecks, ForceFrame, NordBord
+    Load VALD data from local files or API.
+
+    Priority:
+    1. Local CSV files (for local development)
+    2. VALD API (for Streamlit Cloud deployment)
     """
     file_mapping = {
         'forcedecks': [
@@ -39,6 +215,7 @@ def load_vald_data(device: str = 'forcedecks') -> pd.DataFrame:
 
     file_paths = file_mapping.get(device, file_mapping['forcedecks'])
 
+    # Try local files first
     for file_path in file_paths:
         if os.path.exists(file_path):
             try:
@@ -60,8 +237,13 @@ def load_vald_data(device: str = 'forcedecks') -> pd.DataFrame:
                 return df
 
             except Exception as e:
-                st.error(f"Error loading {device} data from {file_path}: {e}")
+                st.warning(f"Error loading {device} data from {file_path}: {e}")
                 continue
+
+    # No local files found - try API
+    df = fetch_from_vald_api(device)
+    if not df.empty:
+        return df
 
     return pd.DataFrame()
 

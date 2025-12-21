@@ -1448,36 +1448,16 @@ with st.spinner("Loading performance data..."):
     else:
         df = load_vald_data('forcedecks')
 
-# Load ForceFrame and NordBord data
+# Load ForceFrame and NordBord data (uses data_loader with API fallback)
 @st.cache_data(ttl=3600)
 def load_forceframe_data():
-    """Load ForceFrame data from CSV. Cached for 1 hour."""
-    file_paths = [
-        'data/forceframe_allsports.csv',
-        'forceframe_allsports.csv',
-    ]
-    for fp in file_paths:
-        if os.path.exists(fp):
-            df = pd.read_csv(fp)
-            if 'testDateUtc' in df.columns:
-                df['testDateUtc'] = pd.to_datetime(df['testDateUtc'])
-            return df
-    return pd.DataFrame()
+    """Load ForceFrame data from CSV or API. Cached for 1 hour."""
+    return load_vald_data('forceframe')
 
 @st.cache_data(ttl=3600)
 def load_nordbord_data():
-    """Load NordBord data from CSV. Cached for 1 hour."""
-    file_paths = [
-        'data/nordbord_allsports.csv',
-        'nordbord_allsports.csv',
-    ]
-    for fp in file_paths:
-        if os.path.exists(fp):
-            df = pd.read_csv(fp)
-            if 'testDateUtc' in df.columns:
-                df['testDateUtc'] = pd.to_datetime(df['testDateUtc'])
-            return df
-    return pd.DataFrame()
+    """Load NordBord data from CSV or API. Cached for 1 hour."""
+    return load_vald_data('nordbord')
 
 # Load ForceFrame and NordBord
 df_forceframe = load_forceframe_data()
