@@ -81,6 +81,64 @@ def _fetch_athlete_profiles(token: str, region: str, tenant_id: str) -> Dict[str
     return {}
 
 
+@st.cache_data(ttl=3600, show_spinner="Loading data from private repository...")
+def fetch_from_github_repo(device: str = 'forcedecks') -> pd.DataFrame:
+    """
+    Fetch data from a private GitHub repository.
+    Requires GITHUB_TOKEN and GITHUB_DATA_REPO in Streamlit secrets.
+
+    This allows storing historical data in a private repo while
+    hosting the dashboard publicly.
+    """
+    try:
+        if not hasattr(st, 'secrets') or 'github' not in st.secrets:
+            return pd.DataFrame()
+
+        github_token = st.secrets['github'].get('GITHUB_TOKEN', '')
+        data_repo = st.secrets['github'].get('DATA_REPO', '')  # e.g., "username/vald-data"
+
+        if not github_token or not data_repo:
+            return pd.DataFrame()
+
+        # File mapping for each device
+        file_mapping = {
+            'forcedecks': 'forcedecks_allsports_with_athletes.csv',
+            'forceframe': 'forceframe_allsports.csv',
+            'nordbord': 'nordbord_allsports.csv',
+        }
+
+        filename = file_mapping.get(device)
+        if not filename:
+            return pd.DataFrame()
+
+        # GitHub raw content URL for private repos
+        url = f"https://raw.githubusercontent.com/{data_repo}/main/data/{filename}"
+        headers = {
+            'Authorization': f'token {github_token}',
+            'Accept': 'application/vnd.github.v3.raw'
+        }
+
+        response = requests.get(url, headers=headers, timeout=60)
+
+        if response.status_code == 200:
+            from io import StringIO
+            df = pd.read_csv(StringIO(response.text))
+
+            # Parse dates
+            date_columns = ['recordedDateUtc', 'testDateUtc', 'modifiedDateUtc']
+            for col in date_columns:
+                if col in df.columns:
+                    df[col] = pd.to_datetime(df[col], errors='coerce')
+
+            df['data_source'] = device
+            return df
+
+    except Exception as e:
+        st.warning(f"Could not load from GitHub: {e}")
+
+    return pd.DataFrame()
+
+
 @st.cache_data(ttl=1800, show_spinner="Fetching data from VALD API...")
 def fetch_from_vald_api(device: str = 'forcedecks') -> pd.DataFrame:
     """
@@ -186,11 +244,12 @@ def fetch_from_vald_api(device: str = 'forcedecks') -> pd.DataFrame:
 @st.cache_data(ttl=3600)
 def load_vald_data(device: str = 'forcedecks') -> pd.DataFrame:
     """
-    Load VALD data from local files or API.
+    Load VALD data from multiple sources with fallback.
 
     Priority:
     1. Local CSV files (for local development)
-    2. VALD API (for Streamlit Cloud deployment)
+    2. Private GitHub repository (for historical data with PII)
+    3. VALD API direct fetch (for live data)
     """
     file_mapping = {
         'forcedecks': [
@@ -240,7 +299,12 @@ def load_vald_data(device: str = 'forcedecks') -> pd.DataFrame:
                 st.warning(f"Error loading {device} data from {file_path}: {e}")
                 continue
 
-    # No local files found - try API
+    # No local files found - try private GitHub repo first (has historical data)
+    df = fetch_from_github_repo(device)
+    if not df.empty:
+        return df
+
+    # Fall back to VALD API (live data, last 90 days)
     df = fetch_from_vald_api(device)
     if not df.empty:
         return df

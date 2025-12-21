@@ -1,0 +1,161 @@
+# GitHub Actions workflow to sync VALD data to private repository
+# This runs on a schedule to keep historical data updated
+#
+# SETUP:
+# 1. Create a PRIVATE repository for data (e.g., your-username/vald-data)
+# 2. Add these secrets to your PUBLIC dashboard repo:
+#    - VALD_CLIENT_ID: Your VALD OAuth client ID
+#    - VALD_CLIENT_SECRET: Your VALD OAuth client secret
+#    - VALD_TENANT_ID: Your VALD tenant ID
+#    - DATA_REPO_TOKEN: Personal access token with repo scope for private data repo
+#    - DATA_REPO: The private repo name (e.g., "username/vald-data")
+
+name: Sync VALD Data
+
+on:
+  schedule:
+    # Run daily at 6 AM UTC
+    - cron: '0 6 * * *'
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  sync-data:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout dashboard repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install requests pandas
+
+      - name: Fetch VALD data
+        env:
+          VALD_CLIENT_ID: ${{ secrets.VALD_CLIENT_ID }}
+          VALD_CLIENT_SECRET: ${{ secrets.VALD_CLIENT_SECRET }}
+          VALD_TENANT_ID: ${{ secrets.VALD_TENANT_ID }}
+          VALD_REGION: 'euw'
+        run: |
+          python << 'EOF'
+          import os
+          import requests
+          import pandas as pd
+          from datetime import datetime, timedelta, timezone
+
+          def get_token():
+              response = requests.post(
+                  'https://security.valdperformance.com/connect/token',
+                  data={
+                      'grant_type': 'client_credentials',
+                      'client_id': os.environ['VALD_CLIENT_ID'],
+                      'client_secret': os.environ['VALD_CLIENT_SECRET'],
+                      'scope': 'forcedecks forceframe nordbord athletes'
+                  },
+                  timeout=30
+              )
+              return response.json()['access_token']
+
+          def fetch_profiles(token, region, tenant_id):
+              url = f'https://prd-{region}-api-externalprofile.valdperformance.com/api/v1/profiles'
+              headers = {'Authorization': f'Bearer {token}'}
+              response = requests.get(url, headers=headers, params={'TenantId': tenant_id}, timeout=60)
+              if response.status_code == 200:
+                  return {p.get('id'): {
+                      'Name': p.get('fullName') or p.get('name', 'Unknown'),
+                      'athlete_sport': p.get('sport', 'Unknown')
+                  } for p in response.json()}
+              return {}
+
+          def fetch_device_data(token, region, tenant_id, device):
+              endpoints = {
+                  'forcedecks': f'https://prd-{region}-api-extforcedecks.valdperformance.com/v2019q3/teams/{tenant_id}/tests',
+                  'forceframe': f'https://prd-{region}-api-externalforceframe.valdperformance.com/v2020q1/teams/{tenant_id}/tests',
+                  'nordbord': f'https://prd-{region}-api-externalnordbord.valdperformance.com/v2019q3/teams/{tenant_id}/tests',
+              }
+
+              url = endpoints[device]
+              headers = {'Authorization': f'Bearer {token}'}
+              from_date = (datetime.now(timezone.utc) - timedelta(days=365)).strftime('%Y-%m-%dT00:00:00.000Z')
+
+              all_tests = []
+              page = 1
+              while page < 100:
+                  response = requests.get(url, headers=headers, params={'modifiedFromUtc': from_date, 'page': page}, timeout=60)
+                  if response.status_code != 200:
+                      break
+                  data = response.json()
+                  tests = data if isinstance(data, list) else data.get('data', [])
+                  if not tests:
+                      break
+                  all_tests.extend(tests)
+                  if len(tests) < 100:
+                      break
+                  page += 1
+
+              return all_tests
+
+          # Main execution
+          region = os.environ.get('VALD_REGION', 'euw')
+          tenant_id = os.environ['VALD_TENANT_ID']
+
+          print("Getting OAuth token...")
+          token = get_token()
+
+          print("Fetching athlete profiles...")
+          profiles = fetch_profiles(token, region, tenant_id)
+          print(f"Found {len(profiles)} profiles")
+
+          os.makedirs('data_export', exist_ok=True)
+
+          for device in ['forcedecks', 'forceframe', 'nordbord']:
+              print(f"Fetching {device} data...")
+              tests = fetch_device_data(token, region, tenant_id, device)
+              print(f"Found {len(tests)} {device} tests")
+
+              if tests:
+                  df = pd.DataFrame(tests)
+                  if 'profileId' in df.columns:
+                      df['Name'] = df['profileId'].map(lambda pid: profiles.get(pid, {}).get('Name', 'Unknown'))
+                      df['athlete_sport'] = df['profileId'].map(lambda pid: profiles.get(pid, {}).get('athlete_sport', 'Unknown'))
+
+                  filename = f'data_export/{device}_allsports_with_athletes.csv'
+                  df.to_csv(filename, index=False)
+                  print(f"Saved {filename}")
+
+          print("Data export complete!")
+          EOF
+
+      - name: Push to private data repo
+        env:
+          DATA_REPO_TOKEN: ${{ secrets.DATA_REPO_TOKEN }}
+          DATA_REPO: ${{ secrets.DATA_REPO }}
+        run: |
+          # Clone the private data repo
+          git clone https://x-access-token:${DATA_REPO_TOKEN}@github.com/${DATA_REPO}.git private_data_repo
+
+          # Create data directory if it doesn't exist
+          mkdir -p private_data_repo/data
+
+          # Copy the exported data
+          cp data_export/*.csv private_data_repo/data/
+
+          # Commit and push
+          cd private_data_repo
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add data/*.csv
+
+          # Only commit if there are changes
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Update VALD data - $(date -u +"%Y-%m-%d %H:%M UTC")"
+            git push
+            echo "Data pushed successfully!"
+          fi
