@@ -3161,8 +3161,13 @@ with tabs[7]:
 
                                 peak1, peak2 = max(force1), max(force2)
                                 avg1, avg2 = np.mean(force1), np.mean(force2)
-                                impulse1 = np.trapz(force1, time1) / 1000  # Convert to N·s
-                                impulse2 = np.trapz(force2, time2) / 1000
+                                # Use trapezoid (trapz removed in NumPy 2.0)
+                                try:
+                                    impulse1 = np.trapezoid(force1, time1) / 1000  # Convert to N·s
+                                    impulse2 = np.trapezoid(force2, time2) / 1000
+                                except AttributeError:
+                                    impulse1 = np.trapz(force1, time1) / 1000
+                                    impulse2 = np.trapz(force2, time2) / 1000
 
                                 with m1:
                                     diff_peak = ((peak2 - peak1) / peak1 * 100) if peak1 > 0 else 0

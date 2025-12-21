@@ -393,7 +393,12 @@ def calculate_trace_metrics(force_trace: pd.DataFrame, test_type: str = 'CMJ') -
     # Impulse (area under curve)
     # Convert time to seconds
     time_s = time_ms / 1000
-    metrics['impulse'] = np.trapz(force, time_s)
+    # Use trapezoid (trapz was removed in NumPy 2.0)
+    try:
+        metrics['impulse'] = np.trapezoid(force, time_s)
+    except AttributeError:
+        # Fallback for older NumPy versions
+        metrics['impulse'] = np.trapz(force, time_s)
 
     # Phase durations
     phases = detect_phases(force_trace, test_type)
