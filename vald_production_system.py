@@ -634,42 +634,68 @@ class AthleteDataManager:
         self.token_manager = token_manager
         self.rate_limiter = rate_limiter
         self.logger = logger
-        self.base_url = config.get_endpoint('athletes')
+        self.profiles_url = config.get_endpoint('profiles')
 
     def fetch_athletes(self) -> pd.DataFrame:
-        """Fetch athlete details"""
-        self.logger.info("Fetching athlete data...")
+        """Fetch athlete/profile details from Profiles API"""
+        self.logger.info("Fetching athlete data from Profiles API...")
 
-        url = f"{self.base_url}v2021q3/team/{self.config.TENANT_ID}/athletes/detailed"
+        # Use the External Profiles API endpoint
+        url = f"{self.profiles_url}api/v1/profiles"
 
         token = self.token_manager.get_token()
-        headers = {'Authorization': f'Bearer {token}'}
+        headers = {
+            'Authorization': f'Bearer {token}',
+            'Accept': 'application/json'
+        }
+        params = {'TenantId': self.config.TENANT_ID}
 
         self.rate_limiter.wait_if_needed()
 
         try:
-            response = requests.get(url, headers=headers,
+            response = requests.get(url, headers=headers, params=params,
                                    timeout=self.config.REQUEST_TIMEOUT)
 
             if response.status_code == 200:
-                athletes = response.json()
+                profiles = response.json()
 
-                if isinstance(athletes, list):
-                    df = pd.json_normalize(athletes)
-                elif isinstance(athletes, dict) and 'athletes' in athletes:
-                    df = pd.json_normalize(athletes['athletes'])
+                if isinstance(profiles, list):
+                    # Normalize the profile data
+                    athletes = []
+                    for p in profiles:
+                        athlete = {
+                            'id': p.get('id') or p.get('profileId'),
+                            'profileId': p.get('id') or p.get('profileId'),
+                            'givenName': p.get('givenName', ''),
+                            'familyName': p.get('familyName', ''),
+                            'fullName': p.get('fullName') or p.get('name') or p.get('displayName', ''),
+                            'sport': p.get('sport') or p.get('primarySport', 'Unknown'),
+                            'email': p.get('email', ''),
+                            'externalId': p.get('externalId', ''),
+                            'sex': p.get('sex', ''),
+                            'dateOfBirth': p.get('dateOfBirth', ''),
+                            'weightInKG': p.get('weightInKG'),
+                            'heightInCM': p.get('heightInCM'),
+                        }
+                        # Build full name if not provided
+                        if not athlete['fullName']:
+                            athlete['fullName'] = f"{athlete['givenName']} {athlete['familyName']}".strip()
+                        athletes.append(athlete)
+
+                    df = pd.DataFrame(athletes)
+                    self.logger.info(f"Loaded {len(df)} athlete profiles")
+                    return df
                 else:
-                    self.logger.error("Unexpected athlete data format")
+                    self.logger.error("Unexpected profile data format")
                     return pd.DataFrame()
-
-                self.logger.info(f"Loaded {len(df)} athletes")
-                return df
             else:
-                self.logger.error(f"Athlete fetch failed: {response.status_code}")
+                self.logger.error(f"Profile fetch failed: {response.status_code}")
+                # Log response for debugging
+                self.logger.error(f"Response: {response.text[:500] if response.text else 'No response body'}")
                 return pd.DataFrame()
 
         except Exception as e:
-            self.logger.error(f"Athlete fetch error: {e}")
+            self.logger.error(f"Profile fetch error: {e}")
             return pd.DataFrame()
 
     def create_athlete_mapping(self, athletes_df: pd.DataFrame) -> Dict:
@@ -682,18 +708,24 @@ class AthleteDataManager:
         }
 
         for _, athlete in athletes_df.iterrows():
-            # Name lookup
-            full_name = f"{athlete.get('givenName', '')} {athlete.get('familyName', '')}".strip().lower()
+            athlete_dict = athlete.to_dict()
+
+            # Name lookup - try fullName first, then construct from parts
+            full_name = athlete.get('fullName', '')
+            if not full_name:
+                full_name = f"{athlete.get('givenName', '')} {athlete.get('familyName', '')}".strip()
             if full_name:
-                mapping['by_name'][full_name] = athlete.to_dict()
+                mapping['by_name'][full_name.lower()] = athlete_dict
 
-            # ID lookups
-            if 'id' in athlete:
-                mapping['by_id'][str(athlete['id'])] = athlete.to_dict()
-                mapping['by_profile_id'][str(athlete['id'])] = athlete.to_dict()
+            # ID lookups - profile ID (used by ForceDecks)
+            profile_id = athlete.get('profileId') or athlete.get('id')
+            if profile_id and pd.notna(profile_id):
+                mapping['by_id'][str(profile_id)] = athlete_dict
+                mapping['by_profile_id'][str(profile_id)] = athlete_dict
 
+            # External ID lookup
             if 'externalId' in athlete and pd.notna(athlete['externalId']):
-                mapping['by_external_id'][str(athlete['externalId'])] = athlete.to_dict()
+                mapping['by_external_id'][str(athlete['externalId'])] = athlete_dict
 
         self.logger.info(f"Created athlete mapping with {len(mapping['by_name'])} athletes")
         return mapping
@@ -707,22 +739,37 @@ class AthleteDataManager:
         for _, row in df.iterrows():
             athlete = None
 
-            # Try matching by profileId
-            if 'profileId' in row:
+            # Try matching by profileId (ForceDecks)
+            if 'profileId' in row and pd.notna(row.get('profileId')):
                 athlete = athlete_mapping['by_profile_id'].get(str(row['profileId']))
 
+            # Try matching by athleteId (ForceFrame/NordBord)
+            if not athlete and 'athleteId' in row and pd.notna(row.get('athleteId')):
+                athlete = athlete_mapping['by_id'].get(str(row['athleteId']))
+
+            # Try matching by athlete_id (alternate column name)
+            if not athlete and 'athlete_id' in row and pd.notna(row.get('athlete_id')):
+                athlete = athlete_mapping['by_id'].get(str(row['athlete_id']))
+
             # Try matching by name
-            if not athlete and 'Name' in row:
+            if not athlete and 'Name' in row and pd.notna(row.get('Name')):
                 name_lower = str(row['Name']).lower()
                 athlete = athlete_mapping['by_name'].get(name_lower)
 
             if athlete:
+                # Add athlete name if not already present
+                if 'full_name' not in row or pd.isna(row.get('full_name')):
+                    given = athlete.get('givenName', '')
+                    family = athlete.get('familyName', '')
+                    row['full_name'] = f"{given} {family}".strip()
+
                 row['athlete_sport'] = athlete.get('sport', 'Unknown')
                 row['athlete_sex'] = athlete.get('sex', 'Unknown')
                 row['athlete_dob'] = athlete.get('dateOfBirth')
                 row['athlete_weight_kg'] = athlete.get('weightInKG')
                 row['athlete_height_cm'] = athlete.get('heightInCM')
                 row['athlete_position'] = athlete.get('sportSpecificPosition')
+                row['athlete_email'] = athlete.get('email', '')
 
             enriched_rows.append(row)
 

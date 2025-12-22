@@ -113,38 +113,43 @@ def fetch_from_github_repo(device: str = 'forcedecks') -> pd.DataFrame:
             st.info("GitHub token or repo not configured")
             return pd.DataFrame()
 
-        # File mapping for each device
+        # File mapping for each device - try enriched files first, then fall back to base files
         file_mapping = {
-            'forcedecks': 'forcedecks_allsports_with_athletes.csv',
-            'forceframe': 'forceframe_allsports.csv',
-            'nordbord': 'nordbord_allsports.csv',
+            'forcedecks': ['forcedecks_allsports_with_athletes.csv'],
+            'forceframe': ['forceframe_allsports_with_athletes.csv', 'forceframe_allsports.csv'],
+            'nordbord': ['nordbord_allsports_with_athletes.csv', 'nordbord_allsports.csv'],
         }
 
-        filename = file_mapping.get(device)
-        if not filename:
+        filenames = file_mapping.get(device, [])
+        if not filenames:
             return pd.DataFrame()
 
-        # GitHub raw content URL for private repos
-        url = f"https://raw.githubusercontent.com/{data_repo}/main/data/{filename}"
-        headers = {
-            'Authorization': f'token {github_token}',
-            'Accept': 'application/vnd.github.v3.raw'
-        }
+        # Try each filename until one works
+        for filename in filenames:
+            try:
+                # GitHub raw content URL for private repos
+                url = f"https://raw.githubusercontent.com/{data_repo}/main/data/{filename}"
+                headers = {
+                    'Authorization': f'token {github_token}',
+                    'Accept': 'application/vnd.github.v3.raw'
+                }
 
-        response = requests.get(url, headers=headers, timeout=60)
+                response = requests.get(url, headers=headers, timeout=60)
 
-        if response.status_code == 200:
-            from io import StringIO
-            df = pd.read_csv(StringIO(response.text))
+                if response.status_code == 200:
+                    from io import StringIO
+                    df = pd.read_csv(StringIO(response.text))
 
-            # Parse dates
-            date_columns = ['recordedDateUtc', 'testDateUtc', 'modifiedDateUtc']
-            for col in date_columns:
-                if col in df.columns:
-                    df[col] = pd.to_datetime(df[col], errors='coerce')
+                    # Parse dates
+                    date_columns = ['recordedDateUtc', 'testDateUtc', 'modifiedDateUtc']
+                    for col in date_columns:
+                        if col in df.columns:
+                            df[col] = pd.to_datetime(df[col], errors='coerce')
 
-            df['data_source'] = device
-            return df
+                    df['data_source'] = device
+                    return df
+            except Exception:
+                continue  # Try next filename
 
     except Exception as e:
         st.warning(f"Could not load from GitHub: {e}")
@@ -364,24 +369,42 @@ def load_vald_data(device: str = 'forcedecks') -> pd.DataFrame:
     2. Private GitHub repository (for historical data with PII)
     3. VALD API direct fetch (for live data)
     """
+    # Path to vald-data repo (absolute path for reliability)
+    vald_data_dir = r"c:\Users\l.gallagher\OneDrive - Team Saudi\Documents\Performance Analysis\vald-data\data"
+
     file_mapping = {
         'forcedecks': [
+            # vald-data repo (primary source)
+            os.path.join(vald_data_dir, 'forcedecks_allsports_with_athletes.csv'),
+            # Fallback paths
             'forcedecks_allsports_with_athletes.csv',
             'data/forcedecks_allsports_with_athletes.csv',
             'data/master_files/forcedecks_allsports_with_athletes.csv',
             '../data/master_files/forcedecks_allsports_with_athletes.csv',
         ],
         'forceframe': [
+            # vald-data repo (primary source) - enriched file first
+            os.path.join(vald_data_dir, 'forceframe_allsports_with_athletes.csv'),
+            os.path.join(vald_data_dir, 'forceframe_allsports.csv'),
+            # Fallback paths
+            'forceframe_allsports_with_athletes.csv',
+            'data/forceframe_allsports_with_athletes.csv',
+            'data/master_files/forceframe_master_with_athletes.csv',
+            '../data/master_files/forceframe_master_with_athletes.csv',
             'forceframe_allsports.csv',
             'data/forceframe_allsports.csv',
-            'data/master_files/forceframe_allsports.csv',
-            '../data/master_files/forceframe_allsports.csv',
         ],
         'nordbord': [
+            # vald-data repo (primary source) - enriched file first
+            os.path.join(vald_data_dir, 'nordbord_allsports_with_athletes.csv'),
+            os.path.join(vald_data_dir, 'nordbord_allsports.csv'),
+            # Fallback paths
+            'nordbord_allsports_with_athletes.csv',
+            'data/nordbord_allsports_with_athletes.csv',
+            'data/master_files/nordbord_master_with_athletes.csv',
+            '../data/master_files/nordbord_master_with_athletes.csv',
             'nordbord_allsports.csv',
             'data/nordbord_allsports.csv',
-            'data/master_files/nordbord_allsports.csv',
-            '../data/master_files/nordbord_allsports.csv',
         ]
     }
 
@@ -402,6 +425,14 @@ def load_vald_data(device: str = 'forcedecks') -> pd.DataFrame:
                 # Standardize group/sport column
                 if 'Groups' in df.columns and 'athlete_sport' not in df.columns:
                     df['athlete_sport'] = df['Groups'].apply(extract_sport_from_group)
+
+                # Standardize Name column (dashboard uses 'Name' for athlete names)
+                if 'Name' not in df.columns:
+                    if 'full_name' in df.columns:
+                        df['Name'] = df['full_name']
+                    elif 'athleteId' in df.columns:
+                        # Fallback to athleteId if no name available
+                        df['Name'] = df['athleteId'].apply(lambda x: f"Athlete_{str(x)[:8]}" if pd.notna(x) else "Unknown")
 
                 # Add device source
                 df['data_source'] = device

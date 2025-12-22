@@ -77,6 +77,8 @@ class ValdConfig:
         env_locations = [
             env_path,
             '.env',
+            'config/local_secrets/.env',
+            '../config/local_secrets/.env',
             'vald_api_pulls-main/forcedecks/.env',
             '../vald_api_pulls-main/forcedecks/.env',
         ]
@@ -121,7 +123,7 @@ class ValdConfig:
             'forceframe': f'https://prd-{self.REGION}-api-externalforceframe.valdperformance.com/',
             'nordbord': f'https://prd-{self.REGION}-api-externalnordbord.valdperformance.com/',
             'profiles': f'https://prd-{self.REGION}-api-externalprofile.valdperformance.com/',
-            'athletes': f'https://prd-{self.REGION}-api-athletes.valdperformance.com/',
+            'athletes': f'https://prd-{self.REGION}-api-athlete.valdperformance.com/',  # Note: singular 'athlete'
             'tenants': f'https://prd-{self.REGION}-api-externaltenants.valdperformance.com/',
             'security': 'https://security.valdperformance.com/'
         }
