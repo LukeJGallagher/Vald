@@ -88,8 +88,33 @@ ForceDecks: https://prd-{REGION}-api-extforcedecks.valdperformance.com/
 ForceFrame: https://prd-{REGION}-api-externalforceframe.valdperformance.com/
 NordBord: https://prd-{REGION}-api-externalnordbord.valdperformance.com/
 Profiles: https://prd-{REGION}-api-externalprofile.valdperformance.com/
+Tenants: https://prd-{REGION}-api-externaltenants.valdperformance.com/
 ```
 Regions: `euw` (Europe), `use` (US East), `aue` (Australia)
+
+### API Key Methods (from Kenny's vald-aspire)
+- **Get Profiles**: `/profiles?TenantId={tenant_id}` - Returns all athlete profiles with names
+- **Get Tests**: `/v2019q3/teams/{tenant_id}/tests?modifiedFromUtc={date}` - Test data with pagination
+- **Get Trials**: `/v2019q3/teams/{tenant_id}/tests/{test_id}/trials` - Individual trial data
+- **Get Groups**: Tenants API `/groups?TenantId={tenant_id}` - Team/group information
+
+### API Limitation
+VALD API can only pull **6 months of data maximum** per API call. Use staggered date ranges for historical data.
+
+## Athlete Name Mapping
+
+ForceFrame/NordBord use `athleteId` which equals `profileId` in the Profiles API.
+
+**Enrichment script**: `enrich_from_forcedecks.py`
+1. Fetches all profiles from Profiles API (606+ athletes)
+2. Creates `full_name` from `givenName` + `familyName`
+3. Enriches ForceFrame/NordBord CSVs with real names
+4. Dashboard creates `Name` column from `full_name`
+
+Run after API data updates:
+```bash
+python enrich_from_forcedecks.py
+```
 
 ## Important Compatibility Notes
 

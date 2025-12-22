@@ -146,6 +146,13 @@ def fetch_from_github_repo(device: str = 'forcedecks') -> pd.DataFrame:
                         if col in df.columns:
                             df[col] = pd.to_datetime(df[col], errors='coerce')
 
+                    # Create Name column from full_name (critical for athlete display)
+                    if 'Name' not in df.columns:
+                        if 'full_name' in df.columns:
+                            df['Name'] = df['full_name']
+                        elif 'athleteId' in df.columns:
+                            df['Name'] = df['athleteId'].apply(lambda x: f"Athlete_{str(x)[:8]}" if pd.notna(x) else "Unknown")
+
                     df['data_source'] = device
                     return df
             except Exception:
