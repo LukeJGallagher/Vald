@@ -5,6 +5,7 @@
 *.env
 secrets.toml
 .streamlit/secrets.toml
+config/local_secrets/
 
 # Python
 __pycache__/

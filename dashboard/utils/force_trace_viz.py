@@ -533,46 +533,4 @@ def calculate_trace_metrics(force_trace: pd.DataFrame, test_type: str = 'CMJ') -
 def export_force_trace(force_trace: pd.DataFrame, filename: str):
     """Export force trace to CSV for external analysis"""
     force_trace.to_csv(filename, index=False)
-    print(f"Force trace exported to {filename}")
-
-
-# ============================================================================
-# USAGE EXAMPLE
-# ============================================================================
-
-if __name__ == "__main__":
-    print("Force Trace Visualization Module")
-    print("="*50)
-    print()
-    print("Example Usage:")
-    print()
-    print("# 1. Download force trace")
-    print("trace = get_force_trace(")
-    print("    test_id='test-uuid',")
-    print("    trial_id='trial-uuid',")
-    print("    token='your-token',")
-    print("    tenant_id='your-tenant'")
-    print(")")
-    print()
-    print("# 2. Plot single trace")
-    print("fig = plot_force_trace(trace, title='CMJ Force-Time Curve')")
-    print("fig.show()")
-    print()
-    print("# 3. Overlay multiple trials")
-    print("traces = [trial1, trial2, trial3]")
-    print("labels = ['Trial 1', 'Trial 2', 'Trial 3']")
-    print("fig = plot_multi_trial_overlay(traces, labels)")
-    print("fig.show()")
-    print()
-    print("# 4. Compare athletes")
-    print("athlete_traces = {")
-    print("    'Athlete A': trace_a,")
-    print("    'Athlete B': trace_b")
-    print("}")
-    print("fig = plot_athlete_comparison(athlete_traces)")
-    print("fig.show()")
-    print()
-    print("# 5. Calculate metrics")
-    print("metrics = calculate_trace_metrics(trace)")
-    print("print(metrics)")
-# Force redeploy Mon, Dec 22, 2025  7:47:29 AM
+    return filename

@@ -674,18 +674,40 @@ st.markdown("""
         font-weight: 600;
     }
 
-    /* Tabs Styling - Olympic Style */
+    /* Tabs Styling - Olympic Style with Scrollable Tabs */
     .stTabs [data-baseweb="tab-list"] {
-        gap: 12px;
+        gap: 8px;
         background-color: #f0f2f5;
         padding: 8px;
         border-radius: 10px;
         border-bottom: 3px solid var(--saudi-gold);
+        /* Scrollable tabs */
+        overflow-x: auto;
+        overflow-y: hidden;
+        flex-wrap: nowrap;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+        scrollbar-color: var(--saudi-green) #e0e0e0;
+    }
+
+    /* Custom scrollbar for tabs */
+    .stTabs [data-baseweb="tab-list"]::-webkit-scrollbar {
+        height: 6px;
+    }
+
+    .stTabs [data-baseweb="tab-list"]::-webkit-scrollbar-track {
+        background: #e0e0e0;
+        border-radius: 3px;
+    }
+
+    .stTabs [data-baseweb="tab-list"]::-webkit-scrollbar-thumb {
+        background: var(--saudi-green);
+        border-radius: 3px;
     }
 
     .stTabs [data-baseweb="tab"] {
-        height: 50px;
-        padding: 0px 24px;
+        height: 45px;
+        padding: 0px 16px;
         background-color: white;
         border-radius: 8px;
         color: #333333;
@@ -693,6 +715,9 @@ st.markdown("""
         font-family: 'Poppins', sans-serif;
         transition: all 0.3s ease;
         border: 2px solid #e0e0e0;
+        white-space: nowrap;
+        flex-shrink: 0;
+        min-width: fit-content;
     }
 
     .stTabs [data-baseweb="tab"]:hover {
@@ -1707,6 +1732,38 @@ if date_range and len(date_range) == 2:
         (filtered_df['recordedDateUtc'].dt.date >= start_date) &
         (filtered_df['recordedDateUtc'].dt.date <= end_date)
     ]
+
+# Apply same filters to ForceFrame and NordBord data
+filtered_forceframe = df_forceframe.copy()
+filtered_nordbord = df_nordbord.copy()
+
+# Apply sport filter
+if selected_sports:
+    if 'athlete_sport' in filtered_forceframe.columns:
+        filtered_forceframe = filtered_forceframe[filtered_forceframe['athlete_sport'].isin(selected_sports)]
+    if 'athlete_sport' in filtered_nordbord.columns:
+        filtered_nordbord = filtered_nordbord[filtered_nordbord['athlete_sport'].isin(selected_sports)]
+
+# Apply athlete filter
+if selected_athletes:
+    if 'Name' in filtered_forceframe.columns:
+        filtered_forceframe = filtered_forceframe[filtered_forceframe['Name'].isin(selected_athletes)]
+    if 'Name' in filtered_nordbord.columns:
+        filtered_nordbord = filtered_nordbord[filtered_nordbord['Name'].isin(selected_athletes)]
+
+# Apply date filter
+if date_range and len(date_range) == 2:
+    start_date, end_date = date_range
+    if 'testDateUtc' in filtered_forceframe.columns:
+        filtered_forceframe = filtered_forceframe[
+            (pd.to_datetime(filtered_forceframe['testDateUtc']).dt.date >= start_date) &
+            (pd.to_datetime(filtered_forceframe['testDateUtc']).dt.date <= end_date)
+        ]
+    if 'testDateUtc' in filtered_nordbord.columns:
+        filtered_nordbord = filtered_nordbord[
+            (pd.to_datetime(filtered_nordbord['testDateUtc']).dt.date >= start_date) &
+            (pd.to_datetime(filtered_nordbord['testDateUtc']).dt.date <= end_date)
+        ]
 
 # Summary stats in sidebar
 st.sidebar.markdown("---")
@@ -3269,351 +3326,297 @@ with tabs[7]:
     st.markdown("---")
 
     # =========================================================================
-    # FORCE TRACE MODULE FEATURES (only if module available)
+    # MULTI-ATHLETE COMPARISON
     # =========================================================================
+    st.markdown("### 👥 Multi-Athlete Force Trace Comparison")
+
     if not FORCE_TRACE_AVAILABLE:
-        st.info("""
-        **Advanced Force Trace Features** (requires utils/force_trace_viz.py):
-        - Phase detection (eccentric, concentric, flight, landing)
-        - Derived metrics (RFD, impulse, durations)
-        - Multi-trial overlay with phase markers
-        """)
+        st.warning("Force trace module not available. Please ensure utils/force_trace_viz.py is present.")
+    elif not has_test_ids:
+        st.warning("Test IDs not available in data. Multi-athlete comparison requires testId and trialId columns.")
+    elif not env_loaded:
+        st.warning("API credentials not configured. Please add credentials to your .env file.")
     else:
-        st.info("""
-        **Force Trace Analysis** provides deep biomechanical insights by analyzing raw force-time curves.
+        st.markdown("*Select multiple athletes to compare their force traces side-by-side*")
 
-        **Key Features:**
-        - 🔬 **Phase Detection**: Automatically identify movement phases (unweighting, eccentric, concentric, flight, landing)
-        - 📊 **Trial Consistency**: Overlay multiple trials to assess technique reproducibility
-        - 👥 **Athlete Comparison**: Compare force profiles between athletes
-        - 📈 **Derived Metrics**: Calculate RFD, impulse, and phase durations
-        """)
+        # Get athletes with test data
+        athletes_with_tests = sorted(filtered_df['Name'].unique().tolist())
 
-        # Force Trace Demo Section
-        st.markdown("### 🎯 Force Trace Visualization Demo")
+        # Multi-select for athletes (up to 5)
+        selected_athletes_compare = st.multiselect(
+            "Select Athletes to Compare (max 5):",
+            options=athletes_with_tests,
+            max_selections=5,
+            key="multi_athlete_compare"
+        )
+
+        if len(selected_athletes_compare) >= 2:
+            # For each selected athlete, show their most recent test
+            st.markdown("#### Select Test for Each Athlete")
+
+            athlete_test_selections = {}
+
+            cols = st.columns(len(selected_athletes_compare))
+
+            for i, athlete in enumerate(selected_athletes_compare):
+                with cols[i]:
+                    st.markdown(f"**{athlete}**")
+
+                    athlete_tests = filtered_df[filtered_df['Name'] == athlete].sort_values('recordedDateUtc', ascending=False)
+
+                    if not athlete_tests.empty:
+                        test_opts = []
+                        for _, row in athlete_tests.head(10).iterrows():
+                            date_str = row['recordedDateUtc'].strftime('%Y-%m-%d') if pd.notna(row.get('recordedDateUtc')) else 'N/A'
+                            label = f"{row['testType']} - {date_str}"
+                            test_opts.append({
+                                'label': label,
+                                'testId': str(row.get('testId', '')),
+                                'trialId': str(row.get('trialId', ''))
+                            })
+
+                        if test_opts:
+                            selected_idx = st.selectbox(
+                                "Test:",
+                                range(len(test_opts)),
+                                format_func=lambda x, opts=test_opts: opts[x]['label'],
+                                key=f"multi_compare_{athlete}"
+                            )
+                            athlete_test_selections[athlete] = test_opts[selected_idx]
+
+            # Fetch and compare button
+            if st.button("🔄 Fetch & Compare All Athletes", type="primary", key="fetch_multi_compare", use_container_width=True):
+                if len(athlete_test_selections) >= 2:
+                    with st.spinner("Fetching force traces for all athletes..."):
+                        athlete_traces = {}
+                        fetch_errors = []
+
+                        for athlete, test_info in athlete_test_selections.items():
+                            try:
+                                trace = get_force_trace(
+                                    test_info['testId'],
+                                    test_info['trialId'],
+                                    env_creds['token'],
+                                    env_creds['tenant_id'],
+                                    env_creds['region']
+                                )
+                                if trace is not None and not trace.empty:
+                                    athlete_traces[athlete] = trace
+                                else:
+                                    fetch_errors.append(f"{athlete}: No data returned")
+                            except Exception as e:
+                                fetch_errors.append(f"{athlete}: {str(e)}")
+
+                        if athlete_traces:
+                            st.success(f"✅ Successfully fetched traces for {len(athlete_traces)} athletes")
+
+                            # Plot comparison
+                            fig_multi = plot_athlete_comparison(
+                                athlete_traces,
+                                test_type='CMJ',
+                                title="Multi-Athlete Force Trace Comparison"
+                            )
+                            st.plotly_chart(fig_multi, use_container_width=True)
+
+                            # Metrics comparison table
+                            st.markdown("#### 📊 Comparison Metrics")
+                            metrics_data = []
+                            for athlete, trace in athlete_traces.items():
+                                metrics = calculate_trace_metrics(trace, test_type='CMJ')
+                                metrics_data.append({
+                                    'Athlete': athlete,
+                                    'Peak Force (N)': metrics.get('peak_force', 0),
+                                    'Avg Force (N)': metrics.get('average_force', 0),
+                                    'RFD (N/s)': metrics.get('rfd_100ms', 0),
+                                    'Impulse (N·s)': metrics.get('impulse', 0)
+                                })
+
+                            metrics_df = pd.DataFrame(metrics_data)
+                            st.dataframe(metrics_df.round(1), use_container_width=True, hide_index=True)
+
+                        if fetch_errors:
+                            with st.expander("⚠️ Fetch Errors"):
+                                for err in fetch_errors:
+                                    st.warning(err)
+                else:
+                    st.error("Please select tests for at least 2 athletes.")
+
+        elif len(selected_athletes_compare) == 1:
+            st.info("Select at least 2 athletes to compare their force traces.")
+        else:
+            st.info("Select athletes above to compare their force traces.")
+
+    # Live Data Fetching Section
+    st.markdown("---")
+    st.markdown("### 🔌 Fetch Single Force Trace")
+
+    st.info("""
+    **Select specific tests to fetch force trace data from VALD API.**
+    Only selected traces will be downloaded to minimize API calls.
+    """)
+
+    # Load credentials (function defined at top of file)
+    env_creds_single, env_loaded_single = load_env_credentials()
+
+    # API Configuration
+    if env_loaded_single:
+        st.success("✅ **API Configuration loaded**")
+
+        # Use environment credentials
+        api_token = env_creds_single['token']
+        tenant_id = env_creds_single['tenant_id']
+        region = env_creds_single['region']
+    else:
+        st.warning("⚠️ Could not load .env file. Please configure manually.")
+
+        with st.expander("🔧 Manual API Configuration", expanded=True):
+            col1, col2, col3 = st.columns(3)
+
+            with col1:
+                api_token = st.text_input(
+                    "API Token:",
+                    type="password",
+                    help="OAuth bearer token from VALD Hub",
+                    key="api_token"
+                )
+
+            with col2:
+                tenant_id = st.text_input(
+                    "Tenant ID:",
+                    help="Your organization's tenant identifier",
+                    key="tenant_id"
+                )
+
+            with col3:
+                region = st.selectbox(
+                    "Region:",
+                    options=['euw', 'use', 'aue'],
+                    index=0,
+                    help="euw (Europe), use (US East), aue (Australia)",
+                    key="region"
+                )
+
+    # Test Selection
+    if 'testId' in filtered_df.columns and 'trialId' in filtered_df.columns:
+        st.markdown("#### Select Test to Analyze")
 
         col1, col2 = st.columns(2)
 
         with col1:
-            st.markdown("#### Sample Force-Time Curve")
-
-            # Generate sample CMJ force trace for demonstration
-            time_ms = np.linspace(0, 2000, 2000)
-
-            # Simulate a CMJ force profile
-            bodyweight = 800  # N
-
-            # Create realistic CMJ pattern
-            force = np.ones_like(time_ms) * bodyweight
-
-            # Quiet stance (0-300ms)
-            force[:300] = bodyweight + np.random.normal(0, 5, 300)
-
-            # Unweighting phase (300-500ms)
-            unweight = np.linspace(0, -300, 200)
-            force[300:500] = bodyweight + unweight
-
-            # Eccentric braking (500-700ms)
-            eccentric = np.linspace(-300, 400, 200)
-            force[500:700] = bodyweight + eccentric
-
-            # Concentric push (700-900ms)
-            concentric = np.linspace(400, 600, 200)
-            force[700:900] = bodyweight + concentric
-
-            # Takeoff to flight (900-1100ms)
-            takeoff = np.exp(-np.linspace(0, 5, 200)) * 1400
-            force[900:1100] = takeoff
-
-            # Flight phase (1100-1400ms) - zero force
-            force[1100:1400] = 0
-
-            # Landing (1400-1700ms)
-            landing = np.exp(-np.linspace(0, 3, 300)) * 2000
-            force[1400:1700] = landing
-
-            # Recovery (1700-2000ms)
-            force[1700:] = bodyweight + np.random.normal(0, 10, 300)
-
-            # Create DataFrame
-            sample_trace = pd.DataFrame({
-                'time_ms': time_ms,
-                'force_n': force
-            })
-
-            # Plot using the module function
-            fig = plot_force_trace(
-                sample_trace,
-                title="Sample CMJ Force-Time Curve",
-                show_phases=True,
-                test_type='CMJ'
+            # Select athlete
+            trace_athlete = st.selectbox(
+                "Select Athlete:",
+                options=sorted(filtered_df['Name'].unique()),
+                key="trace_athlete"
             )
 
-            st.plotly_chart(fig, use_container_width=True)
-
         with col2:
-            st.markdown("#### Phase Metrics")
+            # Filter tests for selected athlete
+            if trace_athlete:
+                athlete_tests = filtered_df[filtered_df['Name'] == trace_athlete].sort_values('recordedDateUtc', ascending=False)
 
-            # Calculate and display metrics
-            metrics = calculate_trace_metrics(sample_trace, test_type='CMJ')
+                if not athlete_tests.empty:
+                    # Create test options with date and type
+                    test_options = []
+                    for _, row in athlete_tests.head(20).iterrows():
+                        date_str = row['recordedDateUtc'].strftime('%Y-%m-%d') if pd.notna(row['recordedDateUtc']) else 'N/A'
+                        test_label = f"{row['testType']} - {date_str}"
+                        test_options.append((test_label, row['testId'], row.get('trialId', '')))
 
-            st.metric("Peak Force", f"{metrics.get('peak_force', 0):.0f} N")
-            st.metric("Average Force", f"{metrics.get('average_force', 0):.0f} N")
-
-            if 'rfd_100ms' in metrics:
-                st.metric("RFD (100ms)", f"{metrics['rfd_100ms']:.0f} N/s")
-
-            if 'impulse' in metrics:
-                st.metric("Impulse", f"{metrics['impulse']:.0f} N·s")
-
-            # Phase durations
-            st.markdown("**Phase Durations:**")
-            for key, value in metrics.items():
-                if 'duration' in key:
-                    phase_name = key.replace('_duration_ms', '').replace('_', ' ').title()
-                    st.write(f"- {phase_name}: {value:.0f} ms")
-
-        # Multi-Trial Comparison Section
-        st.markdown("---")
-        st.markdown("### 🔄 Multi-Trial Overlay")
-
-        st.info("""
-        **Use Cases:**
-        - Assess trial-to-trial consistency
-        - Identify optimal vs. sub-optimal patterns
-        - Monitor technique changes over time
-        """)
-
-        # Generate multiple trials for demo
-        trials = []
-        trial_labels = []
-
-        for i in range(3):
-            trial_trace = sample_trace.copy()
-            # Add some variation
-            trial_trace['force_n'] = trial_trace['force_n'] * (1 + np.random.uniform(-0.05, 0.05)) + np.random.normal(0, 10, len(trial_trace))
-            trials.append(trial_trace)
-            trial_labels.append(f"Trial {i+1}")
-
-        fig_overlay = plot_multi_trial_overlay(trials, trial_labels, title="Trial-to-Trial Consistency")
-        st.plotly_chart(fig_overlay, use_container_width=True)
-
-        # Athlete Comparison Section
-        st.markdown("---")
-        st.markdown("### 👥 Athlete Force Profile Comparison")
-
-        col1, col2 = st.columns([3, 1])
-
-        with col1:
-            # Create sample traces for different athlete profiles
-            athlete_traces = {}
-
-            # Power athlete (higher peak, shorter phases)
-            power_trace = sample_trace.copy()
-            power_trace['force_n'] = power_trace['force_n'] * 1.15
-            athlete_traces['Power Athlete'] = power_trace
-
-            # Endurance athlete (lower peak, longer phases)
-            endurance_trace = sample_trace.copy()
-            endurance_trace['force_n'] = endurance_trace['force_n'] * 0.9
-            athlete_traces['Endurance Athlete'] = endurance_trace
-
-            fig_comparison = plot_athlete_comparison(
-                athlete_traces,
-                test_type='CMJ',
-                title="Force Profile Comparison"
-            )
-            st.plotly_chart(fig_comparison, use_container_width=True)
-
-        with col2:
-            st.markdown("**Profile Differences:**")
-            st.write("- **Power**: Higher peak force, explosive concentric")
-            st.write("- **Endurance**: Lower peak, efficient mechanics")
-
-        # Live Data Fetching Section
-        st.markdown("---")
-        st.markdown("### 🔌 Fetch Live Force Trace Data")
-
-        st.info("""
-        **Select specific tests to fetch force trace data from VALD API.**
-        Only selected traces will be downloaded to minimize API calls.
-        """)
-
-        # Load credentials (function defined at top of file)
-        env_creds, env_loaded = load_env_credentials()
-
-        # API Configuration
-        if env_loaded:
-            st.success("✅ **API Configuration loaded from .env file**")
-
-            with st.expander("📋 View API Configuration", expanded=False):
-                st.markdown(f"""
-                **Tenant ID:** `{env_creds['tenant_id']}`
-                **Region:** `{env_creds['region']}`
-                **Token:** `{'*' * 20}...` (hidden for security)
-
-                *Credentials automatically loaded from:*
-                `vald_api_pulls-main/forcedecks/.env`
-                """)
-
-            # Use environment credentials
-            api_token = env_creds['token']
-            tenant_id = env_creds['tenant_id']
-            region = env_creds['region']
-        else:
-            st.warning("⚠️ Could not load .env file. Please configure manually.")
-
-            with st.expander("🔧 Manual API Configuration", expanded=True):
-                col1, col2, col3 = st.columns(3)
-
-                with col1:
-                    api_token = st.text_input(
-                        "API Token:",
-                        type="password",
-                        help="OAuth bearer token from VALD Hub",
-                        key="api_token"
+                    selected_test_label = st.selectbox(
+                        "Select Test:",
+                        options=[t[0] for t in test_options],
+                        key="trace_test"
                     )
 
-                with col2:
-                    tenant_id = st.text_input(
-                        "Tenant ID:",
-                        help="Your organization's tenant identifier",
-                        key="tenant_id"
-                    )
+                    # Get selected test IDs
+                    selected_test_info = next((t for t in test_options if t[0] == selected_test_label), None)
 
-                with col3:
-                    region = st.selectbox(
-                        "Region:",
-                        options=['euw', 'use', 'aue'],
-                        index=0,
-                        help="euw (Europe), use (US East), aue (Australia)",
-                        key="region"
-                    )
+                    if selected_test_info:
+                        st.markdown(f"**Test ID:** `{selected_test_info[1]}`")
+                        if selected_test_info[2]:
+                            st.markdown(f"**Trial ID:** `{selected_test_info[2]}`")
 
-        # Test Selection
-        if 'testId' in filtered_df.columns and 'trialId' in filtered_df.columns:
-            st.markdown("#### Select Test to Analyze")
-
-            col1, col2 = st.columns(2)
-
-            with col1:
-                # Select athlete
-                trace_athlete = st.selectbox(
-                    "Select Athlete:",
-                    options=sorted(filtered_df['Name'].unique()),
-                    key="trace_athlete"
-                )
-
-            with col2:
-                # Filter tests for selected athlete
-                if trace_athlete:
-                    athlete_tests = filtered_df[filtered_df['Name'] == trace_athlete].sort_values('recordedDateUtc', ascending=False)
-
-                    if not athlete_tests.empty:
-                        # Create test options with date and type
-                        test_options = []
-                        for _, row in athlete_tests.head(20).iterrows():
-                            date_str = row['recordedDateUtc'].strftime('%Y-%m-%d') if pd.notna(row['recordedDateUtc']) else 'N/A'
-                            test_label = f"{row['testType']} - {date_str}"
-                            test_options.append((test_label, row['testId'], row.get('trialId', '')))
-
-                        selected_test_label = st.selectbox(
-                            "Select Test:",
-                            options=[t[0] for t in test_options],
-                            key="trace_test"
+        # Fetch button
+        if st.button("Fetch Force Trace", type="primary", key="fetch_trace"):
+            if not api_token or not tenant_id:
+                st.error("Please configure API Token and Tenant ID in the configuration section above.")
+            elif selected_test_info:
+                with st.spinner("Fetching force trace data..."):
+                    try:
+                        trace_data = get_force_trace(
+                            test_id=selected_test_info[1],
+                            trial_id=selected_test_info[2] if selected_test_info[2] else selected_test_info[1],
+                            token=api_token,
+                            tenant_id=tenant_id,
+                            region=region
                         )
 
-                        # Get selected test IDs
-                        selected_test_info = next((t for t in test_options if t[0] == selected_test_label), None)
+                        if not trace_data.empty:
+                            st.success(f"Successfully fetched {len(trace_data)} data points!")
 
-                        if selected_test_info:
-                            st.markdown(f"**Test ID:** `{selected_test_info[1]}`")
-                            if selected_test_info[2]:
-                                st.markdown(f"**Trial ID:** `{selected_test_info[2]}`")
+                            # Store in session state for visualization
+                            st.session_state['fetched_trace'] = trace_data
+                            st.session_state['fetched_trace_info'] = {
+                                'athlete': trace_athlete,
+                                'test': selected_test_label
+                            }
 
-            # Fetch button
-            if st.button("Fetch Force Trace", type="primary", key="fetch_trace"):
-                if not api_token or not tenant_id:
-                    st.error("Please configure API Token and Tenant ID in the configuration section above.")
-                elif selected_test_info:
-                    with st.spinner("Fetching force trace data..."):
-                        try:
-                            # Import the get_force_trace function
-                            from utils.force_trace_viz import get_force_trace
-
-                            trace_data = get_force_trace(
-                                test_id=selected_test_info[1],
-                                trial_id=selected_test_info[2] if selected_test_info[2] else selected_test_info[1],
-                                token=api_token,
-                                tenant_id=tenant_id,
-                                region=region
+                            # Display the trace
+                            fig_live = plot_force_trace(
+                                trace_data,
+                                title=f"{trace_athlete} - {selected_test_label}",
+                                show_phases=True,
+                                test_type='CMJ'
                             )
+                            st.plotly_chart(fig_live, use_container_width=True)
 
-                            if not trace_data.empty:
-                                st.success(f"Successfully fetched {len(trace_data)} data points!")
+                            # Display metrics
+                            live_metrics = calculate_trace_metrics(trace_data, test_type='CMJ')
 
-                                # Store in session state for visualization
-                                st.session_state['fetched_trace'] = trace_data
-                                st.session_state['fetched_trace_info'] = {
-                                    'athlete': trace_athlete,
-                                    'test': selected_test_label
-                                }
+                            metric_cols = st.columns(4)
+                            with metric_cols[0]:
+                                st.metric("Peak Force", f"{live_metrics.get('peak_force', 0):.0f} N")
+                            with metric_cols[1]:
+                                st.metric("Avg Force", f"{live_metrics.get('average_force', 0):.0f} N")
+                            with metric_cols[2]:
+                                if 'rfd_100ms' in live_metrics:
+                                    st.metric("RFD", f"{live_metrics['rfd_100ms']:.0f} N/s")
+                            with metric_cols[3]:
+                                if 'impulse' in live_metrics:
+                                    st.metric("Impulse", f"{live_metrics['impulse']:.0f} N·s")
 
-                                # Display the trace
-                                fig_live = plot_force_trace(
-                                    trace_data,
-                                    title=f"{trace_athlete} - {selected_test_label}",
-                                    show_phases=True,
-                                    test_type='CMJ'
-                                )
-                                st.plotly_chart(fig_live, use_container_width=True)
+                            # Download option
+                            csv = trace_data.to_csv(index=False)
+                            st.download_button(
+                                label="Download Trace Data (CSV)",
+                                data=csv,
+                                file_name=f"{trace_athlete}_{selected_test_label.replace(' ', '_')}_trace.csv",
+                                mime="text/csv"
+                            )
+                        else:
+                            st.warning("No trace data returned. Check your API credentials and test IDs.")
 
-                                # Display metrics
-                                live_metrics = calculate_trace_metrics(trace_data, test_type='CMJ')
+                    except Exception as e:
+                        st.error(f"Error fetching trace: {str(e)}")
+            else:
+                st.error("Please select a test to fetch.")
 
-                                metric_cols = st.columns(4)
-                                with metric_cols[0]:
-                                    st.metric("Peak Force", f"{live_metrics.get('peak_force', 0):.0f} N")
-                                with metric_cols[1]:
-                                    st.metric("Avg Force", f"{live_metrics.get('average_force', 0):.0f} N")
-                                with metric_cols[2]:
-                                    if 'rfd_100ms' in live_metrics:
-                                        st.metric("RFD", f"{live_metrics['rfd_100ms']:.0f} N/s")
-                                with metric_cols[3]:
-                                    if 'impulse' in live_metrics:
-                                        st.metric("Impulse", f"{live_metrics['impulse']:.0f} N·s")
+        # Show previously fetched trace if available
+        if 'fetched_trace' in st.session_state:
+            with st.expander("📋 Previously Fetched Trace"):
+                info = st.session_state.get('fetched_trace_info', {})
+                st.markdown(f"**Athlete:** {info.get('athlete', 'N/A')}")
+                st.markdown(f"**Test:** {info.get('test', 'N/A')}")
+                st.markdown(f"**Data Points:** {len(st.session_state['fetched_trace'])}")
 
-                                # Download option
-                                csv = trace_data.to_csv(index=False)
-                                st.download_button(
-                                    label="Download Trace Data (CSV)",
-                                    data=csv,
-                                    file_name=f"{trace_athlete}_{selected_test_label.replace(' ', '_')}_trace.csv",
-                                    mime="text/csv"
-                                )
-                            else:
-                                st.warning("No trace data returned. Check your API credentials and test IDs.")
+    else:
+        st.warning("""
+        **Test IDs not found in data.**
 
-                        except Exception as e:
-                            st.error(f"Error fetching trace: {str(e)}")
-                else:
-                    st.error("Please select a test to fetch.")
-
-            # Show previously fetched trace if available
-            if 'fetched_trace' in st.session_state:
-                with st.expander("📋 Previously Fetched Trace"):
-                    info = st.session_state.get('fetched_trace_info', {})
-                    st.markdown(f"**Athlete:** {info.get('athlete', 'N/A')}")
-                    st.markdown(f"**Test:** {info.get('test', 'N/A')}")
-                    st.markdown(f"**Data Points:** {len(st.session_state['fetched_trace'])}")
-
-        else:
-            st.warning("""
-            **Test IDs not found in data.**
-
-            To fetch live traces, your data needs `testId` and `trialId` columns.
-            These are available when data is pulled directly from the VALD API.
-            """)
+        To fetch live traces, your data needs `testId` and `trialId` columns.
+        These are available when data is pulled directly from the VALD API.
+        """)
 
         # Trial Comparison Section
         st.markdown("---")
@@ -4853,89 +4856,306 @@ with tabs[15]:
 
 with tabs[1]:
     st.markdown("## 🔲 ForceFrame Analysis")
-    st.markdown("*Isometric strength testing across multiple joint positions*")
+    st.markdown("*Isometric strength testing across multiple joint positions - filtered by sidebar selections*")
 
-    if df_forceframe.empty:
+    # Use filtered data
+    ff_data = filtered_forceframe if not filtered_forceframe.empty else df_forceframe
+
+    if ff_data.empty:
         st.warning("No ForceFrame data available. Upload data or check data/forceframe_allsports.csv")
     else:
-        # Overview metrics
-        col1, col2, col3, col4 = st.columns(4)
+        # Create subtabs for ForceFrame
+        ff_tabs = st.tabs(["📊 Overview", "🏃 Individual Athlete", "📈 Yearly Progression", "⚖️ Asymmetry Analysis"])
 
-        with col1:
-            n_athletes = df_forceframe['athleteId'].nunique() if 'athleteId' in df_forceframe.columns else 0
-            st.metric("Athletes Tested", n_athletes)
+        with ff_tabs[0]:
+            # Overview metrics
+            col1, col2, col3, col4 = st.columns(4)
 
-        with col2:
-            st.metric("Total Tests", len(df_forceframe))
+            with col1:
+                n_athletes = ff_data['Name'].nunique() if 'Name' in ff_data.columns else (ff_data['athleteId'].nunique() if 'athleteId' in ff_data.columns else 0)
+                st.metric("Athletes", n_athletes)
 
-        with col3:
-            n_types = df_forceframe['testTypeName'].nunique() if 'testTypeName' in df_forceframe.columns else 0
-            st.metric("Test Types", n_types)
+            with col2:
+                st.metric("Total Tests", len(ff_data))
 
-        with col4:
-            if 'testDateUtc' in df_forceframe.columns:
-                latest = df_forceframe['testDateUtc'].max()
-                st.metric("Latest Test", latest.strftime('%Y-%m-%d') if pd.notna(latest) else "N/A")
+            with col3:
+                n_types = ff_data['testTypeName'].nunique() if 'testTypeName' in ff_data.columns else 0
+                st.metric("Test Types", n_types)
 
-        st.markdown("---")
+            with col4:
+                if 'testDateUtc' in ff_data.columns:
+                    latest = pd.to_datetime(ff_data['testDateUtc']).max()
+                    st.metric("Latest Test", latest.strftime('%Y-%m-%d') if pd.notna(latest) else "N/A")
 
-        # Test type distribution
-        if 'testTypeName' in df_forceframe.columns:
-            st.markdown("### Test Type Distribution")
-            test_counts = df_forceframe['testTypeName'].value_counts()
+            st.markdown("---")
 
-            fig = px.bar(
-                x=test_counts.index,
-                y=test_counts.values,
-                labels={'x': 'Test Type', 'y': 'Count'},
-                color=test_counts.values,
-                color_continuous_scale=['#1D4D3B', '#a08e66']
-            )
-            fig.update_layout(
-                xaxis_tickangle=-45,
-                showlegend=False,
-                height=400
-            )
-            st.plotly_chart(fig, use_container_width=True)
+            # Test type distribution
+            if 'testTypeName' in ff_data.columns:
+                st.markdown("### Test Type Distribution")
+                test_counts = ff_data['testTypeName'].value_counts()
 
-        # Force comparison
-        st.markdown("### Left vs Right Force Comparison")
-
-        left_col = 'innerLeftMaxForce' if 'innerLeftMaxForce' in df_forceframe.columns else None
-        right_col = 'innerRightMaxForce' if 'innerRightMaxForce' in df_forceframe.columns else None
-
-        if left_col and right_col:
-            plot_df = df_forceframe[[left_col, right_col]].dropna()
-
-            if len(plot_df) > 0:
-                fig = px.scatter(
-                    plot_df,
-                    x=left_col,
-                    y=right_col,
-                    labels={left_col: 'Left Max Force (N)', right_col: 'Right Max Force (N)'}
+                fig = px.bar(
+                    x=test_counts.index,
+                    y=test_counts.values,
+                    labels={'x': 'Test Type', 'y': 'Count'},
+                    color=test_counts.values,
+                    color_continuous_scale=['#1D4D3B', '#a08e66']
                 )
-                max_val = max(plot_df[left_col].max(), plot_df[right_col].max())
-                fig.add_shape(type='line', x0=0, y0=0, x1=max_val, y1=max_val,
-                             line=dict(color='red', dash='dash'))
-                fig.update_traces(marker=dict(color='#1D4D3B', size=10))
-                fig.update_layout(height=500)
+                fig.update_layout(
+                    xaxis_tickangle=-45,
+                    showlegend=False,
+                    height=400
+                )
                 st.plotly_chart(fig, use_container_width=True)
 
-        # Data table
-        st.markdown("### ForceFrame Data Table")
-        display_cols = ['testDateUtc', 'testTypeName', 'innerLeftMaxForce', 'innerRightMaxForce',
-                       'outerLeftMaxForce', 'outerRightMaxForce']
-        available_cols = [c for c in display_cols if c in df_forceframe.columns]
+            # Force comparison - Left vs Right
+            st.markdown("### Left vs Right Force Comparison")
 
-        if available_cols:
-            display_ff = df_forceframe[available_cols].copy()
-            if 'testDateUtc' in display_ff.columns:
-                display_ff['testDateUtc'] = pd.to_datetime(display_ff['testDateUtc']).dt.strftime('%Y-%m-%d %H:%M')
-            st.dataframe(display_ff, use_container_width=True, height=400)
+            left_col = 'innerLeftMaxForce' if 'innerLeftMaxForce' in ff_data.columns else None
+            right_col = 'innerRightMaxForce' if 'innerRightMaxForce' in ff_data.columns else None
 
-        csv_ff = df_forceframe.to_csv(index=False)
-        st.download_button("📥 Download ForceFrame Data", csv_ff,
-                          f"forceframe_data_{datetime.now().strftime('%Y%m%d')}.csv", "text/csv")
+            if left_col and right_col:
+                plot_df = ff_data[[left_col, right_col]].dropna()
+
+                if len(plot_df) > 0:
+                    fig = px.scatter(
+                        plot_df,
+                        x=left_col,
+                        y=right_col,
+                        labels={left_col: 'Left Max Force (N)', right_col: 'Right Max Force (N)'}
+                    )
+                    max_val = max(plot_df[left_col].max(), plot_df[right_col].max())
+                    fig.add_shape(type='line', x0=0, y0=0, x1=max_val, y1=max_val,
+                                 line=dict(color='red', dash='dash'))
+                    fig.update_traces(marker=dict(color='#1D4D3B', size=10))
+                    fig.update_layout(height=500)
+                    st.plotly_chart(fig, use_container_width=True)
+
+            # Data table
+            st.markdown("### ForceFrame Data Table")
+            display_cols = ['Name', 'testDateUtc', 'testTypeName', 'innerLeftMaxForce', 'innerRightMaxForce',
+                           'outerLeftMaxForce', 'outerRightMaxForce']
+            available_cols = [c for c in display_cols if c in ff_data.columns]
+
+            if available_cols:
+                display_ff = ff_data[available_cols].copy()
+                if 'testDateUtc' in display_ff.columns:
+                    display_ff['testDateUtc'] = pd.to_datetime(display_ff['testDateUtc']).dt.strftime('%Y-%m-%d %H:%M')
+                st.dataframe(display_ff, use_container_width=True, height=400)
+
+            csv_ff = ff_data.to_csv(index=False)
+            st.download_button("📥 Download ForceFrame Data", csv_ff,
+                              f"forceframe_data_{datetime.now().strftime('%Y%m%d')}.csv", "text/csv")
+
+        # ========== INDIVIDUAL ATHLETE TAB ==========
+        with ff_tabs[1]:
+            st.markdown("### 🏃 Individual Athlete Analysis")
+            st.markdown("*Select an athlete to view their ForceFrame performance profile*")
+
+            if 'Name' in ff_data.columns and ff_data['Name'].nunique() > 0:
+                selected_ff_athlete = st.selectbox(
+                    "Select Athlete:",
+                    options=sorted(ff_data['Name'].dropna().unique()),
+                    key="ff_athlete_select"
+                )
+
+                athlete_ff = ff_data[ff_data['Name'] == selected_ff_athlete].copy()
+
+                if not athlete_ff.empty:
+                    # Athlete summary metrics
+                    st.markdown(f"#### {selected_ff_athlete} - Performance Summary")
+
+                    col1, col2, col3, col4 = st.columns(4)
+
+                    with col1:
+                        st.metric("Total Tests", len(athlete_ff))
+
+                    with col2:
+                        if 'innerLeftMaxForce' in athlete_ff.columns:
+                            avg_left = athlete_ff['innerLeftMaxForce'].mean()
+                            st.metric("Avg Left Force", f"{avg_left:.0f} N")
+
+                    with col3:
+                        if 'innerRightMaxForce' in athlete_ff.columns:
+                            avg_right = athlete_ff['innerRightMaxForce'].mean()
+                            st.metric("Avg Right Force", f"{avg_right:.0f} N")
+
+                    with col4:
+                        if 'innerLeftMaxForce' in athlete_ff.columns and 'innerRightMaxForce' in athlete_ff.columns:
+                            avg_asym = ((athlete_ff['innerRightMaxForce'].mean() - athlete_ff['innerLeftMaxForce'].mean()) /
+                                       ((athlete_ff['innerRightMaxForce'].mean() + athlete_ff['innerLeftMaxForce'].mean()) / 2) * 100)
+                            st.metric("Avg Asymmetry", f"{avg_asym:.1f}%",
+                                     delta="⚠️ High" if abs(avg_asym) > 10 else "✅ Normal")
+
+                    # Force time series
+                    if 'testDateUtc' in athlete_ff.columns:
+                        st.markdown("#### Force Over Time")
+                        athlete_ff['testDateUtc'] = pd.to_datetime(athlete_ff['testDateUtc'])
+                        athlete_ff = athlete_ff.sort_values('testDateUtc')
+
+                        fig_time = go.Figure()
+
+                        if 'innerLeftMaxForce' in athlete_ff.columns:
+                            fig_time.add_trace(go.Scatter(
+                                x=athlete_ff['testDateUtc'],
+                                y=athlete_ff['innerLeftMaxForce'],
+                                mode='lines+markers',
+                                name='Left (Inner)',
+                                line=dict(color='#3498db', width=2)
+                            ))
+
+                        if 'innerRightMaxForce' in athlete_ff.columns:
+                            fig_time.add_trace(go.Scatter(
+                                x=athlete_ff['testDateUtc'],
+                                y=athlete_ff['innerRightMaxForce'],
+                                mode='lines+markers',
+                                name='Right (Inner)',
+                                line=dict(color='#e74c3c', width=2)
+                            ))
+
+                        fig_time.update_layout(
+                            xaxis_title="Date",
+                            yaxis_title="Max Force (N)",
+                            height=400,
+                            hovermode='x unified'
+                        )
+                        st.plotly_chart(fig_time, use_container_width=True)
+
+                    # Athlete test history
+                    st.markdown("#### Test History")
+                    hist_cols = ['testDateUtc', 'testTypeName', 'innerLeftMaxForce', 'innerRightMaxForce']
+                    hist_available = [c for c in hist_cols if c in athlete_ff.columns]
+                    if hist_available:
+                        st.dataframe(athlete_ff[hist_available].round(1), use_container_width=True, hide_index=True)
+            else:
+                st.info("No athlete names available in ForceFrame data.")
+
+        # ========== YEARLY PROGRESSION TAB ==========
+        with ff_tabs[2]:
+            st.markdown("### 📈 Yearly Progression Analysis")
+            st.markdown("*Track force development across the year*")
+
+            if 'testDateUtc' in ff_data.columns and 'Name' in ff_data.columns:
+                ff_data_copy = ff_data.copy()
+                ff_data_copy['testDateUtc'] = pd.to_datetime(ff_data_copy['testDateUtc'])
+                ff_data_copy['Month'] = ff_data_copy['testDateUtc'].dt.to_period('M').astype(str)
+                ff_data_copy['Year'] = ff_data_copy['testDateUtc'].dt.year
+
+                # Select athlete for progression
+                prog_athlete = st.selectbox(
+                    "Select Athlete for Progression:",
+                    options=sorted(ff_data_copy['Name'].dropna().unique()),
+                    key="ff_prog_athlete"
+                )
+
+                athlete_prog = ff_data_copy[ff_data_copy['Name'] == prog_athlete].copy()
+
+                if not athlete_prog.empty and 'innerLeftMaxForce' in athlete_prog.columns:
+                    # Monthly progression
+                    monthly_avg = athlete_prog.groupby('Month').agg({
+                        'innerLeftMaxForce': 'mean',
+                        'innerRightMaxForce': 'mean'
+                    }).reset_index()
+
+                    fig_prog = go.Figure()
+
+                    fig_prog.add_trace(go.Bar(
+                        x=monthly_avg['Month'],
+                        y=monthly_avg['innerLeftMaxForce'],
+                        name='Left Force',
+                        marker_color='#3498db'
+                    ))
+
+                    fig_prog.add_trace(go.Bar(
+                        x=monthly_avg['Month'],
+                        y=monthly_avg['innerRightMaxForce'],
+                        name='Right Force',
+                        marker_color='#e74c3c'
+                    ))
+
+                    fig_prog.update_layout(
+                        title=f"{prog_athlete} - Monthly Force Progression",
+                        xaxis_title="Month",
+                        yaxis_title="Avg Max Force (N)",
+                        barmode='group',
+                        height=450
+                    )
+                    st.plotly_chart(fig_prog, use_container_width=True)
+
+                    # Progress metrics
+                    if len(athlete_prog) >= 2:
+                        first_test = athlete_prog.iloc[0]
+                        last_test = athlete_prog.iloc[-1]
+
+                        col1, col2, col3 = st.columns(3)
+                        with col1:
+                            change_left = ((last_test['innerLeftMaxForce'] - first_test['innerLeftMaxForce']) /
+                                          first_test['innerLeftMaxForce'] * 100) if first_test['innerLeftMaxForce'] > 0 else 0
+                            st.metric("Left Force Change", f"{change_left:+.1f}%",
+                                     delta="Improved" if change_left > 0 else "Declined")
+                        with col2:
+                            change_right = ((last_test['innerRightMaxForce'] - first_test['innerRightMaxForce']) /
+                                           first_test['innerRightMaxForce'] * 100) if first_test['innerRightMaxForce'] > 0 else 0
+                            st.metric("Right Force Change", f"{change_right:+.1f}%",
+                                     delta="Improved" if change_right > 0 else "Declined")
+                        with col3:
+                            st.metric("Testing Period",
+                                     f"{(athlete_prog['testDateUtc'].max() - athlete_prog['testDateUtc'].min()).days} days")
+            else:
+                st.info("Date or athlete information not available for progression analysis.")
+
+        # ========== ASYMMETRY ANALYSIS TAB ==========
+        with ff_tabs[3]:
+            st.markdown("### ⚖️ Bilateral Asymmetry Analysis")
+            st.markdown("""
+            **Clinical Thresholds (VALD Standard):**
+            - ✅ **< 10%**: Normal symmetry
+            - ⚠️ **10-15%**: Monitor closely
+            - 🔴 **> 15%**: Intervention recommended
+            """)
+
+            if 'innerLeftMaxForce' in ff_data.columns and 'innerRightMaxForce' in ff_data.columns:
+                # Calculate asymmetry for all tests
+                asym_df = ff_data[['Name', 'testDateUtc', 'innerLeftMaxForce', 'innerRightMaxForce']].dropna().copy()
+
+                asym_df['Asymmetry (%)'] = ((asym_df['innerRightMaxForce'] - asym_df['innerLeftMaxForce']) /
+                                            ((asym_df['innerRightMaxForce'] + asym_df['innerLeftMaxForce']) / 2) * 100)
+
+                asym_df['Risk Level'] = asym_df['Asymmetry (%)'].abs().apply(
+                    lambda x: '🔴 High Risk' if x > 15 else ('⚠️ Moderate' if x > 10 else '✅ Normal')
+                )
+
+                # Asymmetry distribution
+                st.markdown("#### Asymmetry Distribution (All Athletes)")
+                fig_asym = px.histogram(
+                    asym_df, x='Asymmetry (%)', nbins=25,
+                    color_discrete_sequence=['#1D4D3B']
+                )
+                fig_asym.add_vline(x=0, line_dash='dash', line_color='gray', annotation_text='Balanced')
+                fig_asym.add_vline(x=10, line_dash='dot', line_color='orange', annotation_text='+10%')
+                fig_asym.add_vline(x=-10, line_dash='dot', line_color='orange', annotation_text='-10%')
+                fig_asym.add_vline(x=15, line_dash='dot', line_color='red')
+                fig_asym.add_vline(x=-15, line_dash='dot', line_color='red')
+                fig_asym.update_layout(height=400)
+                st.plotly_chart(fig_asym, use_container_width=True)
+
+                # Athletes at risk
+                st.markdown("#### Athletes Requiring Attention")
+                high_risk = asym_df[asym_df['Asymmetry (%)'].abs() > 10].copy()
+
+                if not high_risk.empty:
+                    # Latest asymmetry per athlete
+                    high_risk['testDateUtc'] = pd.to_datetime(high_risk['testDateUtc'])
+                    latest_risk = high_risk.sort_values('testDateUtc').groupby('Name').last().reset_index()
+                    latest_risk = latest_risk.sort_values('Asymmetry (%)', key=abs, ascending=False)
+
+                    display_risk = latest_risk[['Name', 'Asymmetry (%)', 'Risk Level', 'innerLeftMaxForce', 'innerRightMaxForce']]
+                    display_risk.columns = ['Athlete', 'Asymmetry (%)', 'Risk', 'Left (N)', 'Right (N)']
+                    st.dataframe(display_risk.round(1), use_container_width=True, hide_index=True)
+                else:
+                    st.success("✅ All athletes within normal asymmetry thresholds!")
+            else:
+                st.warning("Left/Right force columns not available for asymmetry analysis.")
 
 # ============================================================================
 # PAGE: NORDBORD
@@ -4943,103 +5163,346 @@ with tabs[1]:
 
 with tabs[2]:
     st.markdown("## 🦵 NordBord Analysis")
-    st.markdown("*Nordic hamstring strength and asymmetry assessment*")
+    st.markdown("*Nordic hamstring strength and asymmetry assessment - filtered by sidebar selections*")
 
-    if df_nordbord.empty:
+    # Use filtered data
+    nb_data = filtered_nordbord if not filtered_nordbord.empty else df_nordbord
+
+    if nb_data.empty:
         st.warning("No NordBord data available. Upload data or check data/nordbord_allsports.csv")
     else:
-        # Overview metrics
-        col1, col2, col3, col4 = st.columns(4)
+        # Create subtabs for NordBord
+        nb_tabs = st.tabs(["📊 Overview", "🏃 Individual Athlete", "📈 Yearly Progression", "⚖️ Asymmetry Analysis", "🔬 Hamstring Health"])
 
-        with col1:
-            n_athletes = df_nordbord['athleteId'].nunique() if 'athleteId' in df_nordbord.columns else 0
-            st.metric("Athletes Tested", n_athletes)
+        with nb_tabs[0]:
+            # Overview metrics
+            col1, col2, col3, col4 = st.columns(4)
 
-        with col2:
-            st.metric("Total Tests", len(df_nordbord))
+            with col1:
+                n_athletes = nb_data['Name'].nunique() if 'Name' in nb_data.columns else (nb_data['athleteId'].nunique() if 'athleteId' in nb_data.columns else 0)
+                st.metric("Athletes", n_athletes)
 
-        with col3:
-            if 'testTypeName' in df_nordbord.columns:
-                test_types = df_nordbord['testTypeName'].unique()
-                st.metric("Test Type", test_types[0] if len(test_types) > 0 else "N/A")
+            with col2:
+                st.metric("Total Tests", len(nb_data))
 
-        with col4:
-            if 'testDateUtc' in df_nordbord.columns:
-                latest = df_nordbord['testDateUtc'].max()
-                st.metric("Latest Test", latest.strftime('%Y-%m-%d') if pd.notna(latest) else "N/A")
+            with col3:
+                if 'testTypeName' in nb_data.columns:
+                    test_types = nb_data['testTypeName'].unique()
+                    st.metric("Test Type", test_types[0] if len(test_types) > 0 else "Nordic")
 
-        st.markdown("---")
+            with col4:
+                if 'testDateUtc' in nb_data.columns:
+                    latest = pd.to_datetime(nb_data['testDateUtc']).max()
+                    st.metric("Latest Test", latest.strftime('%Y-%m-%d') if pd.notna(latest) else "N/A")
 
-        # Left vs Right scatter
-        st.markdown("### Left vs Right Hamstring Force")
+            st.markdown("---")
 
-        if 'leftMaxForce' in df_nordbord.columns and 'rightMaxForce' in df_nordbord.columns:
-            plot_df = df_nordbord[['leftMaxForce', 'rightMaxForce', 'testDateUtc']].dropna()
+            # Left vs Right scatter
+            st.markdown("### Left vs Right Hamstring Force")
 
-            if len(plot_df) > 0:
-                fig = px.scatter(
-                    plot_df, x='leftMaxForce', y='rightMaxForce',
-                    labels={'leftMaxForce': 'Left Max Force (N)', 'rightMaxForce': 'Right Max Force (N)'}
+            if 'leftMaxForce' in nb_data.columns and 'rightMaxForce' in nb_data.columns:
+                plot_df = nb_data[['leftMaxForce', 'rightMaxForce']].dropna()
+
+                if len(plot_df) > 0:
+                    fig = px.scatter(
+                        plot_df, x='leftMaxForce', y='rightMaxForce',
+                        labels={'leftMaxForce': 'Left Max Force (N)', 'rightMaxForce': 'Right Max Force (N)'}
+                    )
+                    max_val = max(plot_df['leftMaxForce'].max(), plot_df['rightMaxForce'].max())
+                    fig.add_shape(type='line', x0=0, y0=0, x1=max_val, y1=max_val,
+                                 line=dict(color='red', dash='dash'))
+                    fig.update_traces(marker=dict(color='#1D4D3B', size=12))
+                    fig.update_layout(height=500)
+                    st.plotly_chart(fig, use_container_width=True)
+
+            # Data table
+            st.markdown("### NordBord Data Table")
+            display_cols = ['Name', 'testDateUtc', 'testTypeName', 'leftMaxForce', 'rightMaxForce',
+                           'leftAvgForce', 'rightAvgForce']
+            available_cols = [c for c in display_cols if c in nb_data.columns]
+
+            if available_cols:
+                display_nb = nb_data[available_cols].copy()
+                if 'testDateUtc' in display_nb.columns:
+                    display_nb['testDateUtc'] = pd.to_datetime(display_nb['testDateUtc']).dt.strftime('%Y-%m-%d %H:%M')
+                st.dataframe(display_nb, use_container_width=True, height=400)
+
+            csv_nb = nb_data.to_csv(index=False)
+            st.download_button("📥 Download NordBord Data", csv_nb,
+                              f"nordbord_data_{datetime.now().strftime('%Y%m%d')}.csv", "text/csv")
+
+        # ========== INDIVIDUAL ATHLETE TAB ==========
+        with nb_tabs[1]:
+            st.markdown("### 🏃 Individual Athlete Analysis")
+            st.markdown("*Select an athlete to view their Nordic hamstring profile*")
+
+            if 'Name' in nb_data.columns and nb_data['Name'].nunique() > 0:
+                selected_nb_athlete = st.selectbox(
+                    "Select Athlete:",
+                    options=sorted(nb_data['Name'].dropna().unique()),
+                    key="nb_athlete_select"
                 )
-                max_val = max(plot_df['leftMaxForce'].max(), plot_df['rightMaxForce'].max())
-                fig.add_shape(type='line', x0=0, y0=0, x1=max_val, y1=max_val,
-                             line=dict(color='red', dash='dash'))
-                fig.update_traces(marker=dict(color='#1D4D3B', size=12))
-                fig.update_layout(height=500)
-                st.plotly_chart(fig, use_container_width=True)
 
-                # Asymmetry histogram
-                plot_df['asymmetry'] = ((plot_df['rightMaxForce'] - plot_df['leftMaxForce']) /
-                                        ((plot_df['rightMaxForce'] + plot_df['leftMaxForce']) / 2) * 100)
+                athlete_nb = nb_data[nb_data['Name'] == selected_nb_athlete].copy()
 
-                st.markdown("### Asymmetry Distribution")
-                fig_asym = px.histogram(plot_df, x='asymmetry', nbins=20,
-                                       labels={'asymmetry': 'Asymmetry (%)'},
-                                       color_discrete_sequence=['#1D4D3B'])
-                fig_asym.add_vline(x=0, line_dash='dash', line_color='red')
-                fig_asym.add_vline(x=10, line_dash='dot', line_color='orange', annotation_text='10%')
-                fig_asym.add_vline(x=-10, line_dash='dot', line_color='orange')
-                fig_asym.update_layout(height=400)
-                st.plotly_chart(fig_asym, use_container_width=True)
+                if not athlete_nb.empty:
+                    st.markdown(f"#### {selected_nb_athlete} - Hamstring Profile")
 
-        # Time series
-        st.markdown("### Force Trend Over Time")
+                    col1, col2, col3, col4 = st.columns(4)
 
-        if 'testDateUtc' in df_nordbord.columns and 'leftMaxForce' in df_nordbord.columns:
-            time_df = df_nordbord.sort_values('testDateUtc')
+                    with col1:
+                        st.metric("Total Tests", len(athlete_nb))
 
-            fig_time = go.Figure()
-            fig_time.add_trace(go.Scatter(
-                x=time_df['testDateUtc'], y=time_df['leftMaxForce'],
-                name='Left', mode='markers+lines',
-                marker=dict(color='#1D4D3B', size=8), line=dict(color='#1D4D3B')
-            ))
-            fig_time.add_trace(go.Scatter(
-                x=time_df['testDateUtc'], y=time_df['rightMaxForce'],
-                name='Right', mode='markers+lines',
-                marker=dict(color='#a08e66', size=8), line=dict(color='#a08e66')
-            ))
-            fig_time.update_layout(
-                xaxis_title='Date', yaxis_title='Max Force (N)', height=400,
-                legend=dict(orientation='h', yanchor='bottom', y=1.02)
-            )
-            st.plotly_chart(fig_time, use_container_width=True)
+                    with col2:
+                        if 'leftMaxForce' in athlete_nb.columns:
+                            peak_left = athlete_nb['leftMaxForce'].max()
+                            st.metric("Peak Left", f"{peak_left:.0f} N")
 
-        # Data table
-        st.markdown("### NordBord Data Table")
-        display_cols = ['testDateUtc', 'testTypeName', 'leftMaxForce', 'rightMaxForce',
-                       'leftAvgForce', 'rightAvgForce', 'leftTorque', 'rightTorque', 'device']
-        available_cols = [c for c in display_cols if c in df_nordbord.columns]
+                    with col3:
+                        if 'rightMaxForce' in athlete_nb.columns:
+                            peak_right = athlete_nb['rightMaxForce'].max()
+                            st.metric("Peak Right", f"{peak_right:.0f} N")
 
-        if available_cols:
-            display_nb = df_nordbord[available_cols].copy()
-            if 'testDateUtc' in display_nb.columns:
-                display_nb['testDateUtc'] = pd.to_datetime(display_nb['testDateUtc']).dt.strftime('%Y-%m-%d %H:%M')
-            st.dataframe(display_nb, use_container_width=True, height=400)
+                    with col4:
+                        if 'leftMaxForce' in athlete_nb.columns and 'rightMaxForce' in athlete_nb.columns:
+                            avg_asym = ((athlete_nb['rightMaxForce'].mean() - athlete_nb['leftMaxForce'].mean()) /
+                                       ((athlete_nb['rightMaxForce'].mean() + athlete_nb['leftMaxForce'].mean()) / 2) * 100)
+                            st.metric("Avg Asymmetry", f"{avg_asym:.1f}%",
+                                     delta="⚠️ High" if abs(avg_asym) > 10 else "✅ Normal")
 
-        csv_nb = df_nordbord.to_csv(index=False)
-        st.download_button("📥 Download NordBord Data", csv_nb,
-                          f"nordbord_data_{datetime.now().strftime('%Y%m%d')}.csv", "text/csv")
+                    # Force time series
+                    if 'testDateUtc' in athlete_nb.columns:
+                        st.markdown("#### Hamstring Force Over Time")
+                        athlete_nb['testDateUtc'] = pd.to_datetime(athlete_nb['testDateUtc'])
+                        athlete_nb = athlete_nb.sort_values('testDateUtc')
+
+                        fig_time = go.Figure()
+
+                        if 'leftMaxForce' in athlete_nb.columns:
+                            fig_time.add_trace(go.Scatter(
+                                x=athlete_nb['testDateUtc'],
+                                y=athlete_nb['leftMaxForce'],
+                                mode='lines+markers',
+                                name='Left Hamstring',
+                                line=dict(color='#3498db', width=2),
+                                marker=dict(size=8)
+                            ))
+
+                        if 'rightMaxForce' in athlete_nb.columns:
+                            fig_time.add_trace(go.Scatter(
+                                x=athlete_nb['testDateUtc'],
+                                y=athlete_nb['rightMaxForce'],
+                                mode='lines+markers',
+                                name='Right Hamstring',
+                                line=dict(color='#e74c3c', width=2),
+                                marker=dict(size=8)
+                            ))
+
+                        fig_time.update_layout(
+                            xaxis_title="Date",
+                            yaxis_title="Max Force (N)",
+                            height=400,
+                            hovermode='x unified'
+                        )
+                        st.plotly_chart(fig_time, use_container_width=True)
+
+                    # Asymmetry trend
+                    if 'leftMaxForce' in athlete_nb.columns and 'rightMaxForce' in athlete_nb.columns:
+                        st.markdown("#### Asymmetry Trend")
+                        athlete_nb['Asymmetry'] = ((athlete_nb['rightMaxForce'] - athlete_nb['leftMaxForce']) /
+                                                   ((athlete_nb['rightMaxForce'] + athlete_nb['leftMaxForce']) / 2) * 100)
+
+                        fig_asym_trend = go.Figure()
+                        fig_asym_trend.add_trace(go.Scatter(
+                            x=athlete_nb['testDateUtc'],
+                            y=athlete_nb['Asymmetry'],
+                            mode='lines+markers',
+                            name='Asymmetry',
+                            line=dict(color='#1D4D3B', width=2),
+                            fill='tozeroy',
+                            fillcolor='rgba(29, 77, 59, 0.2)'
+                        ))
+                        fig_asym_trend.add_hline(y=0, line_dash='dash', line_color='gray')
+                        fig_asym_trend.add_hline(y=10, line_dash='dot', line_color='orange', annotation_text='10% threshold')
+                        fig_asym_trend.add_hline(y=-10, line_dash='dot', line_color='orange')
+                        fig_asym_trend.update_layout(
+                            yaxis_title="Asymmetry (%)",
+                            height=350
+                        )
+                        st.plotly_chart(fig_asym_trend, use_container_width=True)
+            else:
+                st.info("No athlete names available in NordBord data.")
+
+        # ========== YEARLY PROGRESSION TAB ==========
+        with nb_tabs[2]:
+            st.markdown("### 📈 Yearly Progression Analysis")
+            st.markdown("*Track hamstring strength development across the year*")
+
+            if 'testDateUtc' in nb_data.columns and 'Name' in nb_data.columns:
+                nb_data_copy = nb_data.copy()
+                nb_data_copy['testDateUtc'] = pd.to_datetime(nb_data_copy['testDateUtc'])
+                nb_data_copy['Month'] = nb_data_copy['testDateUtc'].dt.to_period('M').astype(str)
+
+                prog_nb_athlete = st.selectbox(
+                    "Select Athlete for Progression:",
+                    options=sorted(nb_data_copy['Name'].dropna().unique()),
+                    key="nb_prog_athlete"
+                )
+
+                athlete_nb_prog = nb_data_copy[nb_data_copy['Name'] == prog_nb_athlete].copy()
+
+                if not athlete_nb_prog.empty and 'leftMaxForce' in athlete_nb_prog.columns:
+                    # Monthly progression
+                    monthly_nb = athlete_nb_prog.groupby('Month').agg({
+                        'leftMaxForce': 'max',
+                        'rightMaxForce': 'max'
+                    }).reset_index()
+
+                    fig_nb_prog = go.Figure()
+
+                    fig_nb_prog.add_trace(go.Bar(
+                        x=monthly_nb['Month'],
+                        y=monthly_nb['leftMaxForce'],
+                        name='Left Hamstring (Peak)',
+                        marker_color='#3498db'
+                    ))
+
+                    fig_nb_prog.add_trace(go.Bar(
+                        x=monthly_nb['Month'],
+                        y=monthly_nb['rightMaxForce'],
+                        name='Right Hamstring (Peak)',
+                        marker_color='#e74c3c'
+                    ))
+
+                    fig_nb_prog.update_layout(
+                        title=f"{prog_nb_athlete} - Monthly Peak Force",
+                        xaxis_title="Month",
+                        yaxis_title="Peak Force (N)",
+                        barmode='group',
+                        height=450
+                    )
+                    st.plotly_chart(fig_nb_prog, use_container_width=True)
+
+                    # Progress summary
+                    if len(athlete_nb_prog) >= 2:
+                        athlete_nb_prog = athlete_nb_prog.sort_values('testDateUtc')
+                        first = athlete_nb_prog.iloc[0]
+                        last = athlete_nb_prog.iloc[-1]
+
+                        col1, col2, col3 = st.columns(3)
+                        with col1:
+                            change = ((last['leftMaxForce'] - first['leftMaxForce']) / first['leftMaxForce'] * 100) if first['leftMaxForce'] > 0 else 0
+                            st.metric("Left Change", f"{change:+.1f}%")
+                        with col2:
+                            change = ((last['rightMaxForce'] - first['rightMaxForce']) / first['rightMaxForce'] * 100) if first['rightMaxForce'] > 0 else 0
+                            st.metric("Right Change", f"{change:+.1f}%")
+                        with col3:
+                            days = (athlete_nb_prog['testDateUtc'].max() - athlete_nb_prog['testDateUtc'].min()).days
+                            st.metric("Period", f"{days} days")
+            else:
+                st.info("Date or athlete information not available.")
+
+        # ========== ASYMMETRY ANALYSIS TAB ==========
+        with nb_tabs[3]:
+            st.markdown("### ⚖️ Bilateral Hamstring Asymmetry")
+            st.markdown("""
+            **Hamstring Injury Risk Thresholds:**
+            - ✅ **< 10%**: Low injury risk
+            - ⚠️ **10-15%**: Elevated risk - targeted training recommended
+            - 🔴 **> 15%**: High injury risk - intervention required
+
+            *Based on Nordic hamstring research (Opar et al., 2015)*
+            """)
+
+            if 'leftMaxForce' in nb_data.columns and 'rightMaxForce' in nb_data.columns:
+                asym_nb = nb_data[['Name', 'testDateUtc', 'leftMaxForce', 'rightMaxForce']].dropna().copy()
+
+                asym_nb['Asymmetry (%)'] = ((asym_nb['rightMaxForce'] - asym_nb['leftMaxForce']) /
+                                            ((asym_nb['rightMaxForce'] + asym_nb['leftMaxForce']) / 2) * 100)
+
+                asym_nb['Risk'] = asym_nb['Asymmetry (%)'].abs().apply(
+                    lambda x: '🔴 High' if x > 15 else ('⚠️ Moderate' if x > 10 else '✅ Low')
+                )
+
+                # Distribution
+                st.markdown("#### Asymmetry Distribution")
+                fig_nb_asym = px.histogram(
+                    asym_nb, x='Asymmetry (%)', nbins=25,
+                    color_discrete_sequence=['#1D4D3B']
+                )
+                fig_nb_asym.add_vline(x=0, line_dash='dash', line_color='gray')
+                fig_nb_asym.add_vline(x=10, line_dash='dot', line_color='orange')
+                fig_nb_asym.add_vline(x=-10, line_dash='dot', line_color='orange')
+                fig_nb_asym.add_vline(x=15, line_dash='dot', line_color='red')
+                fig_nb_asym.add_vline(x=-15, line_dash='dot', line_color='red')
+                fig_nb_asym.update_layout(height=400)
+                st.plotly_chart(fig_nb_asym, use_container_width=True)
+
+                # Risk athletes
+                st.markdown("#### Athletes at Injury Risk")
+                at_risk = asym_nb[asym_nb['Asymmetry (%)'].abs() > 10].copy()
+
+                if not at_risk.empty and 'Name' in at_risk.columns:
+                    at_risk['testDateUtc'] = pd.to_datetime(at_risk['testDateUtc'])
+                    latest_risk = at_risk.sort_values('testDateUtc').groupby('Name').last().reset_index()
+                    latest_risk = latest_risk.sort_values('Asymmetry (%)', key=abs, ascending=False)
+
+                    st.dataframe(
+                        latest_risk[['Name', 'Asymmetry (%)', 'Risk', 'leftMaxForce', 'rightMaxForce']].round(1),
+                        use_container_width=True, hide_index=True
+                    )
+                else:
+                    st.success("✅ All athletes within safe asymmetry thresholds!")
+
+        # ========== HAMSTRING HEALTH TAB ==========
+        with nb_tabs[4]:
+            st.markdown("### 🔬 Hamstring Health Dashboard")
+            st.markdown("""
+            **Evidence-Based Hamstring Assessment:**
+            - Nordic hamstring strength is a key predictor of hamstring injury risk
+            - Eccentric strength training reduces injury risk by up to 51%
+            - Bilateral asymmetry >15% significantly increases injury risk
+
+            *Based on Opar et al. (2015), van Dyk et al. (2019)*
+            """)
+
+            if 'leftMaxForce' in nb_data.columns and 'rightMaxForce' in nb_data.columns and 'Name' in nb_data.columns:
+                # Calculate team summary
+                team_summary = nb_data.groupby('Name').agg({
+                    'leftMaxForce': ['max', 'mean'],
+                    'rightMaxForce': ['max', 'mean']
+                }).reset_index()
+                team_summary.columns = ['Athlete', 'Left Peak', 'Left Avg', 'Right Peak', 'Right Avg']
+
+                team_summary['Total Strength'] = team_summary['Left Peak'] + team_summary['Right Peak']
+                team_summary['Asymmetry (%)'] = ((team_summary['Right Peak'] - team_summary['Left Peak']) /
+                                                 ((team_summary['Right Peak'] + team_summary['Left Peak']) / 2) * 100)
+                team_summary['Risk'] = team_summary['Asymmetry (%)'].abs().apply(
+                    lambda x: '🔴 High' if x > 15 else ('⚠️ Moderate' if x > 10 else '✅ Low')
+                )
+
+                # Summary metrics
+                col1, col2, col3, col4 = st.columns(4)
+                with col1:
+                    st.metric("Team Avg Strength", f"{team_summary['Total Strength'].mean():.0f} N")
+                with col2:
+                    high_risk = len(team_summary[team_summary['Asymmetry (%)'].abs() > 15])
+                    st.metric("High Risk Athletes", high_risk, delta="Need Attention" if high_risk > 0 else None)
+                with col3:
+                    mod_risk = len(team_summary[(team_summary['Asymmetry (%)'].abs() > 10) & (team_summary['Asymmetry (%)'].abs() <= 15)])
+                    st.metric("Moderate Risk", mod_risk)
+                with col4:
+                    low_risk = len(team_summary[team_summary['Asymmetry (%)'].abs() <= 10])
+                    st.metric("Low Risk", low_risk, delta="✅" if low_risk > 0 else None)
+
+                # Full team table
+                st.markdown("#### Team Hamstring Health Summary")
+                st.dataframe(
+                    team_summary.sort_values('Total Strength', ascending=False).round(1),
+                    use_container_width=True, hide_index=True
+                )
+            else:
+                st.info("Insufficient data for hamstring health analysis.")
 
 # ============================================================================
 # FOOTER

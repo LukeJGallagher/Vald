@@ -8,7 +8,11 @@
       "Bash(nul)",
       "Bash(python -m py_compile:*)",
       "Bash(streamlit run:*)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(git push:*)",
+      "Bash(ls:*)",
+      "Bash(powershell:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []
