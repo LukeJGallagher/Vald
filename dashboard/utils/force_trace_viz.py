@@ -33,15 +33,18 @@ def _get_force_trace_impl(test_id: str, trial_id: str, token: str, tenant_id: st
     """
     Download raw force-time trace from VALD API
 
-    API Endpoint:
-    GET /v2019q3/teams/{tenant}/tests/{testId}/trials/{trialId}/trace
+    API Endpoint (Correct - per VALD docs):
+    GET /v2019q3/teams/{tenant}/tests/{testId}/recording
+
+    Note: This endpoint retrieves the raw test recording data.
+    You need permission from VALD Support (support@vald.com) to use this endpoint.
 
     Parameters:
     -----------
     test_id : str
         VALD test ID
     trial_id : str
-        Trial ID within the test
+        Trial ID within the test (used for filtering if multiple trials)
     token : str
         OAuth bearer token
     tenant_id : str
@@ -53,12 +56,13 @@ def _get_force_trace_impl(test_id: str, trial_id: str, token: str, tenant_id: st
     --------
     pd.DataFrame with columns:
         - time_ms: Time in milliseconds
-        - force_n: Force in Newtons
-        - force_left_n: Left limb force (if bilateral)
-        - force_right_n: Right limb force (if bilateral)
+        - force_n: Total force in Newtons (Z Left + Z Right)
+        - force_left_n: Left plate force (Z Left)
+        - force_right_n: Right plate force (Z Right)
     """
 
-    url = f"https://prd-{region}-api-extforcedecks.valdperformance.com/v2019q3/teams/{tenant_id}/tests/{test_id}/trials/{trial_id}/trace"
+    # Primary endpoint: /recording (correct per VALD API docs)
+    url = f"https://prd-{region}-api-extforcedecks.valdperformance.com/v2019q3/teams/{tenant_id}/tests/{test_id}/recording"
 
     headers = {
         'Authorization': f'Bearer {token}',
@@ -66,23 +70,85 @@ def _get_force_trace_impl(test_id: str, trial_id: str, token: str, tenant_id: st
     }
 
     try:
-        response = requests.get(url, headers=headers, timeout=30)
+        response = requests.get(url, headers=headers, timeout=60)
 
         if response.status_code == 200:
-            trace_data = response.json()
+            recording_data = response.json()
 
-            # Convert to DataFrame
-            # VALD typically returns: {time: [...], force: [...]}
-            df = pd.DataFrame(trace_data)
+            # Parse the VALD recording response format
+            # Expected structure:
+            # {
+            #   "samplingFrequency": 1000,
+            #   "duration": 5.0,
+            #   "headers": ["Time", "Z Left", "COPX Left", "COPY Left", "Z Right", "COPX Right", "COPY Right"],
+            #   "data": [[0, 450.2, 0.1, 0.05, 448.3, -0.1, 0.03], ...]
+            # }
 
-            return df
+            if isinstance(recording_data, dict):
+                headers_list = recording_data.get('headers', [])
+                data_rows = recording_data.get('data', [])
 
-        else:
-            print(f"Error fetching trace: {response.status_code}")
+                if headers_list and data_rows:
+                    df = pd.DataFrame(data_rows, columns=headers_list)
+
+                    # Standardize column names
+                    column_mapping = {}
+
+                    # Find time column
+                    for col in df.columns:
+                        col_lower = col.lower()
+                        if 'time' in col_lower:
+                            column_mapping[col] = 'time_ms'
+                        elif col_lower == 'z left' or col_lower == 'zleft':
+                            column_mapping[col] = 'force_left_n'
+                        elif col_lower == 'z right' or col_lower == 'zright':
+                            column_mapping[col] = 'force_right_n'
+
+                    df = df.rename(columns=column_mapping)
+
+                    # Calculate total force if we have bilateral data
+                    if 'force_left_n' in df.columns and 'force_right_n' in df.columns:
+                        df['force_n'] = df['force_left_n'] + df['force_right_n']
+                    elif 'force_left_n' in df.columns:
+                        df['force_n'] = df['force_left_n']
+                    elif 'force_right_n' in df.columns:
+                        df['force_n'] = df['force_right_n']
+
+                    # Convert time to milliseconds if needed
+                    if 'time_ms' in df.columns:
+                        # Check if time is in seconds (values < 100) or already ms
+                        if df['time_ms'].max() < 100:
+                            df['time_ms'] = df['time_ms'] * 1000
+
+                    # Store sampling frequency as metadata
+                    df.attrs['sampling_frequency'] = recording_data.get('samplingFrequency', 1000)
+                    df.attrs['duration'] = recording_data.get('duration', 0)
+
+                    return df
+
+            # Fallback: Try to parse as simple array format
+            elif isinstance(recording_data, list):
+                df = pd.DataFrame(recording_data)
+                return df
+
+            print(f"Unexpected response format from VALD API")
             return pd.DataFrame()
 
+        elif response.status_code == 403:
+            print(f"Error 403: Permission denied. Contact support@vald.com to enable recording access.")
+            return pd.DataFrame()
+        elif response.status_code == 404:
+            print(f"Error 404: Recording not found for test {test_id}")
+            return pd.DataFrame()
+        else:
+            print(f"Error fetching recording: {response.status_code} - {response.text[:200] if response.text else 'No details'}")
+            return pd.DataFrame()
+
+    except requests.exceptions.Timeout:
+        print(f"Timeout fetching recording for test {test_id}")
+        return pd.DataFrame()
     except Exception as e:
-        print(f"Exception: {e}")
+        print(f"Exception fetching recording: {e}")
         return pd.DataFrame()
 
 
@@ -159,6 +225,55 @@ def detect_phases(force_trace: pd.DataFrame, test_type: str = 'CMJ') -> Dict[str
                 phases['landing'] = (landing_start, len(force))
 
     return phases
+
+
+def get_result_definitions(token: str, tenant_id: str, region: str = 'euw') -> pd.DataFrame:
+    """
+    Retrieve all result definitions from VALD API (Scenario 4 from VALD docs)
+
+    API Endpoint:
+    GET /v2019q3/teams/{tenant}/resultDefinitions
+
+    This provides metadata about all available metrics including:
+    - resultId: Unique identifier for the metric
+    - name: Display name
+    - unit: Unit of measurement
+    - description: What the metric measures
+
+    Returns:
+    --------
+    pd.DataFrame with result definitions
+    """
+
+    url = f"https://prd-{region}-api-extforcedecks.valdperformance.com/v2019q3/teams/{tenant_id}/resultDefinitions"
+
+    headers = {
+        'Authorization': f'Bearer {token}',
+        'Accept': 'application/json'
+    }
+
+    try:
+        response = requests.get(url, headers=headers, timeout=30)
+
+        if response.status_code == 200:
+            definitions = response.json()
+
+            if isinstance(definitions, list):
+                df = pd.DataFrame(definitions)
+                return df
+            elif isinstance(definitions, dict) and 'data' in definitions:
+                df = pd.DataFrame(definitions['data'])
+                return df
+
+            return pd.DataFrame()
+
+        else:
+            print(f"Error fetching result definitions: {response.status_code}")
+            return pd.DataFrame()
+
+    except Exception as e:
+        print(f"Exception fetching result definitions: {e}")
+        return pd.DataFrame()
 
 
 # ============================================================================
