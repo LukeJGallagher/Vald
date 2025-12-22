@@ -460,3 +460,4 @@ if __name__ == "__main__":
     print("# 5. Calculate metrics")
     print("metrics = calculate_trace_metrics(trace)")
     print("print(metrics)")
+# Force redeploy Mon, Dec 22, 2025  7:47:29 AM
