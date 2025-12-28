@@ -3184,7 +3184,11 @@ with tabs[7]:
                                 env_creds['region']
                             )
 
-                            if trace1 is not None and trace2 is not None:
+                            # Check if we got valid DataFrames (not empty and not None)
+                            trace1_valid = isinstance(trace1, pd.DataFrame) and not trace1.empty
+                            trace2_valid = isinstance(trace2, pd.DataFrame) and not trace2.empty
+
+                            if trace1_valid and trace2_valid:
                                 st.success(f"✅ Fetched {len(trace1)} points for Trial 1, {len(trace2)} points for Trial 2")
 
                                 # Store in session state for persistence
@@ -3822,7 +3826,11 @@ with tabs[7]:
                                 region=region_comp
                             )
 
-                            if not trace1.empty and not trace2.empty:
+                            # Check if we got valid DataFrames (not empty and not None/tuple)
+                            trace1_valid = isinstance(trace1, pd.DataFrame) and not trace1.empty
+                            trace2_valid = isinstance(trace2, pd.DataFrame) and not trace2.empty
+
+                            if trace1_valid and trace2_valid:
                                 st.success(f"✅ Fetched {len(trace1)} + {len(trace2)} data points!")
 
                                 # Store in session state
@@ -5117,7 +5125,7 @@ with tabs[1]:
         # ========== INDIVIDUAL ATHLETE TAB ==========
         with ff_tabs[2]:
             st.markdown("### 🏃 Individual Athlete Analysis")
-            st.markdown("*Select an athlete and test type to view their ForceFrame performance profile*")
+            st.markdown("*Select an athlete and test type to view their ForceFrame performance profile with traffic light indicators*")
 
             if 'Name' in ff_data.columns and ff_data['Name'].nunique() > 0:
                 # Get unique athlete names (filter out placeholder names)
@@ -5151,73 +5159,200 @@ with tabs[1]:
                             selected_test_type = "All Tests"
 
                     if not athlete_ff.empty:
-                        # Athlete summary metrics
+                        # Athlete summary with traffic light status cards
                         st.markdown(f"#### {selected_ff_athlete} - {selected_test_type}")
 
+                        # Calculate key metrics for latest test
+                        if 'testDateUtc' in athlete_ff.columns:
+                            athlete_ff['testDateUtc'] = pd.to_datetime(athlete_ff['testDateUtc'])
+                            athlete_ff = athlete_ff.sort_values('testDateUtc', ascending=False)
+                            latest = athlete_ff.iloc[0]
+                        else:
+                            latest = athlete_ff.iloc[-1]
+
+                        # Get force values
+                        left_force = latest.get('innerLeftMaxForce', 0) or 0
+                        right_force = latest.get('innerRightMaxForce', 0) or 0
+
+                        # Calculate asymmetry
+                        if left_force > 0 and right_force > 0:
+                            asym = ((right_force - left_force) / ((right_force + left_force) / 2) * 100)
+                        else:
+                            asym = 0
+
+                        # Determine traffic light colors
+                        def get_asym_status_ff(asym_val):
+                            """Return status color and text for ForceFrame asymmetry"""
+                            if abs(asym_val) < 10:
+                                return "#27AE60", "NORMAL", "✅"  # Green
+                            elif abs(asym_val) < 15:
+                                return "#F39C12", "CAUTION", "⚠️"  # Yellow
+                            else:
+                                return "#E74C3C", "AT RISK", "🔴"  # Red
+
+                        asym_color, asym_status, asym_icon = get_asym_status_ff(asym)
+
+                        # Traffic light status cards
                         col1, col2, col3, col4 = st.columns(4)
 
                         with col1:
-                            st.metric("Total Tests", len(athlete_ff))
+                            st.markdown(f"""
+                            <div style="background: linear-gradient(135deg, #1D4D3B 0%, #153829 100%); padding: 1rem; border-radius: 12px; text-align: center; border-left: 4px solid #a08e66;">
+                                <div style="font-size: 0.85rem; color: #a08e66; font-weight: 600;">TOTAL TESTS</div>
+                                <div style="font-size: 2rem; font-weight: 700; color: white;">{len(athlete_ff)}</div>
+                                <div style="font-size: 0.75rem; color: #8fb7b3;">{selected_test_type}</div>
+                            </div>
+                            """, unsafe_allow_html=True)
 
                         with col2:
-                            if 'innerLeftMaxForce' in athlete_ff.columns:
-                                avg_left = athlete_ff['innerLeftMaxForce'].mean()
-                                st.metric("Avg Left Force", f"{avg_left:.0f} N")
+                            st.markdown(f"""
+                            <div style="background: linear-gradient(135deg, #1D4D3B 0%, #153829 100%); padding: 1rem; border-radius: 12px; text-align: center; border-left: 4px solid #3498db;">
+                                <div style="font-size: 0.85rem; color: #3498db; font-weight: 600;">LEFT PEAK</div>
+                                <div style="font-size: 2rem; font-weight: 700; color: white;">{left_force:.0f}</div>
+                                <div style="font-size: 0.75rem; color: #8fb7b3;">Newtons</div>
+                            </div>
+                            """, unsafe_allow_html=True)
 
                         with col3:
-                            if 'innerRightMaxForce' in athlete_ff.columns:
-                                avg_right = athlete_ff['innerRightMaxForce'].mean()
-                                st.metric("Avg Right Force", f"{avg_right:.0f} N")
+                            st.markdown(f"""
+                            <div style="background: linear-gradient(135deg, #1D4D3B 0%, #153829 100%); padding: 1rem; border-radius: 12px; text-align: center; border-left: 4px solid #e74c3c;">
+                                <div style="font-size: 0.85rem; color: #e74c3c; font-weight: 600;">RIGHT PEAK</div>
+                                <div style="font-size: 2rem; font-weight: 700; color: white;">{right_force:.0f}</div>
+                                <div style="font-size: 0.75rem; color: #8fb7b3;">Newtons</div>
+                            </div>
+                            """, unsafe_allow_html=True)
 
                         with col4:
-                            if 'innerLeftMaxForce' in athlete_ff.columns and 'innerRightMaxForce' in athlete_ff.columns:
-                                left_mean = athlete_ff['innerLeftMaxForce'].mean()
-                                right_mean = athlete_ff['innerRightMaxForce'].mean()
-                                if (left_mean + right_mean) > 0:
-                                    avg_asym = ((right_mean - left_mean) / ((right_mean + left_mean) / 2) * 100)
-                                    st.metric("Avg Asymmetry", f"{avg_asym:.1f}%",
-                                             delta="⚠️ High" if abs(avg_asym) > 10 else "✅ Normal")
+                            st.markdown(f"""
+                            <div style="background: linear-gradient(135deg, #1D4D3B 0%, #153829 100%); padding: 1rem; border-radius: 12px; text-align: center; border-left: 4px solid {asym_color};">
+                                <div style="font-size: 0.85rem; color: {asym_color}; font-weight: 600;">ASYMMETRY</div>
+                                <div style="font-size: 2rem; font-weight: 700; color: white;">{abs(asym):.1f}%</div>
+                                <div style="font-size: 0.75rem; color: {asym_color};">{asym_icon} {asym_status}</div>
+                            </div>
+                            """, unsafe_allow_html=True)
+
+                        st.markdown("<br>", unsafe_allow_html=True)
+
+                        # Horizontal asymmetry bar chart (Patrick Ward style) - Test History
+                        if 'testDateUtc' in athlete_ff.columns and len(athlete_ff) > 1:
+                            st.markdown("#### 📊 Asymmetry History (Horizontal Bar Chart)")
+                            st.markdown("*Each bar represents one test session - color indicates risk level*")
+
+                            # Calculate asymmetry for each test
+                            test_asym_data = []
+                            for _, row in athlete_ff.iterrows():
+                                left = row.get('innerLeftMaxForce', 0) or 0
+                                right = row.get('innerRightMaxForce', 0) or 0
+                                if left > 0 and right > 0:
+                                    test_asym = ((right - left) / ((right + left) / 2) * 100)
+                                    test_date = row['testDateUtc'].strftime('%Y-%m-%d') if pd.notna(row.get('testDateUtc')) else 'N/A'
+                                    test_asym_data.append({
+                                        'Date': test_date,
+                                        'Asymmetry': test_asym,
+                                        'Left': left,
+                                        'Right': right
+                                    })
+
+                            if test_asym_data:
+                                asym_history_df = pd.DataFrame(test_asym_data)
+
+                                # Assign colors based on asymmetry level
+                                def get_bar_color(val):
+                                    if abs(val) < 10:
+                                        return '#27AE60'  # Green
+                                    elif abs(val) < 15:
+                                        return '#F39C12'  # Yellow
+                                    else:
+                                        return '#E74C3C'  # Red
+
+                                bar_colors = [get_bar_color(v) for v in asym_history_df['Asymmetry']]
+
+                                fig_asym_hist = go.Figure()
+
+                                # Add colored zones
+                                fig_asym_hist.add_vrect(x0=-10, x1=10, fillcolor="rgba(39, 174, 96, 0.1)", layer="below", line_width=0)
+                                fig_asym_hist.add_vrect(x0=-15, x1=-10, fillcolor="rgba(243, 156, 18, 0.1)", layer="below", line_width=0)
+                                fig_asym_hist.add_vrect(x0=10, x1=15, fillcolor="rgba(243, 156, 18, 0.1)", layer="below", line_width=0)
+                                fig_asym_hist.add_vrect(x0=-30, x1=-15, fillcolor="rgba(231, 76, 60, 0.1)", layer="below", line_width=0)
+                                fig_asym_hist.add_vrect(x0=15, x1=30, fillcolor="rgba(231, 76, 60, 0.1)", layer="below", line_width=0)
+
+                                # Add horizontal bars
+                                fig_asym_hist.add_trace(go.Bar(
+                                    y=asym_history_df['Date'],
+                                    x=asym_history_df['Asymmetry'],
+                                    orientation='h',
+                                    marker_color=bar_colors,
+                                    text=[f"{v:.1f}%" for v in asym_history_df['Asymmetry']],
+                                    textposition='outside',
+                                    hovertemplate='<b>%{y}</b><br>Asymmetry: %{x:.1f}%<extra></extra>'
+                                ))
+
+                                # Add vertical threshold lines
+                                fig_asym_hist.add_vline(x=0, line_width=2, line_dash="solid", line_color="#666")
+                                fig_asym_hist.add_vline(x=-10, line_width=1, line_dash="dash", line_color="#F39C12")
+                                fig_asym_hist.add_vline(x=10, line_width=1, line_dash="dash", line_color="#F39C12")
+
+                                fig_asym_hist.update_layout(
+                                    title=f"{selected_ff_athlete} - Asymmetry Trend ({selected_test_type})",
+                                    xaxis_title="Asymmetry (%) - Positive = Right Dominant",
+                                    yaxis_title="Test Date",
+                                    height=max(350, len(asym_history_df) * 40),
+                                    showlegend=False,
+                                    xaxis=dict(range=[-30, 30], zeroline=True),
+                                    yaxis=dict(autorange="reversed"),
+                                    plot_bgcolor='rgba(0,0,0,0)'
+                                )
+
+                                st.plotly_chart(fig_asym_hist, use_container_width=True)
+
+                                # Legend
+                                st.markdown("""
+                                <div style="display: flex; justify-content: center; gap: 2rem; margin-top: 0.5rem;">
+                                    <span style="color: #27AE60;">● Normal (&lt;10%)</span>
+                                    <span style="color: #F39C12;">● Caution (10-15%)</span>
+                                    <span style="color: #E74C3C;">● At Risk (&gt;15%)</span>
+                                </div>
+                                """, unsafe_allow_html=True)
 
                         # Force time series - by test type
                         if 'testDateUtc' in athlete_ff.columns:
-                            st.markdown(f"#### {selected_test_type} - Force Over Time")
-                            athlete_ff['testDateUtc'] = pd.to_datetime(athlete_ff['testDateUtc'])
-                            athlete_ff = athlete_ff.sort_values('testDateUtc')
+                            st.markdown(f"#### 📈 {selected_test_type} - Force Over Time")
+                            athlete_ff_sorted = athlete_ff.sort_values('testDateUtc')
 
                             fig_time = go.Figure()
 
-                            if 'innerLeftMaxForce' in athlete_ff.columns:
+                            if 'innerLeftMaxForce' in athlete_ff_sorted.columns:
                                 fig_time.add_trace(go.Scatter(
-                                    x=athlete_ff['testDateUtc'],
-                                    y=athlete_ff['innerLeftMaxForce'],
+                                    x=athlete_ff_sorted['testDateUtc'],
+                                    y=athlete_ff_sorted['innerLeftMaxForce'],
                                     mode='lines+markers',
                                     name='Left (Inner)',
                                     line=dict(color='#3498db', width=2)
                                 ))
 
-                            if 'innerRightMaxForce' in athlete_ff.columns:
+                            if 'innerRightMaxForce' in athlete_ff_sorted.columns:
                                 fig_time.add_trace(go.Scatter(
-                                    x=athlete_ff['testDateUtc'],
-                                    y=athlete_ff['innerRightMaxForce'],
+                                    x=athlete_ff_sorted['testDateUtc'],
+                                    y=athlete_ff_sorted['innerRightMaxForce'],
                                     mode='lines+markers',
                                     name='Right (Inner)',
                                     line=dict(color='#e74c3c', width=2)
                                 ))
 
                             # Add outer forces if available
-                            if 'outerLeftMaxForce' in athlete_ff.columns:
+                            if 'outerLeftMaxForce' in athlete_ff_sorted.columns:
                                 fig_time.add_trace(go.Scatter(
-                                    x=athlete_ff['testDateUtc'],
-                                    y=athlete_ff['outerLeftMaxForce'],
+                                    x=athlete_ff_sorted['testDateUtc'],
+                                    y=athlete_ff_sorted['outerLeftMaxForce'],
                                     mode='lines+markers',
                                     name='Left (Outer)',
                                     line=dict(color='#2980b9', width=2, dash='dash')
                                 ))
 
-                            if 'outerRightMaxForce' in athlete_ff.columns:
+                            if 'outerRightMaxForce' in athlete_ff_sorted.columns:
                                 fig_time.add_trace(go.Scatter(
-                                    x=athlete_ff['testDateUtc'],
-                                    y=athlete_ff['outerRightMaxForce'],
+                                    x=athlete_ff_sorted['testDateUtc'],
+                                    y=athlete_ff_sorted['outerRightMaxForce'],
                                     mode='lines+markers',
                                     name='Right (Outer)',
                                     line=dict(color='#c0392b', width=2, dash='dash')
@@ -5233,7 +5368,7 @@ with tabs[1]:
                             st.plotly_chart(fig_time, use_container_width=True)
 
                         # Athlete test history for this test type
-                        st.markdown(f"#### {selected_test_type} - Test History")
+                        st.markdown(f"#### 📋 {selected_test_type} - Test History")
                         hist_cols = ['testDateUtc', 'testTypeName', 'innerLeftMaxForce', 'innerRightMaxForce',
                                     'outerLeftMaxForce', 'outerRightMaxForce']
                         hist_available = [c for c in hist_cols if c in athlete_ff.columns]
@@ -5775,7 +5910,7 @@ with tabs[2]:
         # ========== INDIVIDUAL ATHLETE TAB ==========
         with nb_tabs[2]:
             st.markdown("### 🏃 Individual Athlete Analysis")
-            st.markdown("*Select an athlete to view their Nordic hamstring profile*")
+            st.markdown("*Select an athlete to view their Nordic hamstring profile with risk assessment*")
 
             if 'Name' in nb_data.columns and nb_data['Name'].nunique() > 0:
                 # Get unique athlete names (filter out placeholder names)
@@ -5794,29 +5929,128 @@ with tabs[2]:
                     if not athlete_nb.empty:
                         st.markdown(f"#### {selected_nb_athlete} - Hamstring Profile")
 
+                        # Calculate key metrics
+                        peak_left = athlete_nb['leftMaxForce'].max() if 'leftMaxForce' in athlete_nb.columns else 0
+                        peak_right = athlete_nb['rightMaxForce'].max() if 'rightMaxForce' in athlete_nb.columns else 0
+                        min_force = min(peak_left, peak_right)
+                        avg_force = (peak_left + peak_right) / 2 if (peak_left + peak_right) > 0 else 0
+
+                        # Calculate asymmetry
+                        if peak_left > 0 and peak_right > 0:
+                            avg_asym = ((peak_right - peak_left) / ((peak_right + peak_left) / 2) * 100)
+                        else:
+                            avg_asym = 0
+
+                        # Traffic light status cards (matching team style)
+                        st.markdown("#### 🚦 Athlete Risk Status")
                         col1, col2, col3, col4 = st.columns(4)
 
                         with col1:
-                            st.metric("Total Tests", len(athlete_nb))
+                            # Force threshold status
+                            force_ok = min_force >= NORDBORD_THRESHOLDS['injury_risk_absolute']
+                            force_color = '#27ae60' if force_ok else '#e74c3c'
+                            force_status = '✅ Safe' if force_ok else '🔴 At Risk'
+                            st.markdown(f"""
+                            <div style="background: {force_color}; padding: 1rem; border-radius: 8px; text-align: center; color: white;">
+                                <h2 style="margin: 0;">{min_force:.0f}N</h2>
+                                <p style="margin: 0; font-size: 0.85rem;">Min Force</p>
+                                <p style="margin: 0; font-size: 0.7rem; opacity: 0.8;">{force_status} (>337N)</p>
+                            </div>
+                            """, unsafe_allow_html=True)
 
                         with col2:
-                            if 'leftMaxForce' in athlete_nb.columns:
-                                peak_left = athlete_nb['leftMaxForce'].max()
-                                st.metric("Peak Left", f"{peak_left:.0f} N")
+                            st.markdown(f"""
+                            <div style="background: #3498db; padding: 1rem; border-radius: 8px; text-align: center; color: white;">
+                                <h2 style="margin: 0;">{peak_left:.0f}N</h2>
+                                <p style="margin: 0; font-size: 0.85rem;">Left Peak</p>
+                                <p style="margin: 0; font-size: 0.7rem; opacity: 0.8;">Max recorded</p>
+                            </div>
+                            """, unsafe_allow_html=True)
 
                         with col3:
-                            if 'rightMaxForce' in athlete_nb.columns:
-                                peak_right = athlete_nb['rightMaxForce'].max()
-                                st.metric("Peak Right", f"{peak_right:.0f} N")
+                            st.markdown(f"""
+                            <div style="background: #e74c3c; padding: 1rem; border-radius: 8px; text-align: center; color: white;">
+                                <h2 style="margin: 0;">{peak_right:.0f}N</h2>
+                                <p style="margin: 0; font-size: 0.85rem;">Right Peak</p>
+                                <p style="margin: 0; font-size: 0.7rem; opacity: 0.8;">Max recorded</p>
+                            </div>
+                            """, unsafe_allow_html=True)
 
                         with col4:
-                            if 'leftMaxForce' in athlete_nb.columns and 'rightMaxForce' in athlete_nb.columns:
-                                left_mean = athlete_nb['leftMaxForce'].mean()
-                                right_mean = athlete_nb['rightMaxForce'].mean()
-                                if (left_mean + right_mean) > 0:
-                                    avg_asym = ((right_mean - left_mean) / ((right_mean + left_mean) / 2) * 100)
-                                    st.metric("Avg Asymmetry", f"{avg_asym:.1f}%",
-                                             delta="⚠️ High" if abs(avg_asym) > 10 else "✅ Normal")
+                            # Asymmetry status
+                            abs_asym = abs(avg_asym)
+                            if abs_asym < 10:
+                                asym_color = '#27ae60'
+                                asym_status = '✅ Normal'
+                            elif abs_asym < 15:
+                                asym_color = '#f39c12'
+                                asym_status = '⚠️ Monitor'
+                            else:
+                                asym_color = '#e74c3c'
+                                asym_status = '🔴 High Risk'
+
+                            direction = "R>L" if avg_asym > 0 else "L>R"
+                            st.markdown(f"""
+                            <div style="background: {asym_color}; padding: 1rem; border-radius: 8px; text-align: center; color: white;">
+                                <h2 style="margin: 0;">{avg_asym:+.1f}%</h2>
+                                <p style="margin: 0; font-size: 0.85rem;">Asymmetry ({direction})</p>
+                                <p style="margin: 0; font-size: 0.7rem; opacity: 0.8;">{asym_status}</p>
+                            </div>
+                            """, unsafe_allow_html=True)
+
+                        st.markdown("---")
+
+                        # Test history horizontal bar chart (like team profile)
+                        st.markdown("#### 📊 Test History - Asymmetry Profile")
+                        if 'testDateUtc' in athlete_nb.columns and len(athlete_nb) > 1:
+                            athlete_nb['testDateUtc'] = pd.to_datetime(athlete_nb['testDateUtc'])
+                            athlete_nb = athlete_nb.sort_values('testDateUtc')
+                            athlete_nb['Test Date'] = athlete_nb['testDateUtc'].dt.strftime('%Y-%m-%d')
+                            athlete_nb['Test Asymmetry'] = ((athlete_nb['rightMaxForce'] - athlete_nb['leftMaxForce']) /
+                                                           ((athlete_nb['rightMaxForce'] + athlete_nb['leftMaxForce']) / 2) * 100)
+
+                            # Color by risk
+                            def get_test_color(val):
+                                abs_val = abs(val)
+                                if abs_val < 10:
+                                    return '#27ae60'
+                                elif abs_val < 15:
+                                    return '#f39c12'
+                                else:
+                                    return '#e74c3c'
+
+                            colors = [get_test_color(v) for v in athlete_nb['Test Asymmetry']]
+
+                            fig_athlete_asym = go.Figure()
+                            fig_athlete_asym.add_vrect(x0=-10, x1=10, fillcolor="rgba(39, 174, 96, 0.1)",
+                                                      layer="below", line_width=0)
+
+                            fig_athlete_asym.add_trace(go.Bar(
+                                y=athlete_nb['Test Date'],
+                                x=athlete_nb['Test Asymmetry'],
+                                orientation='h',
+                                marker_color=colors,
+                                text=[f"{v:.1f}%" for v in athlete_nb['Test Asymmetry']],
+                                textposition='outside'
+                            ))
+
+                            fig_athlete_asym.add_vline(x=0, line_dash='solid', line_color='gray', line_width=1)
+                            fig_athlete_asym.add_vline(x=10, line_dash='dot', line_color='#f39c12', line_width=1)
+                            fig_athlete_asym.add_vline(x=-10, line_dash='dot', line_color='#f39c12', line_width=1)
+                            fig_athlete_asym.add_vline(x=15, line_dash='dash', line_color='#e74c3c', line_width=1)
+                            fig_athlete_asym.add_vline(x=-15, line_dash='dash', line_color='#e74c3c', line_width=1)
+
+                            fig_athlete_asym.update_layout(
+                                height=max(250, len(athlete_nb) * 30),
+                                xaxis_title="Asymmetry (%) - Left ← → Right Dominant",
+                                yaxis_title="",
+                                showlegend=False,
+                                xaxis=dict(range=[-30, 30], zeroline=True),
+                                margin=dict(l=100)
+                            )
+                            st.plotly_chart(fig_athlete_asym, use_container_width=True)
+
+                        st.markdown("---")
 
                         # Force time series
                         if 'testDateUtc' in athlete_nb.columns:
