@@ -4888,6 +4888,14 @@ with tabs[1]:
     </div>
     """, unsafe_allow_html=True)
 
+    # ForceFrame thresholds (from research)
+    FORCEFRAME_THRESHOLDS = {
+        'hip_adduction_min': 250,     # Minimum acceptable adduction force (N)
+        'hip_abduction_min': 200,     # Minimum acceptable abduction force (N)
+        'add_abd_ratio_max': 1.3,     # ADD:ABD ratio >1.3 = groin pain risk
+        'asymmetry_threshold': 10,    # >10% asymmetry flag
+    }
+
     # Use filtered data
     ff_data = filtered_forceframe if not filtered_forceframe.empty else df_forceframe
 
@@ -5319,22 +5327,18 @@ with tabs[1]:
         with ff_tabs[3]:
             st.markdown("### ⚖️ Bilateral Asymmetry Dashboard")
             st.markdown("""
-            <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
-                <div style="flex: 1; background: #27ae60; padding: 0.75rem; border-radius: 6px; text-align: center; color: white;">
-                    <strong>✅ &lt;10%</strong><br><span style="font-size: 0.85rem;">Normal</span>
-                </div>
-                <div style="flex: 1; background: #f39c12; padding: 0.75rem; border-radius: 6px; text-align: center; color: white;">
-                    <strong>⚠️ 10-15%</strong><br><span style="font-size: 0.85rem;">Monitor</span>
-                </div>
-                <div style="flex: 1; background: #e74c3c; padding: 0.75rem; border-radius: 6px; text-align: center; color: white;">
-                    <strong>🔴 &gt;15%</strong><br><span style="font-size: 0.85rem;">Intervention</span>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+            **Asymmetry Risk Thresholds:**
+            - ✅ **<10%**: Normal bilateral balance
+            - ⚠️ **10-15%**: Monitor - targeted training recommended
+            - 🔴 **>15%**: High risk - intervention required
+            """)
 
             if 'innerLeftMaxForce' in ff_data.columns and 'innerRightMaxForce' in ff_data.columns:
                 # Calculate asymmetry for all tests
-                asym_df = ff_data[['Name', 'testDateUtc', 'innerLeftMaxForce', 'innerRightMaxForce']].dropna().copy()
+                cols_needed = ['Name', 'testDateUtc', 'innerLeftMaxForce', 'innerRightMaxForce']
+                if 'testTypeName' in ff_data.columns:
+                    cols_needed.insert(1, 'testTypeName')
+                asym_df = ff_data[[c for c in cols_needed if c in ff_data.columns]].dropna().copy()
 
                 asym_df['Asymmetry (%)'] = ((asym_df['innerRightMaxForce'] - asym_df['innerLeftMaxForce']) /
                                             ((asym_df['innerRightMaxForce'] + asym_df['innerLeftMaxForce']) / 2) * 100)
@@ -5343,8 +5347,98 @@ with tabs[1]:
                     lambda x: '🔴 High Risk' if x > 15 else ('⚠️ Moderate' if x > 10 else '✅ Normal')
                 )
 
-                # Asymmetry distribution
-                st.markdown("#### Asymmetry Distribution (All Athletes)")
+                # Team overview cards
+                st.markdown("#### 🚦 Team Asymmetry Status")
+                col1, col2, col3 = st.columns(3)
+
+                with col1:
+                    normal_pct = (asym_df['Asymmetry (%)'].abs() < 10).sum() / len(asym_df) * 100 if len(asym_df) > 0 else 0
+                    st.markdown(f"""
+                    <div style="background: #27ae60; padding: 1rem; border-radius: 8px; text-align: center; color: white;">
+                        <h2 style="margin: 0;">{normal_pct:.0f}%</h2>
+                        <p style="margin: 0;">Normal (<10%)</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                with col2:
+                    moderate_pct = ((asym_df['Asymmetry (%)'].abs() >= 10) & (asym_df['Asymmetry (%)'].abs() < 15)).sum() / len(asym_df) * 100 if len(asym_df) > 0 else 0
+                    st.markdown(f"""
+                    <div style="background: #f39c12; padding: 1rem; border-radius: 8px; text-align: center; color: white;">
+                        <h2 style="margin: 0;">{moderate_pct:.0f}%</h2>
+                        <p style="margin: 0;">Monitor (10-15%)</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                with col3:
+                    high_pct = (asym_df['Asymmetry (%)'].abs() >= 15).sum() / len(asym_df) * 100 if len(asym_df) > 0 else 0
+                    st.markdown(f"""
+                    <div style="background: #e74c3c; padding: 1rem; border-radius: 8px; text-align: center; color: white;">
+                        <h2 style="margin: 0;">{high_pct:.0f}%</h2>
+                        <p style="margin: 0;">High Risk (>15%)</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                st.markdown("---")
+
+                # Horizontal Asymmetry Bar Chart (Patrick Ward style)
+                st.markdown("#### 📊 Team Asymmetry Profile by Athlete")
+                st.markdown("*Bars show left-right difference. Green = safe, Yellow = caution, Red = high risk*")
+
+                if 'Name' in asym_df.columns and asym_df['Name'].nunique() > 0:
+                    # Get latest test per athlete
+                    asym_df['testDateUtc'] = pd.to_datetime(asym_df['testDateUtc'])
+                    latest_asym = asym_df.sort_values('testDateUtc').groupby('Name').last().reset_index()
+                    latest_asym = latest_asym.sort_values('Asymmetry (%)', key=abs, ascending=True)
+
+                    # Color based on risk
+                    def get_ff_asym_color(val):
+                        abs_val = abs(val)
+                        if abs_val < 10:
+                            return '#27ae60'
+                        elif abs_val < 15:
+                            return '#f39c12'
+                        else:
+                            return '#e74c3c'
+
+                    colors = [get_ff_asym_color(v) for v in latest_asym['Asymmetry (%)']]
+
+                    fig_ff_asym = go.Figure()
+
+                    # Safe zone shading
+                    fig_ff_asym.add_vrect(x0=-10, x1=10, fillcolor="rgba(39, 174, 96, 0.1)",
+                                         layer="below", line_width=0)
+
+                    fig_ff_asym.add_trace(go.Bar(
+                        y=latest_asym['Name'],
+                        x=latest_asym['Asymmetry (%)'],
+                        orientation='h',
+                        marker_color=colors,
+                        text=[f"{v:.1f}%" for v in latest_asym['Asymmetry (%)']],
+                        textposition='outside',
+                        hovertemplate='<b>%{y}</b><br>Asymmetry: %{x:.1f}%<extra></extra>'
+                    ))
+
+                    # Threshold lines
+                    fig_ff_asym.add_vline(x=0, line_dash='solid', line_color='gray', line_width=1)
+                    fig_ff_asym.add_vline(x=10, line_dash='dot', line_color='#f39c12', line_width=1)
+                    fig_ff_asym.add_vline(x=-10, line_dash='dot', line_color='#f39c12', line_width=1)
+                    fig_ff_asym.add_vline(x=15, line_dash='dash', line_color='#e74c3c', line_width=1)
+                    fig_ff_asym.add_vline(x=-15, line_dash='dash', line_color='#e74c3c', line_width=1)
+
+                    fig_ff_asym.update_layout(
+                        height=max(300, len(latest_asym) * 35),
+                        xaxis_title="Asymmetry (%) - Left ← → Right Dominant",
+                        yaxis_title="",
+                        showlegend=False,
+                        xaxis=dict(range=[-30, 30], zeroline=True),
+                        margin=dict(l=150)
+                    )
+                    st.plotly_chart(fig_ff_asym, use_container_width=True)
+
+                st.markdown("---")
+
+                # Asymmetry distribution histogram
+                st.markdown("#### Asymmetry Distribution (All Tests)")
                 fig_asym = px.histogram(
                     asym_df, x='Asymmetry (%)', nbins=25,
                     color_discrete_sequence=['#1D4D3B']
@@ -5354,21 +5448,25 @@ with tabs[1]:
                 fig_asym.add_vline(x=-10, line_dash='dot', line_color='orange', annotation_text='-10%')
                 fig_asym.add_vline(x=15, line_dash='dot', line_color='red')
                 fig_asym.add_vline(x=-15, line_dash='dot', line_color='red')
-                fig_asym.update_layout(height=400)
+                fig_asym.update_layout(height=350)
                 st.plotly_chart(fig_asym, use_container_width=True)
 
-                # Athletes at risk
-                st.markdown("#### Athletes Requiring Attention")
+                # Athletes at risk table
+                st.markdown("#### ⚠️ Athletes Requiring Attention")
                 high_risk = asym_df[asym_df['Asymmetry (%)'].abs() > 10].copy()
 
                 if not high_risk.empty:
-                    # Latest asymmetry per athlete
                     high_risk['testDateUtc'] = pd.to_datetime(high_risk['testDateUtc'])
                     latest_risk = high_risk.sort_values('testDateUtc').groupby('Name').last().reset_index()
                     latest_risk = latest_risk.sort_values('Asymmetry (%)', key=abs, ascending=False)
 
-                    display_risk = latest_risk[['Name', 'Asymmetry (%)', 'Risk Level', 'innerLeftMaxForce', 'innerRightMaxForce']]
-                    display_risk.columns = ['Athlete', 'Asymmetry (%)', 'Risk', 'Left (N)', 'Right (N)']
+                    display_cols = ['Name', 'Asymmetry (%)', 'Risk Level', 'innerLeftMaxForce', 'innerRightMaxForce']
+                    if 'testTypeName' in latest_risk.columns:
+                        display_cols.insert(1, 'testTypeName')
+                    display_risk = latest_risk[[c for c in display_cols if c in latest_risk.columns]]
+                    rename_map = {'Name': 'Athlete', 'testTypeName': 'Test Type', 'Asymmetry (%)': 'Asymmetry (%)',
+                                  'Risk Level': 'Risk', 'innerLeftMaxForce': 'Left (N)', 'innerRightMaxForce': 'Right (N)'}
+                    display_risk.columns = [rename_map.get(c, c) for c in display_risk.columns]
                     st.dataframe(display_risk.round(1), use_container_width=True, hide_index=True)
                 else:
                     st.success("✅ All athletes within normal asymmetry thresholds!")
@@ -5384,10 +5482,21 @@ with tabs[2]:
     st.markdown("""
     <div style="background: linear-gradient(135deg, #c0392b 0%, #e74c3c 100%); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
         <p style="color: white; margin: 0; font-size: 0.95rem;">
-            <strong>Gold standard</strong> for hamstring testing • >340N target threshold • <15% asymmetry target
+            <strong>Gold standard</strong> for hamstring testing • Research-based injury thresholds
         </p>
     </div>
     """, unsafe_allow_html=True)
+
+    # Research-based thresholds (Timmins et al. 2016, Opar et al. 2015)
+    NORDBORD_THRESHOLDS = {
+        'injury_risk_absolute': 337,  # Below 337N = 4.4x injury risk (Timmins et al. 2016)
+        'target_absolute': 400,       # Target for elite athletes
+        'relative_good': 4.5,         # Good relative strength N/kg
+        'relative_elite': 5.2,        # Elite male athletes N/kg
+        'asymmetry_low': 10,          # <10% = low risk
+        'asymmetry_moderate': 15,     # 10-15% = 2.4x risk
+        'asymmetry_high': 20,         # >15% = 3.4x risk
+    }
 
     # Use filtered data
     nb_data = filtered_nordbord if not filtered_nordbord.empty else df_nordbord
@@ -5459,11 +5568,16 @@ with tabs[2]:
         with nb_tabs[1]:
             st.markdown("### 🎯 Hamstring Strength Benchmarks")
             st.markdown("""
-            Based on research by [VALD Performance](https://valdperformance.com/products/nordbord) and
-            [Science for Sport](https://www.scienceforsport.com/vald-nordbord-hamstring-strength-testing/),
-            athletes should aim for:
-            - **>340 N** peak force per limb (injury risk threshold)
-            - **<15%** bilateral asymmetry
+            **Research-Based Injury Risk Thresholds:**
+
+            | Metric | Threshold | Risk Level | Source |
+            |--------|-----------|------------|--------|
+            | Absolute Force | <337 N | **4.4x injury risk** | Timmins et al. 2016 |
+            | Relative Force | <4.5 N/kg | Below average | VALD Population Data |
+            | Asymmetry | >15% | **2.4x injury risk** | Opar et al. 2015 |
+            | Asymmetry | >20% | **3.4x injury risk** | Opar et al. 2015 |
+
+            **Elite Benchmarks:** Males 441±89N (5.2 N/kg) | Females 315±60N (4.8 N/kg)
             """)
 
             if 'leftMaxForce' in nb_data.columns and 'rightMaxForce' in nb_data.columns:
@@ -5471,61 +5585,143 @@ with tabs[2]:
                 nb_bench = nb_data.copy()
                 nb_bench['Max Force'] = nb_bench[['leftMaxForce', 'rightMaxForce']].max(axis=1)
                 nb_bench['Min Force'] = nb_bench[['leftMaxForce', 'rightMaxForce']].min(axis=1)
+                nb_bench['Avg Force'] = nb_bench[['leftMaxForce', 'rightMaxForce']].mean(axis=1)
                 nb_bench['Asymmetry (%)'] = (
                     (nb_bench['leftMaxForce'] - nb_bench['rightMaxForce']).abs() /
                     ((nb_bench['leftMaxForce'] + nb_bench['rightMaxForce']) / 2) * 100
                 )
 
-                # Status cards
-                st.markdown("#### Team Status Overview")
+                # Calculate relative strength if body mass available
+                if 'athlete_weight_kg' in nb_bench.columns:
+                    nb_bench['Relative Strength (N/kg)'] = nb_bench['Avg Force'] / nb_bench['athlete_weight_kg']
+                else:
+                    nb_bench['Relative Strength (N/kg)'] = None
+
+                # Injury risk classification
+                INJURY_THRESHOLD = NORDBORD_THRESHOLDS['injury_risk_absolute']  # 337N
+
+                # Status cards with traffic light system
+                st.markdown("#### 🚦 Team Risk Dashboard")
                 col1, col2, col3, col4 = st.columns(4)
 
                 with col1:
-                    above_340 = (nb_bench['Min Force'] >= 340).sum()
-                    pct_above = above_340 / len(nb_bench) * 100 if len(nb_bench) > 0 else 0
+                    above_337 = (nb_bench['Min Force'] >= INJURY_THRESHOLD).sum()
+                    pct_above = above_337 / len(nb_bench) * 100 if len(nb_bench) > 0 else 0
+                    risk_color = '#27ae60' if pct_above >= 80 else '#f39c12' if pct_above >= 50 else '#e74c3c'
                     st.markdown(f"""
-                    <div style="background: {'#27ae60' if pct_above >= 80 else '#f39c12' if pct_above >= 50 else '#e74c3c'};
-                                padding: 1rem; border-radius: 8px; text-align: center; color: white;">
+                    <div style="background: {risk_color}; padding: 1rem; border-radius: 8px; text-align: center; color: white;">
                         <h2 style="margin: 0;">{pct_above:.0f}%</h2>
-                        <p style="margin: 0; font-size: 0.85rem;">Above 340N Threshold</p>
+                        <p style="margin: 0; font-size: 0.85rem;">Above 337N (Safe)</p>
+                        <p style="margin: 0; font-size: 0.7rem; opacity: 0.8;">{above_337}/{len(nb_bench)} athletes</p>
                     </div>
                     """, unsafe_allow_html=True)
 
                 with col2:
                     below_15 = (nb_bench['Asymmetry (%)'] < 15).sum()
                     pct_sym = below_15 / len(nb_bench) * 100 if len(nb_bench) > 0 else 0
+                    sym_color = '#27ae60' if pct_sym >= 80 else '#f39c12' if pct_sym >= 50 else '#e74c3c'
                     st.markdown(f"""
-                    <div style="background: {'#27ae60' if pct_sym >= 80 else '#f39c12' if pct_sym >= 50 else '#e74c3c'};
-                                padding: 1rem; border-radius: 8px; text-align: center; color: white;">
+                    <div style="background: {sym_color}; padding: 1rem; border-radius: 8px; text-align: center; color: white;">
                         <h2 style="margin: 0;">{pct_sym:.0f}%</h2>
                         <p style="margin: 0; font-size: 0.85rem;">Within 15% Asymmetry</p>
+                        <p style="margin: 0; font-size: 0.7rem; opacity: 0.8;">{below_15}/{len(nb_bench)} athletes</p>
                     </div>
                     """, unsafe_allow_html=True)
 
                 with col3:
                     avg_force = nb_bench[['leftMaxForce', 'rightMaxForce']].mean().mean()
+                    force_color = '#27ae60' if avg_force >= 400 else '#f39c12' if avg_force >= INJURY_THRESHOLD else '#e74c3c'
                     st.markdown(f"""
-                    <div style="background: {'#27ae60' if avg_force >= 340 else '#f39c12' if avg_force >= 280 else '#e74c3c'};
-                                padding: 1rem; border-radius: 8px; text-align: center; color: white;">
+                    <div style="background: {force_color}; padding: 1rem; border-radius: 8px; text-align: center; color: white;">
                         <h2 style="margin: 0;">{avg_force:.0f}N</h2>
                         <p style="margin: 0; font-size: 0.85rem;">Team Avg Force</p>
+                        <p style="margin: 0; font-size: 0.7rem; opacity: 0.8;">Target: >400N</p>
                     </div>
                     """, unsafe_allow_html=True)
 
                 with col4:
                     avg_asym = nb_bench['Asymmetry (%)'].mean()
+                    asym_color = '#27ae60' if avg_asym < 10 else '#f39c12' if avg_asym < 15 else '#e74c3c'
                     st.markdown(f"""
-                    <div style="background: {'#27ae60' if avg_asym < 10 else '#f39c12' if avg_asym < 15 else '#e74c3c'};
-                                padding: 1rem; border-radius: 8px; text-align: center; color: white;">
+                    <div style="background: {asym_color}; padding: 1rem; border-radius: 8px; text-align: center; color: white;">
                         <h2 style="margin: 0;">{avg_asym:.1f}%</h2>
                         <p style="margin: 0; font-size: 0.85rem;">Avg Asymmetry</p>
+                        <p style="margin: 0; font-size: 0.7rem; opacity: 0.8;">Target: <10%</p>
                     </div>
                     """, unsafe_allow_html=True)
 
                 st.markdown("---")
 
-                # Force distribution with 340N threshold
-                st.markdown("#### Force Distribution vs 340N Threshold")
+                # Horizontal Asymmetry Bar Chart (Patrick Ward style)
+                st.markdown("#### 📊 Team Asymmetry Profile")
+                st.markdown("*Bars show left-right difference. Green = safe (<10%), Yellow = caution (10-15%), Red = high risk (>15%)*")
+
+                if 'Name' in nb_bench.columns:
+                    # Get latest test per athlete
+                    if 'testDateUtc' in nb_bench.columns:
+                        nb_bench['testDateUtc'] = pd.to_datetime(nb_bench['testDateUtc'])
+                        latest_tests = nb_bench.sort_values('testDateUtc').groupby('Name').last().reset_index()
+                    else:
+                        latest_tests = nb_bench.groupby('Name').last().reset_index()
+
+                    # Calculate signed asymmetry (positive = right dominant, negative = left dominant)
+                    latest_tests['Signed Asymmetry'] = (
+                        (latest_tests['rightMaxForce'] - latest_tests['leftMaxForce']) /
+                        ((latest_tests['rightMaxForce'] + latest_tests['leftMaxForce']) / 2) * 100
+                    )
+
+                    # Sort by absolute asymmetry
+                    latest_tests = latest_tests.sort_values('Signed Asymmetry', key=abs, ascending=True)
+
+                    # Color based on risk level
+                    def get_asym_color(val):
+                        abs_val = abs(val)
+                        if abs_val < 10:
+                            return '#27ae60'  # Green - safe
+                        elif abs_val < 15:
+                            return '#f39c12'  # Yellow - caution
+                        else:
+                            return '#e74c3c'  # Red - high risk
+
+                    colors = [get_asym_color(v) for v in latest_tests['Signed Asymmetry']]
+
+                    fig_asym_bars = go.Figure()
+
+                    # Add gray zone for safe range
+                    fig_asym_bars.add_vrect(x0=-10, x1=10, fillcolor="rgba(39, 174, 96, 0.1)",
+                                           layer="below", line_width=0)
+
+                    fig_asym_bars.add_trace(go.Bar(
+                        y=latest_tests['Name'],
+                        x=latest_tests['Signed Asymmetry'],
+                        orientation='h',
+                        marker_color=colors,
+                        text=[f"{v:.1f}%" for v in latest_tests['Signed Asymmetry']],
+                        textposition='outside',
+                        hovertemplate='<b>%{y}</b><br>Asymmetry: %{x:.1f}%<extra></extra>'
+                    ))
+
+                    # Add threshold lines
+                    fig_asym_bars.add_vline(x=0, line_dash='solid', line_color='gray', line_width=1)
+                    fig_asym_bars.add_vline(x=10, line_dash='dot', line_color='#f39c12', line_width=1)
+                    fig_asym_bars.add_vline(x=-10, line_dash='dot', line_color='#f39c12', line_width=1)
+                    fig_asym_bars.add_vline(x=15, line_dash='dash', line_color='#e74c3c', line_width=1)
+                    fig_asym_bars.add_vline(x=-15, line_dash='dash', line_color='#e74c3c', line_width=1)
+
+                    fig_asym_bars.update_layout(
+                        height=max(300, len(latest_tests) * 35),
+                        xaxis_title="Asymmetry (%) - Left ← → Right Dominant",
+                        yaxis_title="",
+                        showlegend=False,
+                        xaxis=dict(range=[-30, 30], zeroline=True),
+                        margin=dict(l=150)
+                    )
+                    st.plotly_chart(fig_asym_bars, use_container_width=True)
+
+                st.markdown("---")
+
+                # Force distribution with 337N threshold
+                st.markdown("#### Force Distribution vs 337N Injury Threshold")
                 col1, col2 = st.columns(2)
 
                 with col1:
@@ -5534,8 +5730,10 @@ with tabs[2]:
                         labels={'leftMaxForce': 'Left Hamstring Force (N)'},
                         color_discrete_sequence=['#3498db']
                     )
-                    fig_left.add_vline(x=340, line_dash='dash', line_color='red',
-                                       annotation_text='340N Threshold')
+                    fig_left.add_vline(x=INJURY_THRESHOLD, line_dash='dash', line_color='red',
+                                       annotation_text=f'{INJURY_THRESHOLD}N Risk Threshold')
+                    fig_left.add_vline(x=400, line_dash='dot', line_color='green',
+                                       annotation_text='400N Target')
                     fig_left.update_layout(title='Left Hamstring', height=350)
                     st.plotly_chart(fig_left, use_container_width=True)
 
@@ -5545,15 +5743,17 @@ with tabs[2]:
                         labels={'rightMaxForce': 'Right Hamstring Force (N)'},
                         color_discrete_sequence=['#e74c3c']
                     )
-                    fig_right.add_vline(x=340, line_dash='dash', line_color='red',
-                                        annotation_text='340N Threshold')
+                    fig_right.add_vline(x=INJURY_THRESHOLD, line_dash='dash', line_color='red',
+                                        annotation_text=f'{INJURY_THRESHOLD}N Risk Threshold')
+                    fig_right.add_vline(x=400, line_dash='dot', line_color='green',
+                                        annotation_text='400N Target')
                     fig_right.update_layout(title='Right Hamstring', height=350)
                     st.plotly_chart(fig_right, use_container_width=True)
 
                 # Athletes below threshold
-                st.markdown("#### ⚠️ Athletes Below 340N Threshold")
+                st.markdown("#### ⚠️ Athletes Below 337N Injury Threshold")
                 if 'Name' in nb_bench.columns:
-                    below_threshold = nb_bench[nb_bench['Min Force'] < 340].copy()
+                    below_threshold = nb_bench[nb_bench['Min Force'] < INJURY_THRESHOLD].copy()
                     if not below_threshold.empty:
                         below_summary = below_threshold.groupby('Name').agg({
                             'leftMaxForce': 'max',
@@ -5561,11 +5761,14 @@ with tabs[2]:
                             'Asymmetry (%)': 'mean'
                         }).reset_index()
                         below_summary.columns = ['Athlete', 'Left Peak (N)', 'Right Peak (N)', 'Avg Asymmetry (%)']
-                        below_summary['Deficit'] = 340 - below_summary[['Left Peak (N)', 'Right Peak (N)']].min(axis=1)
-                        below_summary = below_summary.sort_values('Deficit', ascending=False)
+                        below_summary['Deficit to 337N'] = INJURY_THRESHOLD - below_summary[['Left Peak (N)', 'Right Peak (N)']].min(axis=1)
+                        below_summary['Risk'] = below_summary['Deficit to 337N'].apply(
+                            lambda x: '🔴 High' if x > 50 else ('⚠️ Moderate' if x > 20 else '🟡 Low')
+                        )
+                        below_summary = below_summary.sort_values('Deficit to 337N', ascending=False)
                         st.dataframe(below_summary.round(1), use_container_width=True, hide_index=True)
                     else:
-                        st.success("✅ All athletes meet the 340N threshold!")
+                        st.success("✅ All athletes meet the 337N injury threshold!")
             else:
                 st.warning("Force data columns not available for benchmarking.")
 
