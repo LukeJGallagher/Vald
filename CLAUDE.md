@@ -8,29 +8,9 @@ Team Saudi VALD Performance Analysis System - A Python/Streamlit analytics platf
 
 **Deployment**: Streamlit Cloud (public dashboard) + Private GitHub repo (athlete data with PII)
 
-## Project Structure
-
-```
-Vald/
-├── dashboard/                    # Streamlit app (deployment target)
-│   ├── world_class_vald_dashboard.py  # Main 16-tab dashboard
-│   ├── requirements.txt
-│   ├── utils/                    # Analytics modules
-│   │   ├── data_loader.py        # Multi-source data loading (local/GitHub/API)
-│   │   ├── force_trace_viz.py    # Force-time curve visualization
-│   │   ├── adaptive_ranges.py    # EM algorithm for meaningful change
-│   │   └── force_velocity_power.py
-│   └── .streamlit/               # Streamlit config & secrets
-├── config/
-│   ├── vald_config.py            # Centralized ValdConfig dataclass
-│   └── local_secrets/            # Local .env files (gitignored)
-├── .github/workflows/
-│   └── sync-vald-data.yml        # Daily data sync to private repo
-├── vald_production_system.py     # Core API system
-└── integrate_athletes.py         # Athlete data enrichment
-```
-
-**Separate private repo**: `vald-data/` stores CSV files with athlete PII
+**Two Repositories:**
+- `Vald/` - Dashboard code and scripts (this repo)
+- `vald-data/` - Private repo storing CSV files with athlete PII (must push enriched data here for Streamlit Cloud)
 
 ## Common Commands
 
@@ -114,6 +94,10 @@ ForceFrame/NordBord use `athleteId` which equals `profileId` in the Profiles API
 Run after API data updates:
 ```bash
 python enrich_from_forcedecks.py
+
+# Then push enriched files to vald-data repo for Streamlit Cloud
+cd ../vald-data
+git add data/*_with_athletes.csv && git commit -m "Update enriched data" && git push
 ```
 
 ## Important Compatibility Notes
@@ -149,3 +133,19 @@ Team Saudi colors:
 
 Local testing: `config/local_secrets/.env`
 Production: Streamlit Cloud Secrets dashboard
+
+## Troubleshooting
+
+**Athlete names not showing (shows "Athlete_XXXXXX"):**
+1. Run `python enrich_from_forcedecks.py` to fetch profiles and enrich data
+2. Push `*_with_athletes.csv` files to `vald-data` repo
+3. Click "🔄 Refresh" button in dashboard or restart Streamlit (cache is 1 hour)
+
+**API Authentication Errors (401):**
+1. Check `.env` credentials in `config/local_secrets/`
+2. Verify region setting matches your VALD account (euw/use/aue)
+3. Test with: `python vald_production_system.py --verify`
+
+**Rate Limiting (429):**
+- System auto-handles with 12 calls per 5 seconds
+- Adjust in `config/vald_config.py` if needed

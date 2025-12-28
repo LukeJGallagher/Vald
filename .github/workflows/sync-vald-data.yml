@@ -54,22 +54,31 @@ jobs:
                   data={
                       'grant_type': 'client_credentials',
                       'client_id': os.environ['VALD_CLIENT_ID'],
-                      'client_secret': os.environ['VALD_CLIENT_SECRET'],
-                      'scope': 'forcedecks forceframe nordbord athletes'
+                      'client_secret': os.environ['VALD_CLIENT_SECRET']
                   },
                   timeout=30
               )
+              if response.status_code != 200:
+                  print(f"Token error: {response.status_code} - {response.text}")
+                  raise Exception("Failed to get OAuth token")
               return response.json()['access_token']
 
           def fetch_profiles(token, region, tenant_id):
-              url = f'https://prd-{region}-api-externalprofile.valdperformance.com/api/v1/profiles'
+              url = f'https://prd-{region}-api-externalprofile.valdperformance.com/profiles'
               headers = {'Authorization': f'Bearer {token}'}
               response = requests.get(url, headers=headers, params={'TenantId': tenant_id}, timeout=60)
               if response.status_code == 200:
-                  return {p.get('id'): {
-                      'Name': p.get('fullName') or p.get('name', 'Unknown'),
-                      'athlete_sport': p.get('sport', 'Unknown')
-                  } for p in response.json()}
+                  data = response.json()
+                  profiles = data.get('profiles', data) if isinstance(data, dict) else data
+                  result = {}
+                  for p in profiles:
+                      pid = p.get('profileId') or p.get('id')
+                      given = p.get('givenName', '') or ''
+                      family = p.get('familyName', '') or ''
+                      full_name = f"{given} {family}".strip() or p.get('fullName') or 'Unknown'
+                      result[pid] = {'full_name': full_name, 'athlete_sport': p.get('sport', 'Unknown')}
+                  return result
+              print(f"Profiles error: {response.status_code}")
               return {}
 
           def fetch_device_data(token, region, tenant_id, device):
@@ -120,9 +129,11 @@ jobs:
 
               if tests:
                   df = pd.DataFrame(tests)
-                  if 'profileId' in df.columns:
-                      df['Name'] = df['profileId'].map(lambda pid: profiles.get(pid, {}).get('Name', 'Unknown'))
-                      df['athlete_sport'] = df['profileId'].map(lambda pid: profiles.get(pid, {}).get('athlete_sport', 'Unknown'))
+                  # Map athlete names from profiles (athleteId = profileId)
+                  id_col = 'athleteId' if 'athleteId' in df.columns else 'profileId'
+                  if id_col in df.columns:
+                      df['full_name'] = df[id_col].map(lambda pid: profiles.get(pid, {}).get('full_name', f'Athlete_{str(pid)[:8]}'))
+                      df['athlete_sport'] = df[id_col].map(lambda pid: profiles.get(pid, {}).get('athlete_sport', 'Unknown'))
 
                   filename = f'data_export/{device}_allsports_with_athletes.csv'
                   df.to_csv(filename, index=False)
