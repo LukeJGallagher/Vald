@@ -53,31 +53,87 @@ def fetch_profiles(token, region, tenant_id):
 
 def fetch_device_data(token, region, tenant_id, device):
     """Fetch test data from a VALD device API."""
-    endpoints = {
-        'forcedecks': f'https://prd-{region}-api-extforcedecks.valdperformance.com/v2019q3/teams/{tenant_id}/tests',
-        'forceframe': f'https://prd-{region}-api-externalforceframe.valdperformance.com/v2020q1/teams/{tenant_id}/tests',
-        'nordbord': f'https://prd-{region}-api-externalnordbord.valdperformance.com/v2019q3/teams/{tenant_id}/tests',
+    base_urls = {
+        'forcedecks': f'https://prd-{region}-api-extforcedecks.valdperformance.com/tests',
+        'forceframe': f'https://prd-{region}-api-externalforceframe.valdperformance.com/tests',
+        'nordbord': f'https://prd-{region}-api-externalnordbord.valdperformance.com/tests',
     }
 
-    url = endpoints[device]
+    url = base_urls[device]
     headers = {'Authorization': f'Bearer {token}'}
     from_date = (datetime.now(timezone.utc) - timedelta(days=365)).strftime('%Y-%m-%dT00:00:00.000Z')
 
     all_tests = []
-    page = 1
-    while page < 100:
-        response = requests.get(url, headers=headers, params={'modifiedFromUtc': from_date, 'page': page}, timeout=60)
-        if response.status_code != 200:
-            print(f"{device} API error on page {page}: {response.status_code}")
-            break
-        data = response.json()
-        tests = data if isinstance(data, list) else data.get('data', [])
-        if not tests:
-            break
-        all_tests.extend(tests)
-        if len(tests) < 100:
-            break
-        page += 1
+
+    if device == 'forcedecks':
+        # ForceDecks uses cursor-based pagination with modifiedFromUtc
+        modified_from = from_date
+        while True:
+            params = {'tenantId': tenant_id, 'modifiedFromUtc': modified_from}
+            response = requests.get(url, headers=headers, params=params, timeout=60)
+            if response.status_code == 204:
+                print(f"{device}: No more data (204)")
+                break
+            if response.status_code != 200:
+                print(f"{device} API error: {response.status_code} - {response.text[:200]}")
+                break
+            tests = response.json()
+            if not tests:
+                break
+            all_tests.extend(tests)
+            print(f"{device}: Fetched {len(tests)} tests (total: {len(all_tests)})")
+            # Get the last modified date for next page
+            if len(tests) < 100:
+                break
+            last_modified = tests[-1].get('modifiedDateUtc')
+            if not last_modified or last_modified == modified_from:
+                break
+            modified_from = last_modified
+
+    elif device == 'forceframe':
+        # ForceFrame uses cursor-based pagination
+        modified_from = from_date
+        while True:
+            params = {'TenantId': tenant_id, 'ModifiedFromUtc': modified_from}
+            response = requests.get(url, headers=headers, params=params, timeout=60)
+            if response.status_code == 204:
+                print(f"{device}: No more data (204)")
+                break
+            if response.status_code != 200:
+                print(f"{device} API error: {response.status_code} - {response.text[:200]}")
+                break
+            tests = response.json()
+            if not tests:
+                break
+            all_tests.extend(tests)
+            print(f"{device}: Fetched {len(tests)} tests (total: {len(all_tests)})")
+            if len(tests) < 100:
+                break
+            last_modified = tests[-1].get('modifiedDateUtc')
+            if not last_modified or last_modified == modified_from:
+                break
+            modified_from = last_modified
+
+    elif device == 'nordbord':
+        # NordBord uses page-based pagination
+        page = 1
+        while page < 100:
+            params = {'TenantId': tenant_id, 'Page': page}
+            response = requests.get(url, headers=headers, params=params, timeout=60)
+            if response.status_code == 204:
+                print(f"{device}: No more data (204)")
+                break
+            if response.status_code != 200:
+                print(f"{device} API error: {response.status_code} - {response.text[:200]}")
+                break
+            tests = response.json()
+            if not tests:
+                break
+            all_tests.extend(tests)
+            print(f"{device}: Fetched {len(tests)} tests (total: {len(all_tests)})")
+            if len(tests) < 100:
+                break
+            page += 1
 
     return all_tests
 
