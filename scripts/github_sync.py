@@ -138,6 +138,29 @@ def fetch_device_data(token, region, tenant_id, device):
     return all_tests
 
 
+def merge_with_existing(new_df, existing_path, id_column='testId'):
+    """Merge new data with existing CSV, removing duplicates."""
+    if os.path.exists(existing_path):
+        try:
+            existing_df = pd.read_csv(existing_path)
+            print(f"  Existing data: {len(existing_df)} rows")
+
+            # Combine and remove duplicates based on test ID
+            if id_column in new_df.columns and id_column in existing_df.columns:
+                combined = pd.concat([existing_df, new_df], ignore_index=True)
+                combined = combined.drop_duplicates(subset=[id_column], keep='last')
+                print(f"  After merge: {len(combined)} rows")
+                return combined
+            else:
+                # If no ID column, just append
+                combined = pd.concat([existing_df, new_df], ignore_index=True)
+                return combined
+        except Exception as e:
+            print(f"  Could not read existing file: {e}")
+
+    return new_df
+
+
 def main():
     """Main execution."""
     region = os.environ.get('VALD_REGION', 'euw')
@@ -159,7 +182,10 @@ def main():
     for device in ['forcedecks', 'forceframe', 'nordbord']:
         print(f"Fetching {device} data...")
         tests = fetch_device_data(token, region, tenant_id, device)
-        print(f"Found {len(tests)} {device} tests")
+        print(f"Found {len(tests)} {device} tests from API")
+
+        filename = f'data_export/{device}_allsports_with_athletes.csv'
+        existing_path = f'private_data_repo/data/{device}_allsports_with_athletes.csv'
 
         if tests:
             df = pd.DataFrame(tests)
@@ -168,9 +194,15 @@ def main():
                 df['full_name'] = df[id_col].map(lambda pid: profiles.get(pid, {}).get('full_name', f'Athlete_{str(pid)[:8]}'))
                 df['athlete_sport'] = df[id_col].map(lambda pid: profiles.get(pid, {}).get('athlete_sport', 'Unknown'))
 
-            filename = f'data_export/{device}_allsports_with_athletes.csv'
+            # Merge with existing data
+            df = merge_with_existing(df, existing_path)
             df.to_csv(filename, index=False)
-            print(f"Saved {filename}")
+            print(f"Saved {filename} ({len(df)} total rows)")
+        elif os.path.exists(existing_path):
+            # No new data, but keep existing
+            import shutil
+            shutil.copy(existing_path, filename)
+            print(f"No new {device} data, kept existing file")
 
     print("Data export complete!")
 

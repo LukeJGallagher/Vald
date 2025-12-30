@@ -35,6 +35,13 @@ jobs:
         run: |
           pip install requests pandas
 
+      - name: Clone private data repo
+        env:
+          DATA_REPO_TOKEN: ${{ secrets.DATA_REPO_TOKEN }}
+          DATA_REPO: ${{ secrets.DATA_REPO }}
+        run: |
+          git clone https://x-access-token:${DATA_REPO_TOKEN}@github.com/${DATA_REPO}.git private_data_repo
+
       - name: Fetch VALD data
         env:
           VALD_CLIENT_ID: ${{ secrets.VALD_CLIENT_ID }}
@@ -44,13 +51,7 @@ jobs:
         run: python scripts/github_sync.py
 
       - name: Push to private data repo
-        env:
-          DATA_REPO_TOKEN: ${{ secrets.DATA_REPO_TOKEN }}
-          DATA_REPO: ${{ secrets.DATA_REPO }}
         run: |
-          # Clone the private data repo
-          git clone https://x-access-token:${DATA_REPO_TOKEN}@github.com/${DATA_REPO}.git private_data_repo
-
           # Create data directory if it doesn't exist
           mkdir -p private_data_repo/data
 
