@@ -1713,7 +1713,7 @@ else:
     selected_athletes = []
 
 # Test type filter
-available_test_types = sorted(df['testType'].unique())
+available_test_types = sorted([t for t in df['testType'].dropna().unique() if isinstance(t, str)])
 selected_test_types = st.sidebar.multiselect(
     "Select Test Types:",
     options=available_test_types,
