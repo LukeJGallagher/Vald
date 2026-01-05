@@ -251,8 +251,35 @@ def main():
     athlete_lookup = build_athlete_lookup(profiles, forcedecks_df)
     print(f"    Total athletes in lookup: {len(athlete_lookup)}")
 
-    # Step 4: Process ForceFrame
-    print("\n[4] Processing ForceFrame...")
+    # Step 4: Process ForceDecks (add names to ForceDecks itself)
+    print("\n[4] Processing ForceDecks...")
+    if forcedecks_df is not None and not forcedecks_df.empty:
+        # Add full_name column using profileId
+        if 'profileId' in forcedecks_df.columns:
+            forcedecks_df['full_name'] = forcedecks_df['profileId'].apply(
+                lambda x: athlete_lookup.get(str(x), {}).get('full_name', f"Athlete_{str(x)[:8]}")
+            )
+            forcedecks_df['athlete_sport'] = forcedecks_df['profileId'].apply(
+                lambda x: athlete_lookup.get(str(x), {}).get('athlete_sport', 'Unknown')
+            )
+            matched = forcedecks_df['full_name'].apply(lambda x: not str(x).startswith('Athlete_')).sum()
+            print(f"    Matched {matched}/{len(forcedecks_df)} records with real athlete names")
+
+            # Save enriched ForceDecks file
+            output_file = FORCEDECKS_FILE.replace('.csv', '_enriched.csv')
+            forcedecks_df.to_csv(output_file, index=False)
+            print(f"    Saved: {output_file}")
+
+            # Also save to vald-data repo location
+            vald_data_output = FORCEDECKS_FILE.replace('Vald/data/master_files', 'vald-data/data')
+            if os.path.exists(os.path.dirname(vald_data_output)):
+                forcedecks_df.to_csv(vald_data_output, index=False)
+                print(f"    Saved: {vald_data_output}")
+    else:
+        print("    SKIP: No ForceDecks data loaded")
+
+    # Step 5: Process ForceFrame
+    print("\n[5] Processing ForceFrame...")
     if os.path.exists(FORCEFRAME_FILE):
         ff_df = pd.read_csv(FORCEFRAME_FILE)
         print(f"    Loaded {len(ff_df)} ForceFrame records")
@@ -266,8 +293,8 @@ def main():
     else:
         print(f"    SKIP: ForceFrame file not found")
 
-    # Step 5: Process NordBord
-    print("\n[5] Processing NordBord...")
+    # Step 6: Process NordBord
+    print("\n[6] Processing NordBord...")
     if os.path.exists(NORDBORD_FILE):
         nb_df = pd.read_csv(NORDBORD_FILE)
         print(f"    Loaded {len(nb_df)} NordBord records")
