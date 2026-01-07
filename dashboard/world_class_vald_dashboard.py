@@ -1801,7 +1801,7 @@ st.sidebar.metric("Sports", filtered_df['athlete_sport'].nunique() if 'athlete_s
 
 # Horizontal tabs - reorganized with ForceFrame/NordBord visible
 tabs = st.tabs([
-    "🏠 Home", "🔲 ForceFrame", "🦵 NordBord", "🏃 Athlete", "🦘 CMJ",
+    "🏠 Home", "📊 Reports", "🔲 ForceFrame", "🦵 NordBord", "🏃 Athlete", "🦘 CMJ",
     "💪 Iso", "🥏 Throws", "📉 Trace", "🏅 Sport", "⚠️ Risk",
     "🔀 Compare", "📈 Progress", "🏆 Rank", "🎯 Adv", "⭐ Insights", "📋 Data"
 ])
@@ -1885,7 +1885,7 @@ with tabs[0]:
 
 
 
-with tabs[3]:
+with tabs[4]:
     st.markdown("## 🏃 Athlete Deep Dive")
 
     athlete_list = sorted(filtered_df['Name'].unique()) if 'Name' in filtered_df.columns else []
@@ -2029,7 +2029,7 @@ with tabs[3]:
 
 
 
-with tabs[4]:
+with tabs[5]:
     st.markdown("## 🦘 CMJ (Countermovement Jump) Analysis")
     st.markdown("*Comprehensive bilateral analysis with research-backed insights*")
 
@@ -2069,7 +2069,7 @@ with tabs[4]:
 
 
 
-with tabs[5]:
+with tabs[6]:
     st.markdown("## 💪 Isometric Strength Analysis")
     st.markdown("*Single Leg & Double Leg IMTP (Isometric Mid-Thigh Pull)*")
 
@@ -2110,7 +2110,7 @@ with tabs[5]:
 
 
 
-with tabs[6]:
+with tabs[7]:
     st.markdown("## 🥏 Throws Training Dashboard")
     st.markdown("*Performance dashboard for Athletics athletes - tracking power, force, and technical consistency*")
 
@@ -2153,7 +2153,7 @@ with tabs[6]:
 
 
 
-with tabs[8]:
+with tabs[9]:
     st.markdown("## 🏅 Sport-Specific Analysis")
 
     # If no sports selected in sidebar, show all available sports
@@ -2235,7 +2235,7 @@ with tabs[8]:
 
 
 
-with tabs[9]:
+with tabs[10]:
     st.markdown("## ⚠️ Risk & Readiness Assessment")
 
     # Research-backed overview
@@ -2630,7 +2630,7 @@ with tabs[9]:
 
 
 
-with tabs[10]:
+with tabs[11]:
     st.markdown("## 🔀 Multi-Athlete Comparison")
 
     comparison_athletes = st.multiselect(
@@ -2704,7 +2704,7 @@ with tabs[10]:
 
 
 
-with tabs[11]:
+with tabs[12]:
     st.markdown("## 📈 Progress Tracking")
 
     st.markdown("""
@@ -2856,7 +2856,7 @@ with tabs[11]:
 
 
 
-with tabs[12]:
+with tabs[13]:
     st.markdown("## 📊 Team Benchmarks & Rankings")
 
     st.markdown("""
@@ -3029,7 +3029,7 @@ with tabs[12]:
 
 
 
-with tabs[7]:
+with tabs[8]:
     st.markdown("## 📉 Force Trace Analysis")
 
     # =========================================================================
@@ -4045,7 +4045,7 @@ with tabs[7]:
 
 
 
-with tabs[13]:
+with tabs[14]:
     st.markdown("## 🎯 Advanced Analytics")
 
     if not ADVANCED_VIZ_AVAILABLE:
@@ -4369,7 +4369,7 @@ with tabs[13]:
 
 
 
-with tabs[14]:
+with tabs[15]:
     st.markdown("## ⭐ Elite Insights - Advanced Analysis")
     st.markdown("Research-backed analysis from Patrick Ward (Nike), mattsams89, and elite sports science")
 
@@ -4764,7 +4764,7 @@ with tabs[14]:
 
 
 
-with tabs[15]:
+with tabs[16]:
     st.markdown("## 📋 Data Table View")
     st.markdown("Browse and export all testing data in table format")
 
@@ -4883,10 +4883,118 @@ with tabs[15]:
                     st.metric("Sports", display_df['athlete_sport'].nunique())
 
 # ============================================================================
-# PAGE: FORCEFRAME
+# PAGE: SPORT REPORTS (NEW)
 # ============================================================================
 
 with tabs[1]:
+    st.markdown("## 📊 Sport Reports")
+    st.markdown("""
+    <div style="background: linear-gradient(135deg, #007167 0%, #005a51 100%); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+        <p style="color: white; margin: 0; font-size: 0.95rem;">
+            <strong>Group & Individual Reports</strong> • Benchmark zones • Trend analysis over time
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Import sport reports module
+    try:
+        from dashboard.utils.sport_reports import (
+            create_group_report, create_individual_report,
+            render_benchmark_legend, get_sport_benchmarks
+        )
+        sport_reports_available = True
+    except ImportError:
+        try:
+            from utils.sport_reports import (
+                create_group_report, create_individual_report,
+                render_benchmark_legend, get_sport_benchmarks
+            )
+            sport_reports_available = True
+        except ImportError:
+            sport_reports_available = False
+            st.error("Sport reports module not found. Please check utils/sport_reports.py")
+
+    if sport_reports_available:
+        # Sport selector
+        available_sports = sorted(filtered_df['athlete_sport'].dropna().unique()) if 'athlete_sport' in filtered_df.columns else []
+
+        if available_sports:
+            selected_report_sport = st.selectbox(
+                "Select Sport:",
+                options=available_sports,
+                key="report_sport_selector"
+            )
+
+            # Report type tabs
+            report_tabs = st.tabs(["👥 Group Report", "🏃 Individual Report"])
+
+            # Render benchmark legend
+            render_benchmark_legend()
+
+            with report_tabs[0]:
+                # Group Report
+                st.markdown("### Team Performance Overview")
+
+                # Filter data for selected sport
+                sport_mask = filtered_df['athlete_sport'].str.contains(
+                    selected_report_sport.split()[0], case=False, na=False
+                ) if 'athlete_sport' in filtered_df.columns else pd.Series([True] * len(filtered_df))
+
+                sport_data = filtered_df[sport_mask].copy()
+
+                # Filter ForceFrame and NordBord for sport
+                sport_ff = filtered_forceframe.copy() if not filtered_forceframe.empty else pd.DataFrame()
+                sport_nb = filtered_nordbord.copy() if not filtered_nordbord.empty else pd.DataFrame()
+
+                if 'athlete_sport' in sport_ff.columns:
+                    sport_ff = sport_ff[sport_ff['athlete_sport'].str.contains(
+                        selected_report_sport.split()[0], case=False, na=False
+                    )]
+                if 'athlete_sport' in sport_nb.columns:
+                    sport_nb = sport_nb[sport_nb['athlete_sport'].str.contains(
+                        selected_report_sport.split()[0], case=False, na=False
+                    )]
+
+                create_group_report(
+                    sport_data,
+                    selected_report_sport,
+                    forceframe_df=sport_ff if not sport_ff.empty else None,
+                    nordbord_df=sport_nb if not sport_nb.empty else None
+                )
+
+            with report_tabs[1]:
+                # Individual Report
+                st.markdown("### Individual Athlete Analysis")
+
+                # Get athletes for selected sport
+                sport_athletes = sorted(
+                    filtered_df[sport_mask]['Name'].dropna().unique()
+                ) if 'Name' in filtered_df.columns else []
+
+                if sport_athletes:
+                    selected_report_athlete = st.selectbox(
+                        "Select Athlete:",
+                        options=sport_athletes,
+                        key="report_athlete_selector"
+                    )
+
+                    create_individual_report(
+                        filtered_df,
+                        selected_report_athlete,
+                        selected_report_sport,
+                        forceframe_df=filtered_forceframe if not filtered_forceframe.empty else None,
+                        nordbord_df=filtered_nordbord if not filtered_nordbord.empty else None
+                    )
+                else:
+                    st.info("No athletes found for the selected sport")
+        else:
+            st.warning("No sports found in the data. Check athlete_sport column.")
+
+# ============================================================================
+# PAGE: FORCEFRAME
+# ============================================================================
+
+with tabs[2]:
     st.markdown("## 🔲 ForceFrame Isometric Strength Analysis")
     st.markdown("""
     <div style="background: linear-gradient(135deg, #1D4D3B 0%, #2d6a5a 100%); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
@@ -5612,7 +5720,7 @@ with tabs[1]:
 # PAGE: NORDBORD
 # ============================================================================
 
-with tabs[2]:
+with tabs[3]:
     st.markdown("## 🦵 NordBord Hamstring Analysis")
     st.markdown("""
     <div style="background: linear-gradient(135deg, #c0392b 0%, #e74c3c 100%); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">

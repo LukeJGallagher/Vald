@@ -17,7 +17,8 @@
       "Bash(git add:*)",
       "Bash(gh run list:*)",
       "Bash(git clone:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(sort:*)"
     ],
     "deny": [],
     "ask": []

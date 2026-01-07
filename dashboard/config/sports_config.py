@@ -852,6 +852,138 @@ TEST_TYPE_CONFIG = {
 }
 
 
+# ============================================================================
+# TEST TIERS - Which tests each sport prioritizes
+# ============================================================================
+
+TEST_TIERS = {
+    'Tier1': ['CMJ', 'IMTP', 'NordBord'],  # Core tests all athletes do
+    'Tier2': ['SJ', 'DJ', 'Repeat Hop', 'ForceFrame'],  # Sport-specific
+    'Tier3': ['SLCMJ', 'Bench Press', 'Pull Up', 'Plyo Push Up']  # Specialized
+}
+
+
+# ============================================================================
+# SPORT REPORT LAYOUTS - Defines which sections each sport shows
+# ============================================================================
+
+SPORT_REPORT_LAYOUTS = {
+    'Swimming': {
+        'lower_body': {
+            'tests': ['IMTP', 'CMJ'],
+            'metrics': ['Peak Force / BM_Trial', 'Jump Height (Flight Time)_Trial', 'Peak Power / BM_Trial'],
+            'show_repeat_hop': True,
+        },
+        'upper_body': {
+            'tests': ['Bench Press', 'Pull Up', 'Plyo Push Up'],
+            'metrics': ['Peak Force_Trial', 'Peak Power_Trial'],
+            'show_section': True,
+        },
+        'shoulder_health': {
+            'forceframe_tests': ['Shoulder IR', 'Shoulder ER', 'Shoulder ASH'],
+            'show_section': True,
+        },
+        'hip_health': {
+            'forceframe_tests': ['Hip ABD', 'Hip ADD', 'Hip IR', 'Hip ER'],
+            'show_section': True,
+        },
+        'nordbord': {
+            'show_section': True,
+            'injury_threshold': 337,  # N - below this = 4.4x injury risk
+        },
+    },
+    'Athletics - Throws': {
+        'lower_body': {
+            'tests': ['IMTP', 'CMJ', 'SJ'],
+            'metrics': ['Peak Force / BM_Trial', 'Jump Height (Flight Time)_Trial', 'Peak Power / BM_Trial'],
+            'show_repeat_hop': True,
+        },
+        'upper_body': {
+            'tests': ['Bench Press', 'Pull Up'],
+            'metrics': ['Peak Force_Trial', 'Peak Power_Trial'],
+            'show_section': True,
+        },
+        'shoulder_health': {
+            'forceframe_tests': ['Shoulder IR', 'Shoulder ER'],
+            'show_section': True,
+        },
+        'hip_health': {
+            'forceframe_tests': ['Hip ABD', 'Hip ADD'],
+            'show_section': True,
+        },
+        'nordbord': {
+            'show_section': True,
+            'injury_threshold': 400,  # Higher threshold for power athletes
+        },
+    },
+    'Rowing': {
+        'lower_body': {
+            'tests': ['IMTP', 'CMJ'],
+            'metrics': ['Peak Force / BM_Trial', 'Jump Height (Flight Time)_Trial', 'Peak Power / BM_Trial'],
+            'show_repeat_hop': False,
+        },
+        'upper_body': {
+            'tests': ['Pull Up', 'Bench Press'],
+            'metrics': ['Peak Force_Trial'],
+            'show_section': True,
+        },
+        'shoulder_health': {
+            'forceframe_tests': ['Shoulder IR', 'Shoulder ER'],
+            'show_section': True,
+        },
+        'hip_health': {
+            'forceframe_tests': ['Hip ABD', 'Hip ADD'],
+            'show_section': True,
+        },
+        'nordbord': {
+            'show_section': True,
+            'injury_threshold': 350,
+        },
+    },
+    # Default layout for any sport not explicitly configured
+    'Default': {
+        'lower_body': {
+            'tests': ['IMTP', 'CMJ'],
+            'metrics': ['Peak Force / BM_Trial', 'Jump Height (Flight Time)_Trial', 'Peak Power / BM_Trial'],
+            'show_repeat_hop': True,
+        },
+        'upper_body': {
+            'tests': ['Bench Press', 'Pull Up'],
+            'metrics': ['Peak Force_Trial'],
+            'show_section': True,
+        },
+        'shoulder_health': {
+            'forceframe_tests': ['Shoulder IR', 'Shoulder ER'],
+            'show_section': True,
+        },
+        'hip_health': {
+            'forceframe_tests': ['Hip ABD', 'Hip ADD'],
+            'show_section': True,
+        },
+        'nordbord': {
+            'show_section': True,
+            'injury_threshold': 337,
+        },
+    },
+}
+
+
+def get_report_layout(sport: str) -> dict:
+    """Get the report layout configuration for a sport."""
+    # Try exact match
+    if sport in SPORT_REPORT_LAYOUTS:
+        return SPORT_REPORT_LAYOUTS[sport]
+
+    # Try partial match
+    sport_lower = sport.lower()
+    for key in SPORT_REPORT_LAYOUTS:
+        if sport_lower in key.lower() or key.lower() in sport_lower:
+            return SPORT_REPORT_LAYOUTS[key]
+
+    # Return default
+    return SPORT_REPORT_LAYOUTS['Default']
+
+
 if __name__ == "__main__":
     # Test the configuration
     print("Sport Benchmarks Loaded:")
