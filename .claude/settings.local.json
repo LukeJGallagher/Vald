@@ -12,7 +12,12 @@
       "Bash(git push:*)",
       "Bash(ls:*)",
       "Bash(powershell:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(dir \"c:\\\\Users\\\\l.gallagher\\\\OneDrive - Team Saudi\\\\Documents\\\\Performance Analysis\\\\vald-data\\\\data\"\")",
+      "Bash(git add:*)",
+      "Bash(gh run list:*)",
+      "Bash(git clone:*)",
+      "Bash(grep:*)"
     ],
     "deny": [],
     "ask": []

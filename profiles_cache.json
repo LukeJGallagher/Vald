@@ -1,0 +1,6062 @@
+[
+  {
+    "profileId": "d5dd75e7-33e6-4c94-b5fc-000f71f6090b",
+    "syncId": null,
+    "givenName": "Mohammed",
+    "familyName": "Almaher",
+    "dateOfBirth": "2007-08-30T00:00:00",
+    "externalId": "1139598492",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "66ab9001-483c-46d1-93ac-00217871f260",
+    "syncId": null,
+    "givenName": "FAROUQ",
+    "familyName": "BAIK",
+    "dateOfBirth": "2004-03-15T00:00:00",
+    "externalId": "1124042548",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "580d6e53-b16a-4ca8-9bb7-007b1d141959",
+    "syncId": null,
+    "givenName": "Yousef ",
+    "familyName": "Almarzoq",
+    "dateOfBirth": "2009-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "49401ac9-5b4a-4cb3-8a6a-00da40bf0a1f",
+    "syncId": null,
+    "givenName": "Youssef",
+    "familyName": "madawi",
+    "dateOfBirth": "2009-03-03T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "1da3e187-cd48-4f4a-aa5b-01faa43c74c6",
+    "syncId": null,
+    "givenName": "IDRIS",
+    "familyName": "SUFYANI",
+    "dateOfBirth": "1995-03-13T00:00:00",
+    "externalId": "1085285722",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "0d6cfcb8-5bb1-4aa8-972f-020a646feaa0",
+    "syncId": null,
+    "givenName": "Rida",
+    "familyName": "Alzouri",
+    "dateOfBirth": "2009-05-08T00:00:00",
+    "externalId": "1146558810",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "dea5e52e-ee91-45b2-b8d3-02b077a0aa4d",
+    "syncId": null,
+    "givenName": "Mubarak",
+    "familyName": "alymi",
+    "dateOfBirth": "2008-04-30T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "034b3434-64c1-4595-9b84-02fb41fa96f8",
+    "syncId": null,
+    "givenName": "Rayan ",
+    "familyName": "Al thafeeri",
+    "dateOfBirth": "2009-03-06T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "65a0c635-a83d-4a9b-9333-04161be436cb",
+    "syncId": null,
+    "givenName": "Noor",
+    "familyName": "Al-Maskin",
+    "dateOfBirth": "2009-12-05T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "9fde0293-ad6b-468f-a898-0594950a2d81",
+    "syncId": null,
+    "givenName": "Jenan ",
+    "familyName": "Altaher",
+    "dateOfBirth": "2012-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "81a34be4-7a0b-4bd8-bb95-05b9dad72ecc",
+    "syncId": null,
+    "givenName": "JAMAAN",
+    "familyName": "ALZAHRANI",
+    "dateOfBirth": "1995-10-21T00:00:00",
+    "externalId": "1092517745",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "f3f4ae30-aaaa-4280-8097-070191dfc2ce",
+    "syncId": null,
+    "givenName": "Abdulmajed",
+    "familyName": "Ghaferi ",
+    "dateOfBirth": "2004-08-22T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "9d87f1ee-f30e-40b8-b7ea-08465ac06037",
+    "syncId": null,
+    "givenName": "OSAMAH",
+    "familyName": "ALMARWAI",
+    "dateOfBirth": "1992-11-04T00:00:00",
+    "externalId": "2548950902",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "93d54a82-c309-4dd5-ac71-085c25fe517e",
+    "syncId": null,
+    "givenName": "Abdullah",
+    "familyName": "Almohaimeed",
+    "dateOfBirth": "2008-06-28T00:00:00",
+    "externalId": "1142983996",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "65dd7cef-4454-4a46-9625-08aef29dd1e1",
+    "syncId": null,
+    "givenName": "Seham ",
+    "familyName": "Zaid",
+    "dateOfBirth": "2004-06-12T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "73d6db4e-d59f-4a88-8519-09069d31cac6",
+    "syncId": null,
+    "givenName": " Ali ",
+    "familyName": "AlObaid ",
+    "dateOfBirth": "2011-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "7709d0e1-0f34-4a50-b2bd-092435676d49",
+    "syncId": null,
+    "givenName": "Jwan",
+    "familyName": "Abdullrabalrida",
+    "dateOfBirth": "2011-08-30T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "ef769f96-8631-461b-a947-092b943e9f54",
+    "syncId": null,
+    "givenName": "Haidar ",
+    "familyName": "Al khazal",
+    "dateOfBirth": "2010-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "44bbac98-8ef5-4771-bdd2-094ba2cf79df",
+    "syncId": null,
+    "givenName": "Bader ",
+    "familyName": "Barqawi",
+    "dateOfBirth": "2010-01-15T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "f340dc69-5d6c-44cb-936c-097b0348f771",
+    "syncId": null,
+    "givenName": "Abdelrahman ",
+    "familyName": "Al Amri",
+    "dateOfBirth": "2011-04-18T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "b7fed65c-4b9b-4fa1-acfd-098cf46e87f7",
+    "syncId": null,
+    "givenName": "Mohammed",
+    "familyName": "AlShriedh",
+    "dateOfBirth": "1981-07-23T00:00:00",
+    "externalId": "1034888501",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "650d46f8-da79-4562-a0b5-099414ab3db4",
+    "syncId": null,
+    "givenName": "Saud",
+    "familyName": "Haqawi",
+    "dateOfBirth": "2006-01-05T00:00:00",
+    "externalId": "1132484898",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "406e14f8-07e2-4a07-ba54-09b5f894b52b",
+    "syncId": null,
+    "givenName": "MAHMOUD",
+    "familyName": "HAWSAWI",
+    "dateOfBirth": "2004-11-19T00:00:00",
+    "externalId": "1126927803",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "e5f28ef3-7613-4b95-befd-0ad69dd4676b",
+    "syncId": null,
+    "givenName": "Abdulrahman",
+    "familyName": "Alrajhi",
+    "dateOfBirth": "1995-01-01T00:00:00",
+    "externalId": "1099490870",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "0dae394d-a535-4484-bcec-0b5229e259c8",
+    "syncId": null,
+    "givenName": "Faisal",
+    "familyName": "Maghrabi",
+    "dateOfBirth": "1999-04-11T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "5964e0a3-110e-44bb-90f9-0b97a751e065",
+    "syncId": null,
+    "givenName": " Tamim ",
+    "familyName": "AlThubaiti ",
+    "dateOfBirth": "2010-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "ed6a3eba-0e39-480d-bfd6-0bc84250a237",
+    "syncId": null,
+    "givenName": "Ali",
+    "familyName": "Alhashim",
+    "dateOfBirth": "2006-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "1dbc51bc-20fa-4c57-ab73-0cde2237df8b",
+    "syncId": null,
+    "givenName": "Abduljalil",
+    "familyName": "Mukhtarof",
+    "dateOfBirth": "2025-10-30T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "045819d6-5eea-4a24-a5ec-0cf3f69b807e",
+    "syncId": null,
+    "givenName": "Mohammed",
+    "familyName": "Alzaki",
+    "dateOfBirth": "2006-11-17T00:00:00",
+    "externalId": "1151422951",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "625c2b65-ee3c-4fd9-aca4-0d55cef57c9b",
+    "syncId": null,
+    "givenName": "Yahya",
+    "familyName": "Ghazwani",
+    "dateOfBirth": "2010-02-26T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "8fd6fc8b-ecb6-4555-a726-0d5695d006be",
+    "syncId": null,
+    "givenName": "Tahani",
+    "familyName": "Al-Qahtani",
+    "dateOfBirth": "1999-03-08T00:00:00",
+    "externalId": "1104533383",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "14d90c96-2c14-496a-8fd0-0db1209d304f",
+    "syncId": null,
+    "givenName": "Ali a",
+    "familyName": "Aleid",
+    "dateOfBirth": "2007-11-30T00:00:00",
+    "externalId": "1140399849",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "46eadd60-6458-4bc7-a8f5-0e60a623ad7e",
+    "syncId": null,
+    "givenName": "Muhsin",
+    "familyName": "Al Dabboos",
+    "dateOfBirth": "2000-07-25T00:00:00",
+    "externalId": "1109635605",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "13e421ff-005b-4021-bdce-0e8c35329e46",
+    "syncId": null,
+    "givenName": "Nouraa ",
+    "familyName": "AlMasahar",
+    "dateOfBirth": "2011-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "a4bbec9a-48fe-45f2-8bbf-0f260124f455",
+    "syncId": null,
+    "givenName": "Naif",
+    "familyName": "Alsubaie",
+    "dateOfBirth": "2007-06-28T00:00:00",
+    "externalId": "1139343170",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "95bc5253-f590-431d-900c-0fa3c28e5dfd",
+    "syncId": null,
+    "givenName": "Ahmed",
+    "familyName": "Al-Naama",
+    "dateOfBirth": "2009-03-26T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "2a8bcc7a-6ac3-4895-9ace-1063a39710df",
+    "syncId": null,
+    "givenName": "Ali",
+    "familyName": "Al Hawar",
+    "dateOfBirth": "2008-01-20T00:00:00",
+    "externalId": "1141200111",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "2fa297a5-2ad4-4f13-b844-10cb5f46f073",
+    "syncId": null,
+    "givenName": "Hussain",
+    "familyName": "Al Abdulbaqi",
+    "dateOfBirth": "2007-01-16T00:00:00",
+    "externalId": "1137275721",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "1175bfc1-3dab-46bb-869b-10f4b7d237ce",
+    "syncId": null,
+    "givenName": "Ali  ",
+    "familyName": "AlOmani",
+    "dateOfBirth": "2010-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "64efa040-0223-4431-a499-110cc110c567",
+    "syncId": null,
+    "givenName": "Mohammed",
+    "familyName": "Alamr",
+    "dateOfBirth": "2004-03-22T00:00:00",
+    "externalId": "1125568244",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "51e3b974-e5fc-420d-9c74-11236bfcac96",
+    "syncId": null,
+    "givenName": "Zahraa",
+    "familyName": "Al-Sanona",
+    "dateOfBirth": "2009-11-18T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "8b456ed3-fc8b-436c-a8a8-1127ca7558a9",
+    "syncId": null,
+    "givenName": "hessa",
+    "familyName": " alshateel",
+    "dateOfBirth": "2011-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "53d9d92e-3c9d-49e8-8b1c-11aa6a9538f5",
+    "syncId": null,
+    "givenName": " Yahya ",
+    "familyName": "AlHamoud ",
+    "dateOfBirth": "2011-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "6714bf01-be2d-42a9-b3bf-11acddc8bb57",
+    "syncId": null,
+    "givenName": "Huda",
+    "familyName": "Julaikh",
+    "dateOfBirth": "2011-04-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "2d1a0d28-73c5-4632-9894-1212ee42d5bf",
+    "syncId": null,
+    "givenName": "HASSAN",
+    "familyName": "ALHARTHI",
+    "dateOfBirth": "2004-09-25T00:00:00",
+    "externalId": "1133176444",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "2a22e74f-61a9-407f-afa2-128d08bc7c43",
+    "syncId": null,
+    "givenName": "Rawan",
+    "familyName": "Alhamoudi",
+    "dateOfBirth": "1997-08-25T00:00:00",
+    "externalId": "1096400831",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "cd206d8b-776d-46f1-bd74-131bf3604870",
+    "syncId": null,
+    "givenName": "Zainab ",
+    "familyName": "AlMatar",
+    "dateOfBirth": "2012-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "aabae9a7-5714-458a-9694-1453f345c14f",
+    "syncId": null,
+    "givenName": "Saud ",
+    "familyName": "Alfaifi",
+    "dateOfBirth": "2008-07-14T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "3f7ae829-ad09-4885-b681-14c837e3ae00",
+    "syncId": null,
+    "givenName": "KHALID",
+    "familyName": "ALMEKAINZI",
+    "dateOfBirth": "2000-12-30T00:00:00",
+    "externalId": "1116611425",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "d0482184-06e1-400d-bfd3-14dd4b81b0b3",
+    "syncId": null,
+    "givenName": "Faisal",
+    "familyName": "Ghorab",
+    "dateOfBirth": "2006-04-08T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "11e58514-250e-47d5-b1b7-14e264a0d831",
+    "syncId": null,
+    "givenName": "Abdullah ",
+    "familyName": "Khalid aldossary",
+    "dateOfBirth": "2000-01-19T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "c1f67142-a326-45e4-b928-1509bf532e2b",
+    "syncId": null,
+    "givenName": "ksa",
+    "familyName": "team",
+    "dateOfBirth": "2010-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "aad7b160-ee94-4161-ab68-1576c730d2b6",
+    "syncId": null,
+    "givenName": "Shamsah",
+    "familyName": "Almosalm",
+    "dateOfBirth": "2000-11-09T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "a6090a26-c88a-4b43-8525-158e6b135dfc",
+    "syncId": null,
+    "givenName": "FAISAL",
+    "familyName": "ABED",
+    "dateOfBirth": "1998-08-19T00:00:00",
+    "externalId": "1100671054",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "ef22328b-d27e-46a9-b416-159bbce88eaa",
+    "syncId": null,
+    "givenName": "ZIYAD",
+    "familyName": "ALKHURAYB",
+    "dateOfBirth": "1996-05-20T00:00:00",
+    "externalId": "1094845086",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "950b11bb-7105-4147-86dc-15a1d627cedf",
+    "syncId": null,
+    "givenName": "Mohammed",
+    "familyName": "Raghib",
+    "dateOfBirth": "2007-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "b04efece-c32e-4e5f-a44b-15cc83d16c27",
+    "syncId": null,
+    "givenName": "Ghala ",
+    "familyName": " ALDuhaim",
+    "dateOfBirth": "2009-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "6725f774-1558-47a8-947f-160d4ee9dc5a",
+    "syncId": null,
+    "givenName": "Nuha",
+    "familyName": "AlMuhaisni",
+    "dateOfBirth": "1999-11-06T00:00:00",
+    "externalId": "1111900484",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "e5df66b0-057e-42ee-a304-162459bf8cdd",
+    "syncId": null,
+    "givenName": "Maria",
+    "familyName": "Al-Zurqi",
+    "dateOfBirth": "2011-01-09T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "475afeff-a03d-4a2a-9533-179307213df1",
+    "syncId": null,
+    "givenName": "Sief",
+    "familyName": "Alqaed",
+    "dateOfBirth": "2006-08-12T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "107387ec-6625-485f-b402-179b7715d903",
+    "syncId": null,
+    "givenName": "Aws",
+    "familyName": "Al Aithan",
+    "dateOfBirth": "2000-04-05T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "ad6634ad-98e2-426d-a986-1977667a7cef",
+    "syncId": null,
+    "givenName": "Daniyah",
+    "familyName": "ALHayrani",
+    "dateOfBirth": "2009-10-31T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "1b2cb294-5d19-4129-9120-1a6286f41a20",
+    "syncId": null,
+    "givenName": "Salma ",
+    "familyName": "Almuhana",
+    "dateOfBirth": "2012-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "2af19e09-0c6a-4952-8d05-1b2a70b3d75f",
+    "syncId": null,
+    "givenName": "Zakaria",
+    "familyName": "Ghali",
+    "dateOfBirth": "1997-12-03T00:00:00",
+    "externalId": "2535687053",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "11240852-9521-4f59-8d00-1c6502f3938b",
+    "syncId": null,
+    "givenName": "Ebrahim",
+    "familyName": "Alqassem",
+    "dateOfBirth": "2005-10-31T00:00:00",
+    "externalId": "1131229039",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "ad8a380a-efcb-4157-a762-1ca9fd6567ab",
+    "syncId": null,
+    "givenName": "Hanan",
+    "familyName": "Alammar",
+    "dateOfBirth": "2005-08-29T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "79da632f-224f-4cee-aed6-1cbd9dff6f8f",
+    "syncId": null,
+    "givenName": "Abdulaziz ",
+    "familyName": " Almuqirn",
+    "dateOfBirth": "2008-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "4f4be8af-8ed4-4d87-820a-1d07079c9694",
+    "syncId": null,
+    "givenName": "Paul",
+    "familyName": "Stretch",
+    "dateOfBirth": "1984-02-10T00:00:00",
+    "externalId": "12354",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "e3323999-a885-402d-9d06-1d2ad91e9dfe",
+    "syncId": null,
+    "givenName": "Mishari",
+    "familyName": "Al-Ghamdi",
+    "dateOfBirth": "2009-07-06T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "8c0a11e7-6f20-4945-98a6-1d2c9112797e",
+    "syncId": null,
+    "givenName": "Abdullah",
+    "familyName": "Alqahtani",
+    "dateOfBirth": "2007-12-14T00:00:00",
+    "externalId": "1140575406",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "d7db26b4-7d92-4b77-8f6d-1d8d8d4fa626",
+    "syncId": null,
+    "givenName": "Yousef",
+    "familyName": "Jar",
+    "dateOfBirth": "2006-05-06T00:00:00",
+    "externalId": "1134439452",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "f149970f-3269-48bf-b921-1e30a64ab636",
+    "syncId": null,
+    "givenName": "Giorgio",
+    "familyName": "Da Lozzo ",
+    "dateOfBirth": "1976-06-13T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "80b63866-8224-4830-bcdc-1ec836b32593",
+    "syncId": null,
+    "givenName": "Hatim",
+    "familyName": "Alshammari",
+    "dateOfBirth": "1989-08-20T00:00:00",
+    "externalId": "1066475912",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "77231f3e-e616-4771-b2f9-1edfd77c61d5",
+    "syncId": null,
+    "givenName": "Noura",
+    "familyName": "Alhussain",
+    "dateOfBirth": "2006-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "06af4543-79fe-420b-966d-1ef37a7b5561",
+    "syncId": null,
+    "givenName": "Youssef",
+    "familyName": "Albinali",
+    "dateOfBirth": "2007-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "5680638d-80a1-488d-8b71-1ef46684493d",
+    "syncId": null,
+    "givenName": "JAWAD",
+    "familyName": "ALALAWI",
+    "dateOfBirth": "1998-12-11T00:00:00",
+    "externalId": "1102351986",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "39bde4b2-90e8-438d-be57-1f0bc8fd228f",
+    "syncId": null,
+    "givenName": "Abdulaziz",
+    "familyName": "alsaedi",
+    "dateOfBirth": "2006-01-08T00:00:00",
+    "externalId": "1132263185",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "be895f37-3bbb-4799-aca5-1f5282d33829",
+    "syncId": null,
+    "givenName": "Hashem",
+    "familyName": "Alkhadrawi",
+    "dateOfBirth": "2003-05-04T00:00:00",
+    "externalId": "1120229255",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "26bc0278-5b01-4f91-b40d-1f8a2dc926f1",
+    "syncId": null,
+    "givenName": "Ahmed",
+    "familyName": "alhussain",
+    "dateOfBirth": "1996-03-18T00:00:00",
+    "externalId": "1092767175",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "d77ddc92-7dba-41f7-8cb1-1f9647a4927d",
+    "syncId": null,
+    "givenName": "Ameen",
+    "familyName": " Al-Sahwa",
+    "dateOfBirth": "2012-02-04T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "82097ff4-cc1e-4b93-bd09-1fb6c96a3e57",
+    "syncId": null,
+    "givenName": "mariem",
+    "familyName": " Qari",
+    "dateOfBirth": "2014-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "ecff6868-03f6-4e60-b5a8-2015b83e613f",
+    "syncId": null,
+    "givenName": "husain",
+    "familyName": "al duhylib",
+    "dateOfBirth": "2004-07-10T00:00:00",
+    "externalId": "1125608784",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "5329d8a1-bd58-4930-844a-2077593e1dc9",
+    "syncId": null,
+    "givenName": "Maryam",
+    "familyName": "Alkhazal",
+    "dateOfBirth": "2009-05-03T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "fc7de5fa-33c2-418c-9ce0-217ab677e0ca",
+    "syncId": null,
+    "givenName": "Abdulelah",
+    "familyName": "Albali",
+    "dateOfBirth": "2000-07-25T00:00:00",
+    "externalId": "1112472046",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "fb6d8852-d3bd-46dc-b1aa-218ae92f92d2",
+    "syncId": null,
+    "givenName": "Abdulrahman",
+    "familyName": "Alsairi",
+    "dateOfBirth": "2005-01-07T00:00:00",
+    "externalId": "1130026253",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "a35bc826-3757-4dbf-81b9-2271072ab9f9",
+    "syncId": null,
+    "givenName": "Ahmed",
+    "familyName": "AlYaseen",
+    "dateOfBirth": "1999-08-19T00:00:00",
+    "externalId": "1104739469",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "fc2542cc-3ee1-454c-bdd4-23888e4c983f",
+    "syncId": null,
+    "givenName": "MOHAMMED",
+    "familyName": "RIZQ ALLAH",
+    "dateOfBirth": "1989-05-11T00:00:00",
+    "externalId": "1072498833",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "e5115f66-2038-44a8-946d-23f474df4f07",
+    "syncId": null,
+    "givenName": "Ibrahim",
+    "familyName": "Alhadi",
+    "dateOfBirth": "2008-11-26T00:00:00",
+    "externalId": "1145031736",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "af876e8b-af1b-434b-9e62-2583b2a2cab6",
+    "syncId": null,
+    "givenName": "Hussain",
+    "familyName": "Alrashid",
+    "dateOfBirth": "2008-04-29T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "25341f02-842a-42e8-bed9-258c4a45c111",
+    "syncId": null,
+    "givenName": "Mohammed ",
+    "familyName": "Alhajii",
+    "dateOfBirth": "2009-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "db01d8ff-f8dd-4dd4-addb-25d9d18efe8e",
+    "syncId": null,
+    "givenName": "Abdullah",
+    "familyName": "Mohameed",
+    "dateOfBirth": "1997-05-05T00:00:00",
+    "externalId": "1215076694",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "c0bab718-57f6-40f5-99b9-2621e0883fe8",
+    "syncId": null,
+    "givenName": "FARIS",
+    "familyName": "KASHMEERI",
+    "dateOfBirth": "1996-03-06T00:00:00",
+    "externalId": "1121048803",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "cd47ef33-8542-4dae-a6d7-268840bffc53",
+    "syncId": null,
+    "givenName": "Abdulwahid ",
+    "familyName": "Bati ",
+    "dateOfBirth": "2009-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "4ab38229-cb16-48c0-b55b-2699b59c054a",
+    "syncId": null,
+    "givenName": "Ahmed",
+    "familyName": "Sharbatly",
+    "dateOfBirth": "1980-12-04T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "de32002d-aaad-48c9-b8ac-26fe8517cff9",
+    "syncId": null,
+    "givenName": "Saud",
+    "familyName": "Jaber",
+    "dateOfBirth": "2008-04-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "8b79e59b-a8b4-44a5-9a94-273b742c7264",
+    "syncId": null,
+    "givenName": "Nasser",
+    "familyName": "Abdo",
+    "dateOfBirth": "2002-03-25T00:00:00",
+    "externalId": "1115459735",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "f20c0b08-6e83-4ce3-8785-27704f647e93",
+    "syncId": null,
+    "givenName": "Dunya",
+    "familyName": "AbuTaleb",
+    "dateOfBirth": "1997-06-17T00:00:00",
+    "externalId": "1100360674",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "009b5d03-1040-4877-af5b-27af63527364",
+    "syncId": null,
+    "givenName": "Dhari",
+    "familyName": "Alabbas",
+    "dateOfBirth": "2010-07-17T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "459a5fd6-d54f-4a8b-8c07-27b307b5d875",
+    "syncId": null,
+    "givenName": "Ahmed",
+    "familyName": "Bin Qasim",
+    "dateOfBirth": "2007-09-08T00:00:00",
+    "externalId": "1139646143",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "1caf2ce6-5c8e-489b-aaf4-2806b476469c",
+    "syncId": null,
+    "givenName": "Abdulrahman",
+    "familyName": "Hasan",
+    "dateOfBirth": "2005-10-30T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "d39c979c-6649-409b-8038-2813ec2858af",
+    "syncId": null,
+    "givenName": "Rose",
+    "familyName": "Alfarhan",
+    "dateOfBirth": "2010-07-08T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "a6ad8be8-2be8-4834-8394-28ca414714cb",
+    "syncId": null,
+    "givenName": "Noura",
+    "familyName": "Aldossary",
+    "dateOfBirth": "2011-03-20T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "079f2f8e-3031-4624-94da-291f3b3c4013",
+    "syncId": null,
+    "givenName": "Salem",
+    "familyName": "Al-Mahri",
+    "dateOfBirth": "2010-08-12T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "2c928ab7-7019-46dd-99c6-296e2a00f19e",
+    "syncId": null,
+    "givenName": "MOHAMMED",
+    "familyName": "ALMUBARAK",
+    "dateOfBirth": "2008-01-02T00:00:00",
+    "externalId": "1140976323",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "7d527a0d-8ed2-49e3-ad07-29b8e670c0d7",
+    "syncId": null,
+    "givenName": "Alikhan ",
+    "familyName": "Zhabrailov",
+    "dateOfBirth": "1994-04-14T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "88807c8e-a479-4f27-8c87-2a19601ec510",
+    "syncId": null,
+    "givenName": " haidar ",
+    "familyName": "alhashem",
+    "dateOfBirth": "2012-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "e9b78ce1-b8ad-43b5-932f-2a256a4db36a",
+    "syncId": null,
+    "givenName": " Mohammed ",
+    "familyName": "AlObaid",
+    "dateOfBirth": "2011-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "c875c945-5ed5-4ab6-aeba-2a7ebcb6963a",
+    "syncId": null,
+    "givenName": "Osama",
+    "familyName": "Hawsawi",
+    "dateOfBirth": "2008-07-23T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "4c642d48-20a5-4e06-a5b8-2b24cf85d726",
+    "syncId": null,
+    "givenName": "Noura",
+    "familyName": "Abdullah",
+    "dateOfBirth": "1990-10-17T00:00:00",
+    "externalId": "1071641342",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "45ebc199-63d4-44a1-80f5-2ba64aef8343",
+    "syncId": null,
+    "givenName": "ahmed",
+    "familyName": "almahdi",
+    "dateOfBirth": "2008-10-15T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "48f2a075-0e52-41a7-bdd1-2bc68ba35d66",
+    "syncId": null,
+    "givenName": "Mohammed",
+    "familyName": "AL Dubaisi",
+    "dateOfBirth": "1992-07-01T00:00:00",
+    "externalId": "1077147153",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "d723a493-8b2a-4a20-9e13-2c1e495f6838",
+    "syncId": null,
+    "givenName": "Nujom ",
+    "familyName": "Alsobaie",
+    "dateOfBirth": "2007-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "45e48ded-ff4a-4766-bb13-2c5d2e334f36",
+    "syncId": null,
+    "givenName": "Mohammed",
+    "familyName": "Eisa Al-Subaei",
+    "dateOfBirth": "2009-01-26T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "b91671d4-3beb-4c9d-abfa-2c8a81325e00",
+    "syncId": null,
+    "givenName": "Dalma",
+    "familyName": "Malhas",
+    "dateOfBirth": "1992-02-01T00:00:00",
+    "externalId": "1077039715",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "d134cc33-a0ee-4f08-ac1b-2c990fb00e2b",
+    "syncId": null,
+    "givenName": "Ali",
+    "familyName": "Kalitit",
+    "dateOfBirth": "2005-11-19T00:00:00",
+    "externalId": "1132541127",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "7472016f-65c0-404c-a024-2cc2e637e876",
+    "syncId": null,
+    "givenName": "VALDSup",
+    "familyName": "DELETE",
+    "dateOfBirth": "2000-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "1030c824-c2e0-4597-93ce-2cf711200524",
+    "syncId": null,
+    "givenName": "Adnan",
+    "familyName": "Softa",
+    "dateOfBirth": "2003-12-22T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "c6e216bb-b2de-4e06-9f55-2da065f39c6e",
+    "syncId": null,
+    "givenName": "Muteb",
+    "familyName": "Buhari",
+    "dateOfBirth": "2007-09-24T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "75a23476-831b-432b-bfbf-2dbb29fb7ec8",
+    "syncId": null,
+    "givenName": "Gharam",
+    "familyName": "Mansour kaabi",
+    "dateOfBirth": "2003-01-19T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "cd28551d-2193-4db1-93f0-2e8ebb39613f",
+    "syncId": null,
+    "givenName": "Reda",
+    "familyName": "kashkash",
+    "dateOfBirth": "2014-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "f72a6086-d9d0-47f2-9359-2e9110c74aa0",
+    "syncId": null,
+    "givenName": "Ahmed",
+    "familyName": "Alqudaihi",
+    "dateOfBirth": "1998-04-05T00:00:00",
+    "externalId": "1099509703",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "b5dd50de-a3ee-4fc5-8c41-2eea08a8975a",
+    "syncId": null,
+    "givenName": "Abdulmohsem",
+    "familyName": "shouwaiby",
+    "dateOfBirth": "2010-04-09T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "11c5924a-7b97-403b-baff-2f732d9df1c0",
+    "syncId": null,
+    "givenName": "Eyad",
+    "familyName": "Alturayk",
+    "dateOfBirth": "1995-08-23T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "ad9b0def-687f-4a09-b273-300f7d8f51e7",
+    "syncId": null,
+    "givenName": "Ibrahim",
+    "familyName": "Almarzuqi",
+    "dateOfBirth": "2007-12-18T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "a529aaa2-40c5-464e-add2-306daae3caa0",
+    "syncId": null,
+    "givenName": "Omar",
+    "familyName": "Albuzaya",
+    "dateOfBirth": "2003-05-16T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "9f8eef66-02ac-45f5-bd25-30ab254ab07e",
+    "syncId": null,
+    "givenName": "Mashhoor",
+    "familyName": "Al-Juaid",
+    "dateOfBirth": "2010-08-12T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "b89bde87-b78e-44bd-914c-3126d9a06327",
+    "syncId": null,
+    "givenName": "Mohammed",
+    "familyName": "Alzawri",
+    "dateOfBirth": "2007-09-29T00:00:00",
+    "externalId": "1139874984",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "27386398-3672-4adb-90cf-31884a462a7a",
+    "syncId": null,
+    "givenName": "Nawal",
+    "familyName": "hazaz",
+    "dateOfBirth": "2009-04-19T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "a18fd573-cc29-49f0-939e-3242f5715f55",
+    "syncId": null,
+    "givenName": "Nouf",
+    "familyName": "Alanezi",
+    "dateOfBirth": "2010-12-29T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "881e3c2a-8f3c-4ce9-9a6e-32a118febab9",
+    "syncId": null,
+    "givenName": "Talene",
+    "familyName": "Alkudmani",
+    "dateOfBirth": "2009-05-31T00:00:00",
+    "externalId": "1147034548",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "44e4a398-9bcb-4f32-aa2a-32a8e20eea90",
+    "syncId": null,
+    "givenName": "Abdulmalik",
+    "familyName": "Maimani",
+    "dateOfBirth": "2005-05-31T00:00:00",
+    "externalId": "1130063116",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "82d031e7-a5fc-4733-8902-32cd0450527c",
+    "syncId": null,
+    "givenName": "Sami",
+    "familyName": "Bakhit",
+    "dateOfBirth": "2005-12-06T00:00:00",
+    "externalId": "1141588929",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "ed4991af-7740-4a34-a1d6-330ef3b94f39",
+    "syncId": null,
+    "givenName": "Ahmad",
+    "familyName": "Almuwallad",
+    "dateOfBirth": "1997-11-05T00:00:00",
+    "externalId": "1101373296",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "a5dd2699-ddd0-4897-9612-33434702ab4e",
+    "syncId": null,
+    "givenName": "Faraj",
+    "familyName": "Alnashri",
+    "dateOfBirth": "1999-05-26T00:00:00",
+    "externalId": "1106320151",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "ba845408-f262-4e23-ae27-334c604d7189",
+    "syncId": null,
+    "givenName": "Mohammed",
+    "familyName": "Alsayed",
+    "dateOfBirth": "2006-02-20T00:00:00",
+    "externalId": "1133069854",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "313d4c45-42a5-4da8-adfe-33889491fe8f",
+    "syncId": null,
+    "givenName": "Tarek",
+    "familyName": "Zawawi",
+    "dateOfBirth": "2008-03-11T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "12095e66-022c-46f1-8d41-34c1aa3ce8db",
+    "syncId": null,
+    "givenName": "Eyad",
+    "familyName": "Alharbi",
+    "dateOfBirth": "2007-07-29T00:00:00",
+    "externalId": "1139362006",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "21de2a5b-6b76-40d3-afc5-3505e0b9d605",
+    "syncId": null,
+    "givenName": "Lujan",
+    "familyName": "Fahmi atiah",
+    "dateOfBirth": "2004-01-19T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "c4c14b1a-9de4-416e-9199-352c762baa86",
+    "syncId": null,
+    "givenName": "Mohammed ",
+    "familyName": "Asiri",
+    "dateOfBirth": "2001-05-22T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "eb73ecea-a4ac-492d-ae48-352e34469549",
+    "syncId": null,
+    "givenName": "MAJD",
+    "familyName": "HAWSAWI",
+    "dateOfBirth": "2007-03-12T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "2ab1ceac-f598-4776-bfb6-3544d91df14a",
+    "syncId": null,
+    "givenName": "SLAEH",
+    "familyName": "ALBeladi",
+    "dateOfBirth": "2007-01-22T00:00:00",
+    "externalId": "1137174940",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "a21df502-75b0-4d56-a4f7-3545ba0263a0",
+    "syncId": null,
+    "givenName": "Basel",
+    "familyName": "Othman ",
+    "dateOfBirth": "2007-06-18T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "62822061-7e40-46a4-9936-3561a22477d9",
+    "syncId": null,
+    "givenName": "AMAL",
+    "familyName": "ALSHEHRI",
+    "dateOfBirth": "2005-02-16T00:00:00",
+    "externalId": "1128488226",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "4bf0db4d-d033-4276-990c-3575837fec67",
+    "syncId": null,
+    "givenName": "Abdulaziz",
+    "familyName": "Al Jadani",
+    "dateOfBirth": "1996-05-05T00:00:00",
+    "externalId": "1108449065",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "66184afb-53d2-4a41-9aef-35a11c31c0d0",
+    "syncId": null,
+    "givenName": "WALEED",
+    "familyName": "SAEED",
+    "dateOfBirth": "2008-03-10T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "141c7579-5ee9-4b67-8dc2-35a167cefcff",
+    "syncId": null,
+    "givenName": "Hussain",
+    "familyName": "AlHarbi",
+    "dateOfBirth": "1976-06-28T00:00:00",
+    "externalId": "1049833435",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "d1fd576d-0194-4a55-8a89-35db798ea795",
+    "syncId": null,
+    "givenName": "Rakan",
+    "familyName": "Al Salamah",
+    "dateOfBirth": "2007-12-08T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "2a375067-3162-41cd-8427-36e52fbb489b",
+    "syncId": null,
+    "givenName": "Alwateen",
+    "familyName": "Al-Moaibi",
+    "dateOfBirth": "2011-09-04T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "c785be9e-2cb2-4509-ab81-375c65e53268",
+    "syncId": null,
+    "givenName": "Leen",
+    "familyName": "Alfouzan",
+    "dateOfBirth": "2006-02-10T00:00:00",
+    "externalId": "1132793959",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "7a5482f1-afc1-4d43-8c1d-378371364910",
+    "syncId": null,
+    "givenName": "HANAN",
+    "familyName": "HAZAZI",
+    "dateOfBirth": "2000-08-10T00:00:00",
+    "externalId": "1123827931",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "4aa9e708-faf4-42aa-bd53-37abd81f3f65",
+    "syncId": null,
+    "givenName": "MOHRAH",
+    "familyName": "ALENEZI",
+    "dateOfBirth": "1984-02-28T00:00:00",
+    "externalId": "1011776653",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "a62f9cd1-25f2-4f75-8b34-385e1dc2dc66",
+    "syncId": null,
+    "givenName": "AHMED",
+    "familyName": "BARAHMAH",
+    "dateOfBirth": "2000-10-19T00:00:00",
+    "externalId": "1109781946",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "995f2024-702d-4dc0-a648-387854a8f73a",
+    "syncId": null,
+    "givenName": "Khalifah",
+    "familyName": "Alomairi",
+    "dateOfBirth": "1998-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "61aed778-ee8c-414b-81b0-38b93e19a5e9",
+    "syncId": null,
+    "givenName": "Ali",
+    "familyName": "Alfuzaya",
+    "dateOfBirth": "2009-03-18T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "cb385e1f-3e4a-48c8-8cea-396f8225762a",
+    "syncId": null,
+    "givenName": "Abdulmajeed",
+    "familyName": "Al-Zahrani",
+    "dateOfBirth": "2011-06-14T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "40f565b7-d187-4b7d-9907-3ae2cb3291f3",
+    "syncId": null,
+    "givenName": "Dunya",
+    "familyName": "Saber",
+    "dateOfBirth": "2003-04-18T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "daedadfc-2bd5-4cef-a7ed-3b177f39ec09",
+    "syncId": null,
+    "givenName": "Hussine",
+    "familyName": "Al dihelab",
+    "dateOfBirth": "2011-02-26T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "e858a2bb-06a2-4597-9b90-3b8fa4480696",
+    "syncId": null,
+    "givenName": "Aqeel ",
+    "familyName": "Aljassim",
+    "dateOfBirth": "2004-09-22T00:00:00",
+    "externalId": "1126366150",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "95c676cf-eb5a-40b0-9194-3bb77ec24ccf",
+    "syncId": null,
+    "givenName": "Forat ",
+    "familyName": "Moailo",
+    "dateOfBirth": "2008-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "c900320d-d2fc-43d1-a8e5-3bc863e796d6",
+    "syncId": null,
+    "givenName": "Abdelrahman",
+    "familyName": "al Nashmi",
+    "dateOfBirth": "2011-04-17T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "5cf7bcad-58c5-400b-b7fa-3c1307b984fd",
+    "syncId": null,
+    "givenName": "Fawaz",
+    "familyName": "Alfuwiz",
+    "dateOfBirth": "2006-07-11T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "5755a61d-3ca8-499d-8a7c-3c5650dda126",
+    "syncId": null,
+    "givenName": "Hassan",
+    "familyName": "Al Ahsaiy",
+    "dateOfBirth": "2005-09-25T00:00:00",
+    "externalId": "1131072009",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "13d04a2f-b296-456a-97bb-3c6acde88e68",
+    "syncId": null,
+    "givenName": "Coach ali ",
+    "familyName": "Ibrahim al Obaid ",
+    "dateOfBirth": "1988-05-07T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "e2ecdcc1-aa49-4350-8ba3-3c9c0841a85d",
+    "syncId": null,
+    "givenName": "ABDULAziz",
+    "familyName": "ALSIF",
+    "dateOfBirth": "2006-01-14T00:00:00",
+    "externalId": "1132335413",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "508c6a59-c5e7-45f1-8577-3cd107cce029",
+    "syncId": null,
+    "givenName": "Fahad",
+    "familyName": "Alkhathami",
+    "dateOfBirth": "1990-05-27T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "7fe72461-6b99-4199-b12b-3d1914190401",
+    "syncId": null,
+    "givenName": "ABDULLAH",
+    "familyName": "ALGHAZI",
+    "dateOfBirth": "2001-03-21T00:00:00",
+    "externalId": "1110897152",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "59be0310-842d-4621-b586-3e02d6c15d69",
+    "syncId": null,
+    "givenName": "Abeer ",
+    "familyName": "Alarji ",
+    "dateOfBirth": "2006-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "09b716d6-2c7f-4706-8643-3e510fb4af6a",
+    "syncId": null,
+    "givenName": "Nujud",
+    "familyName": "Khormi",
+    "dateOfBirth": "2005-05-04T00:00:00",
+    "externalId": "1129497465",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "30cffbb0-4052-4ec0-9aca-3e777b6655fd",
+    "syncId": null,
+    "givenName": "Mayar ",
+    "familyName": "Yahya ",
+    "dateOfBirth": "2005-03-06T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "396ea839-a059-43da-9436-3fb0dc4024bd",
+    "syncId": null,
+    "givenName": "RAKAN",
+    "familyName": "ALQAHTANI",
+    "dateOfBirth": "1996-11-26T00:00:00",
+    "externalId": "1117978138",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "b3ce6002-bcb8-4310-819c-40e27b46a24f",
+    "syncId": null,
+    "givenName": "Ziyad",
+    "familyName": "Almesalim",
+    "dateOfBirth": "2007-09-26T00:00:00",
+    "externalId": "1139803363",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "a8cbca04-c845-42d9-a1dc-41f96e723f47",
+    "syncId": null,
+    "givenName": "NOURA",
+    "familyName": "ALDAKHIL",
+    "dateOfBirth": "1998-06-04T00:00:00",
+    "externalId": "1102180252",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "0f5d1e89-48f5-4d2d-ae8a-42aaa4e48a45",
+    "syncId": null,
+    "givenName": "Abrar",
+    "familyName": "Bukhari",
+    "dateOfBirth": "1990-09-09T00:00:00",
+    "externalId": "1067593291",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "421a69c2-b662-4fa8-8c43-43334ead2b22",
+    "syncId": null,
+    "givenName": "Mayar",
+    "familyName": "Tonisi",
+    "dateOfBirth": "2007-03-17T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "bc827de2-15ac-45f6-84bb-44325b81830a",
+    "syncId": null,
+    "givenName": "MALAK",
+    "familyName": "ALKHULAIDI",
+    "dateOfBirth": "2005-04-23T00:00:00",
+    "externalId": "2217044060",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "57dfa61b-bfe6-4068-ab54-44e13b5d4a63",
+    "syncId": null,
+    "givenName": "ABDULAZIZ",
+    "familyName": "ALSHAMANI",
+    "dateOfBirth": "2004-04-11T00:00:00",
+    "externalId": "1124458447",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "2943be62-560c-43bd-aeb0-45068de6eab9",
+    "syncId": null,
+    "givenName": "Marwan ",
+    "familyName": "Alharbi",
+    "dateOfBirth": "2009-08-13T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "cca2d3d4-97f7-4c2b-965d-4542456637cb",
+    "syncId": null,
+    "givenName": "Mutairah",
+    "familyName": "Alshamri ",
+    "dateOfBirth": "2007-08-12T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "1af4e86a-62bf-4092-99d8-46a0222a7521",
+    "syncId": null,
+    "givenName": "YOUSSEF",
+    "familyName": "HASHEM",
+    "dateOfBirth": "2003-06-15T00:00:00",
+    "externalId": "1120772338",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "ae1ae60c-6f13-457b-a100-46cc9ba9b8a2",
+    "syncId": null,
+    "givenName": "Abdullah",
+    "familyName": "Almushraf",
+    "dateOfBirth": "2007-01-09T00:00:00",
+    "externalId": "1136929302",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "de9fd06d-dc0c-4b2f-9afc-46d96a9e846a",
+    "syncId": null,
+    "givenName": "ABDUMALIK",
+    "familyName": "AL MURDHI",
+    "dateOfBirth": "1993-01-05T00:00:00",
+    "externalId": "1082374727",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "bf03683a-e5ef-4dd6-bd59-4742670ce15c",
+    "syncId": null,
+    "givenName": "ali",
+    "familyName": "al abdlwahab",
+    "dateOfBirth": "2008-08-10T00:00:00",
+    "externalId": "1143532958",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "fd9f88a1-ab1f-4c70-8a69-47705d2b96e4",
+    "syncId": null,
+    "givenName": "Sager",
+    "familyName": "Al malki",
+    "dateOfBirth": "2007-09-28T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "b5b71dbf-f64f-475b-99b9-4795cf395e64",
+    "syncId": null,
+    "givenName": "Hibah",
+    "familyName": "Umar",
+    "dateOfBirth": "2001-02-11T00:00:00",
+    "externalId": "2216824983",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "a52e6b1d-dfc4-43d1-94fe-482bfa02ea34",
+    "syncId": null,
+    "givenName": "Mohamed",
+    "familyName": "Al-Subaie",
+    "dateOfBirth": "2004-08-11T00:00:00",
+    "externalId": "1126183191",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "e3f9de28-6a89-483f-8c42-484704cc15e9",
+    "syncId": null,
+    "givenName": "ABDULRAHMAN",
+    "familyName": "ALQURASHI",
+    "dateOfBirth": "1997-12-27T00:00:00",
+    "externalId": "1122659632",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "260d2b37-b0c5-460d-b585-490229bbb641",
+    "syncId": null,
+    "givenName": " Faisal  ",
+    "familyName": "AlSaeed ",
+    "dateOfBirth": "2008-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "307ded4b-e2dc-4aa4-8a3a-49309200d3b6",
+    "syncId": null,
+    "givenName": "Najla ",
+    "familyName": "Alotaibi ",
+    "dateOfBirth": "1998-08-16T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "6a49ae95-2456-4ebd-8eff-493f845478f2",
+    "syncId": null,
+    "givenName": "Haya",
+    "familyName": "Almamy ",
+    "dateOfBirth": "1994-06-08T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "09262106-4d6b-47da-8bc1-49973c911a48",
+    "syncId": null,
+    "givenName": "Lin",
+    "familyName": "alyoussef",
+    "dateOfBirth": "2010-12-31T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "27d7b045-203d-4e6a-8107-4a99e54ed35c",
+    "syncId": null,
+    "givenName": "Oais ",
+    "familyName": "Halawani",
+    "dateOfBirth": "2009-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "1a712a5d-8394-4648-bfeb-4bbd542e0196",
+    "syncId": null,
+    "givenName": "Jawad",
+    "familyName": "Sardidi",
+    "dateOfBirth": "2002-02-14T00:00:00",
+    "externalId": "1115064295",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "21acd5e0-ba39-45f0-b7f4-4c9e032a4ed5",
+    "syncId": null,
+    "givenName": "Faisal",
+    "familyName": "Ali",
+    "dateOfBirth": "2001-10-25T00:00:00",
+    "externalId": "1120053341",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "107de35b-3322-41ba-aa5b-4d325b38e742",
+    "syncId": null,
+    "givenName": "Abbas",
+    "familyName": "Al Mahdi",
+    "dateOfBirth": "2007-03-16T00:00:00",
+    "externalId": "1137580500",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "ce461a19-0e36-4709-ab4d-4d54bd5bec11",
+    "syncId": null,
+    "givenName": "THAMER",
+    "familyName": "ALZAHRANI",
+    "dateOfBirth": "1988-12-27T00:00:00",
+    "externalId": "1102561535",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "5a16cdfa-2fb5-4a6b-81b4-4d779043d3ec",
+    "syncId": null,
+    "givenName": "OMAR",
+    "familyName": "NADA",
+    "dateOfBirth": "2004-12-21T00:00:00",
+    "externalId": "1129924153",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "8063b06d-6455-4dfd-89b2-4ddae2215327",
+    "syncId": null,
+    "givenName": "Zaid",
+    "familyName": "Alalamah",
+    "dateOfBirth": "2008-06-03T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "818155a2-f7e0-4ddd-960f-4fa1e3233ae8",
+    "syncId": null,
+    "givenName": "Azzam",
+    "familyName": "abu Baker",
+    "dateOfBirth": "2004-09-13T00:00:00",
+    "externalId": "2272250024",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "a229185c-9234-4f83-a9a0-4fff9cc157b7",
+    "syncId": null,
+    "givenName": "Mashael",
+    "familyName": "AlAyed",
+    "dateOfBirth": "2006-12-18T00:00:00",
+    "externalId": "1137283824",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "8abcd3ce-80ac-40bc-9933-50e1ac5d6861",
+    "syncId": null,
+    "givenName": "Rahaf",
+    "familyName": "Aljohi",
+    "dateOfBirth": "1996-09-17T00:00:00",
+    "externalId": "1092528890",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "fd8d9d6c-a147-44ac-b3d0-524975061d9f",
+    "syncId": null,
+    "givenName": "HAYA",
+    "familyName": "ALSHEIKH",
+    "dateOfBirth": "2002-02-17T00:00:00",
+    "externalId": "1130820283",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "73c8a1df-f7af-4fc5-ae22-52de749a25c8",
+    "syncId": null,
+    "givenName": "Seham",
+    "familyName": "ziad ",
+    "dateOfBirth": "2004-06-12T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "32b939fb-2ae7-4f14-95e9-52eb1ccec24a",
+    "syncId": null,
+    "givenName": "SULTAN",
+    "familyName": "ALHEBSHI",
+    "dateOfBirth": "1983-02-23T00:00:00",
+    "externalId": "1009936004",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "fc278bf5-04b9-4840-a64f-53258f995626",
+    "syncId": null,
+    "givenName": "Saeid",
+    "familyName": "AlMutairi",
+    "dateOfBirth": "1968-09-23T00:00:00",
+    "externalId": "1032742437",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "f2f6db97-b186-4a5c-af3a-5333fc0ad6b4",
+    "syncId": null,
+    "givenName": "Batool",
+    "familyName": "Baban",
+    "dateOfBirth": "2009-05-27T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "ebaf21e1-0080-464f-8cb2-53a4bdde7c65",
+    "syncId": null,
+    "givenName": "Abdulsalam ",
+    "familyName": "AlEnzi",
+    "dateOfBirth": "2011-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "931205a5-23e0-498d-91f0-53fc5daa907c",
+    "syncId": null,
+    "givenName": "KHALED",
+    "familyName": "ALGHAMDI",
+    "dateOfBirth": "2001-03-26T00:00:00",
+    "externalId": "1111057988",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "332cff29-a39d-4007-aac4-543bdb27e54a",
+    "syncId": null,
+    "givenName": "MESHAL",
+    "familyName": "AWAJI",
+    "dateOfBirth": "2007-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "de39b1a9-13e2-41fd-b246-551bf097ea9b",
+    "syncId": null,
+    "givenName": "Renad",
+    "familyName": "albeshi",
+    "dateOfBirth": "2009-11-17T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "d3bdccef-8a86-4232-b8b6-5525d0489b55",
+    "syncId": null,
+    "givenName": "Hussam",
+    "familyName": "AlMutairi",
+    "dateOfBirth": "2009-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "15586ea9-0ec6-416a-a605-554b9a49be86",
+    "syncId": null,
+    "givenName": "Youseef",
+    "familyName": "Masrahi",
+    "dateOfBirth": "1987-12-31T00:00:00",
+    "externalId": "1097524860",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "9aa7b681-8bc9-49fc-9ba8-555b869b4de4",
+    "syncId": null,
+    "givenName": "Ibrahim",
+    "familyName": "Hakami",
+    "dateOfBirth": "2000-07-30T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "65a5b1a8-a6be-4284-9403-55e7c398e95a",
+    "syncId": null,
+    "givenName": "Ghada ",
+    "familyName": " Alghanam",
+    "dateOfBirth": "2013-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "ef329f63-46a0-45b8-81dd-568cf0dc1a35",
+    "syncId": null,
+    "givenName": "LINA",
+    "familyName": "QARI",
+    "dateOfBirth": "1997-07-24T00:00:00",
+    "externalId": "1086710033",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "0a8bb6d5-02d4-4188-888b-56b37391b330",
+    "syncId": null,
+    "givenName": "JAMILAH",
+    "familyName": "ALQARNI",
+    "dateOfBirth": "1988-11-23T00:00:00",
+    "externalId": "1057829655",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "2fd886cf-9342-4d46-96d4-5726e89ba704",
+    "syncId": null,
+    "givenName": "KHALED",
+    "familyName": "HABAB",
+    "dateOfBirth": "2009-04-12T00:00:00",
+    "externalId": "1146227838",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "2f261849-eff7-4ddb-b65e-57848e16a837",
+    "syncId": null,
+    "givenName": "Edrees ",
+    "familyName": "Sufaine ",
+    "dateOfBirth": "1997-08-22T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "5f452414-c87a-499e-9dae-579bb8596b14",
+    "syncId": null,
+    "givenName": "Muneer",
+    "familyName": "al Shemrani",
+    "dateOfBirth": "2012-06-23T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "435b553a-7540-46b5-b1c8-57cc63a36990",
+    "syncId": null,
+    "givenName": "Turki",
+    "familyName": "Alharbi",
+    "dateOfBirth": "2007-10-04T00:00:00",
+    "externalId": "100581368665",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "fee6d867-c4f9-445d-a101-5800a5a38af3",
+    "syncId": null,
+    "givenName": "Saud",
+    "familyName": "Alhajri",
+    "dateOfBirth": "2005-06-12T00:00:00",
+    "externalId": "1129685499",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "db665964-dc3d-4c48-b283-581584d01a8f",
+    "syncId": null,
+    "givenName": "Sulaiman",
+    "familyName": "Hamad",
+    "dateOfBirth": "1994-05-19T00:00:00",
+    "externalId": "1086271994",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "dd723b59-d8ee-4210-8912-582d02bcdb6b",
+    "syncId": null,
+    "givenName": "Mohanad",
+    "familyName": "hamdi",
+    "dateOfBirth": "2005-08-08T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "1f427172-8bad-4cc3-92e2-58b4ca935bc2",
+    "syncId": null,
+    "givenName": "Saad",
+    "familyName": "AlDowsari",
+    "dateOfBirth": "1987-08-20T00:00:00",
+    "externalId": "1067949550",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "f55d01f0-8a58-4042-8537-58edd4289641",
+    "syncId": null,
+    "givenName": "Safar",
+    "familyName": "AlDosari",
+    "dateOfBirth": "1984-07-26T00:00:00",
+    "externalId": "1047579840",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "6d5f5ff1-f0c2-4207-bb29-59b50bee387e",
+    "syncId": null,
+    "givenName": "HANI",
+    "familyName": "ALNAKHLI",
+    "dateOfBirth": "1986-03-14T00:00:00",
+    "externalId": "1023886649",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "a01fe30f-da7b-4e7e-a3b3-59f7d5d2030b",
+    "syncId": null,
+    "givenName": "noura ",
+    "familyName": "Alshaikh",
+    "dateOfBirth": "2024-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "6caed337-7596-4d6c-aab8-5a0c8200c252",
+    "syncId": null,
+    "givenName": "Meshary",
+    "familyName": "Albisher",
+    "dateOfBirth": "1991-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "3aeba8c4-a342-4ae1-85d1-5a1ce632b31c",
+    "syncId": null,
+    "givenName": "Mariam",
+    "familyName": "Kaki",
+    "dateOfBirth": "2004-07-13T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "7d27600c-f1f0-4f1f-bb15-5ad15575cd52",
+    "syncId": null,
+    "givenName": "Hala",
+    "familyName": "Khadawardi",
+    "dateOfBirth": "2008-07-05T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "fb37e51b-9ff3-4d46-87a8-5b2a3afdde7d",
+    "syncId": null,
+    "givenName": "WALEED",
+    "familyName": "ALI",
+    "dateOfBirth": "2008-03-10T00:00:00",
+    "externalId": "1141787455",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "f0708ed9-7276-47b2-945e-5dea537440af",
+    "syncId": null,
+    "givenName": "Ali",
+    "familyName": "Mas",
+    "dateOfBirth": "2002-04-19T00:00:00",
+    "externalId": "1115772871",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "d82cd9d7-e10c-41ec-8458-5df37d2540de",
+    "syncId": null,
+    "givenName": "Ali",
+    "familyName": "AbdulGhani",
+    "dateOfBirth": "1995-06-05T00:00:00",
+    "externalId": "1086141700",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "d1b94bdf-efc5-441c-98fd-5e1b17cb6210",
+    "syncId": null,
+    "givenName": "Mahmoud",
+    "familyName": "Al Humayd",
+    "dateOfBirth": "1993-09-05T00:00:00",
+    "externalId": "1078405725",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "bc9e805c-bf1d-448a-b268-5e50f1634b12",
+    "syncId": null,
+    "givenName": "Amro",
+    "familyName": "Brqawi",
+    "dateOfBirth": "2009-01-25T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "a375d0ad-e327-43e2-b4ca-5e83b0f40cb0",
+    "syncId": null,
+    "givenName": "EMAD",
+    "familyName": "ALSIBIANI",
+    "dateOfBirth": "2008-04-17T00:00:00",
+    "externalId": "114233614",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "a1a94c0c-aaa3-48c4-922d-5ee35b82d1e0",
+    "syncId": null,
+    "givenName": "Ghadah",
+    "familyName": "AlAtiek",
+    "dateOfBirth": "2002-01-27T00:00:00",
+    "externalId": "1115181289",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "9b65936a-dea7-431c-a9e7-5f8c6cc0af7a",
+    "syncId": null,
+    "givenName": "AMAL",
+    "familyName": "ALMUHAYSHI",
+    "dateOfBirth": "1988-03-01T00:00:00",
+    "externalId": "1050429321",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "2347fae7-dcd9-498e-841a-6026005333fa",
+    "syncId": null,
+    "givenName": "Salma ",
+    "familyName": "Alghlaini ",
+    "dateOfBirth": "2009-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "9da346ad-e4d9-460c-b287-6120caf16081",
+    "syncId": null,
+    "givenName": "Ruba",
+    "familyName": "Almasri",
+    "dateOfBirth": "2001-11-06T00:00:00",
+    "externalId": "1116969690",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "c5fc044e-c085-452b-9e08-6193bdb72bde",
+    "syncId": null,
+    "givenName": "ALI",
+    "familyName": "ALNASSER",
+    "dateOfBirth": "2003-12-29T00:00:00",
+    "externalId": "1123776831",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "97ab1fa4-d0ec-4dae-ab20-6196caf23f2b",
+    "syncId": null,
+    "givenName": "HASSAN",
+    "familyName": "DAWSHI",
+    "dateOfBirth": "1991-06-06T00:00:00",
+    "externalId": "1072662859",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "031ef627-2f78-43d4-afde-62282be8f9c8",
+    "syncId": null,
+    "givenName": "GUSEYN",
+    "familyName": "GASHIMOV",
+    "dateOfBirth": "2005-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "7a5a6964-facc-4d00-9ce5-626ca3724035",
+    "syncId": null,
+    "givenName": "Omar",
+    "familyName": "Alakkas",
+    "dateOfBirth": "2002-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "f8e71d37-5dec-456c-bf0a-62b82a9dd45c",
+    "syncId": null,
+    "givenName": "faisal",
+    "familyName": "alqahtani",
+    "dateOfBirth": "2009-04-13T00:00:00",
+    "externalId": "1146175136",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "a33ccddf-ad41-4b1d-99da-6316916412bd",
+    "syncId": null,
+    "givenName": "Mussad",
+    "familyName": "Alsubaie",
+    "dateOfBirth": "2008-02-20T00:00:00",
+    "externalId": "1141455111",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "8e2cc2e8-16bb-4240-be58-6359b1a69056",
+    "syncId": null,
+    "givenName": "OMAR",
+    "familyName": "Amer",
+    "dateOfBirth": "2006-07-12T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "f24a1ac5-d423-43b5-96b9-636198c50e44",
+    "syncId": null,
+    "givenName": "Eyad",
+    "familyName": "Bamahfouz",
+    "dateOfBirth": "2008-11-23T00:00:00",
+    "externalId": "1146684541",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "e2939745-55b8-4741-9f84-63c89e769a46",
+    "syncId": null,
+    "givenName": "Abdullah ",
+    "familyName": "Al Bishi",
+    "dateOfBirth": "2011-12-12T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "308924c6-8348-4b49-b53a-64fba5f74279",
+    "syncId": null,
+    "givenName": "Nouha",
+    "familyName": "AlGhamdi",
+    "dateOfBirth": "1997-04-21T00:00:00",
+    "externalId": "1094586615",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "4cb6f4df-bcf2-4fd9-9873-654052cf06ac",
+    "syncId": null,
+    "givenName": "Fatimah",
+    "familyName": "Baban",
+    "dateOfBirth": "2009-01-16T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "658f4a7f-7b80-4589-b511-656556f2e3dc",
+    "syncId": null,
+    "givenName": "NAJAT",
+    "familyName": "ALGHAMDI",
+    "dateOfBirth": "1995-09-17T00:00:00",
+    "externalId": "1087868137",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "c3fcf078-220a-49e6-a677-657f13b667c4",
+    "syncId": null,
+    "givenName": "Jehad",
+    "familyName": "Alobaid",
+    "dateOfBirth": "2007-02-08T00:00:00",
+    "externalId": "1137264311",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "dc5a2bff-03a3-40e1-aff5-65b93514da43",
+    "syncId": null,
+    "givenName": "mohammad",
+    "familyName": "obaid",
+    "dateOfBirth": "2009-07-18T00:00:00",
+    "externalId": "1147372088",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "4c05242e-124c-485c-abea-661d648d77aa",
+    "syncId": null,
+    "givenName": "Saad",
+    "familyName": "Alsaif",
+    "dateOfBirth": "2008-05-04T00:00:00",
+    "externalId": "1141622421",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "39fad1ac-c598-4e24-ba0f-665b612e6c51",
+    "syncId": null,
+    "givenName": "AHMED",
+    "familyName": "ALALWANI",
+    "dateOfBirth": "2003-09-02T00:00:00",
+    "externalId": "1121899072",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "99029194-e5ad-4570-80d6-67089da41c31",
+    "syncId": null,
+    "givenName": "Fazzaa",
+    "familyName": "Alsaiari",
+    "dateOfBirth": "2007-10-06T00:00:00",
+    "externalId": "1145820823",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "fff36913-e976-4ab3-a08e-671f049744e3",
+    "syncId": null,
+    "givenName": "Ahmed",
+    "familyName": "Alomran",
+    "dateOfBirth": "2008-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "1b40e1b2-2acd-4570-801c-672ed2c98dec",
+    "syncId": null,
+    "givenName": "Nada",
+    "familyName": "Abdullah ",
+    "dateOfBirth": "1989-08-10T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "842dd0c7-de97-4351-bb4b-684f97b347c2",
+    "syncId": null,
+    "givenName": "Taiba",
+    "familyName": "Alsharif",
+    "dateOfBirth": "2004-10-22T00:00:00",
+    "externalId": "1152665962",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "69710465-d21f-44a2-9840-688de9b59872",
+    "syncId": null,
+    "givenName": "Zied",
+    "familyName": "Alalamah",
+    "dateOfBirth": "2001-01-19T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "1fa59cab-2ff6-4a6d-99b8-6960df524449",
+    "syncId": null,
+    "givenName": "Saleh ",
+    "familyName": "ALSUWAILEM",
+    "dateOfBirth": "2025-05-25T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "3c255323-d1dd-4ab3-b802-6a6e24e4bf88",
+    "syncId": null,
+    "givenName": "Abdulaziz",
+    "familyName": "abufalah",
+    "dateOfBirth": "2008-11-12T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "80a3e923-0f37-4c61-a35a-6ae50851b6b4",
+    "syncId": null,
+    "givenName": "Ghazi",
+    "familyName": "Baker",
+    "dateOfBirth": "1997-04-15T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "bda63ddc-7ed1-471b-908d-6b050c7bb27e",
+    "syncId": null,
+    "givenName": "Fayik",
+    "familyName": "Abdi",
+    "dateOfBirth": "2000-01-01T00:00:00",
+    "externalId": "1097228108",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "8034e253-fc2d-47bd-a530-6b53a57d0535",
+    "syncId": null,
+    "givenName": "moayad",
+    "familyName": "Alraashidi",
+    "dateOfBirth": "2002-08-04T00:00:00",
+    "externalId": "1124754597",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "a57165ba-3933-45c1-955e-6b785c320b48",
+    "syncId": null,
+    "givenName": "DHAY",
+    "familyName": "ALAMIRI",
+    "dateOfBirth": "1987-10-08T00:00:00",
+    "externalId": "1140400399",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "9d1dc9aa-62fd-4fdc-b7e0-6b809c71d8d5",
+    "syncId": null,
+    "givenName": "NADHA",
+    "familyName": "ALHUMAYDANI",
+    "dateOfBirth": "1977-06-18T00:00:00",
+    "externalId": "1013340375",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "a68c132b-e772-4cca-8b1e-6b9410c6d344",
+    "syncId": null,
+    "givenName": "Abdulaziz",
+    "familyName": "khaldi",
+    "dateOfBirth": "2009-04-14T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "0a45bdfe-62be-4694-9cfe-6db27a3782a0",
+    "syncId": null,
+    "givenName": "AbdullahAli ",
+    "familyName": "AlObaid",
+    "dateOfBirth": "2008-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "a02d43e0-93b2-4d80-8d63-6dea718f9e69",
+    "syncId": null,
+    "givenName": "Fayez",
+    "familyName": "AL. Subaie",
+    "dateOfBirth": "2001-12-21T00:00:00",
+    "externalId": "1114567116",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "407ccd05-d582-4db9-bd98-6e26d52f85f1",
+    "syncId": null,
+    "givenName": "ABDULBARI",
+    "familyName": "ALHWSAWI",
+    "dateOfBirth": "2008-02-10T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "6ff60141-a3d6-40a5-b37c-6e7d095bb65c",
+    "syncId": null,
+    "givenName": "Osama",
+    "familyName": "Saib",
+    "dateOfBirth": "2005-02-21T00:00:00",
+    "externalId": "1128193552",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "3a85c993-e60d-47da-b3d5-6e98d260c693",
+    "syncId": null,
+    "givenName": "Khadija",
+    "familyName": "Bashamakh",
+    "dateOfBirth": "2004-11-06T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "4192d07c-9861-4729-a8c4-6f72f15bed92",
+    "syncId": null,
+    "givenName": " Kadi",
+    "familyName": "AlTuwaiher",
+    "dateOfBirth": "2011-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "8e040083-a2f9-414e-9235-70958e37009a",
+    "syncId": null,
+    "givenName": "Mahmoud",
+    "familyName": "Ibrahim",
+    "dateOfBirth": "1993-06-07T00:00:00",
+    "externalId": "Mahmoud Ibrahim",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "bb263645-b528-4a68-82b3-70d1f15ffb9f",
+    "syncId": null,
+    "givenName": "Abdulla",
+    "familyName": "Asiri",
+    "dateOfBirth": "2007-04-22T00:00:00",
+    "externalId": "1138058563",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "c983f5f9-bb46-47bb-87ce-70f144bb3939",
+    "syncId": null,
+    "givenName": "Ben Qacim",
+    "familyName": "Ahmed",
+    "dateOfBirth": "2007-09-08T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "2ed89f05-cc7d-4162-a87f-71c6f010a7f0",
+    "syncId": null,
+    "givenName": "Abdulrahman",
+    "familyName": "Arafat",
+    "dateOfBirth": "2009-12-29T00:00:00",
+    "externalId": "1149417410",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "ee0a865c-4735-4eb1-9b5f-71f21f7c47f1",
+    "syncId": null,
+    "givenName": "Essa",
+    "familyName": "Jerah",
+    "dateOfBirth": "2001-08-29T00:00:00",
+    "externalId": "1113169724",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "26bc779f-0247-4a25-9dfa-72fe3edfc12c",
+    "syncId": null,
+    "givenName": "Kawthar",
+    "familyName": "Al-Hujairat",
+    "dateOfBirth": "2010-11-02T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "7ccfe2a2-a434-4a37-a848-73c9bcf03b3a",
+    "syncId": null,
+    "givenName": "Fazaa",
+    "familyName": "al say\u2019ari",
+    "dateOfBirth": "2007-10-06T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "c8f173eb-8b60-4225-bf41-73ec12cfce93",
+    "syncId": null,
+    "givenName": "Abdulelah",
+    "familyName": "Asiri",
+    "dateOfBirth": "2024-07-16T00:00:00",
+    "externalId": "1108641000",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "93e3a01e-1057-4a82-b4fc-74423db86a25",
+    "syncId": null,
+    "givenName": "Ali",
+    "familyName": "Alshayeb",
+    "dateOfBirth": "2010-12-13T00:00:00",
+    "externalId": "1167385150",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "b4f0d058-e25d-4b42-abc1-744f5227897e",
+    "syncId": null,
+    "givenName": "Ahmed ",
+    "familyName": "Alkhamash",
+    "dateOfBirth": "2010-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "a3db84c0-53c0-47ec-aada-74d0a327a5c4",
+    "syncId": null,
+    "givenName": "ABDULLATIF",
+    "familyName": "ALBAKRI",
+    "dateOfBirth": "2007-11-17T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "c5f2d3f9-8790-414f-b68d-7513f8a8337c",
+    "syncId": null,
+    "givenName": "Abdulrahman ",
+    "familyName": "Adam",
+    "dateOfBirth": "2008-09-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "c40b80df-a9da-4622-96a1-753daf4ad613",
+    "syncId": null,
+    "givenName": "Radan",
+    "familyName": "Aldoosri",
+    "dateOfBirth": "2006-10-06T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "859fb325-08c8-40db-8249-765d9aac1966",
+    "syncId": null,
+    "givenName": "Mohammad ",
+    "familyName": "Al Harbi",
+    "dateOfBirth": "2011-11-11T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "c373eca8-b4bb-48e7-983a-768cdef38d15",
+    "syncId": null,
+    "givenName": "zaid ",
+    "familyName": "almasoud",
+    "dateOfBirth": "2012-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "a0e28383-fdba-4eb6-9aeb-76900bbda220",
+    "syncId": null,
+    "givenName": "Yousef",
+    "familyName": "Almedarham",
+    "dateOfBirth": "2005-07-25T00:00:00",
+    "externalId": "1130220989",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "d5d6412b-2b86-417a-aa80-771dcf51162f",
+    "syncId": null,
+    "givenName": "Husam",
+    "familyName": "Al aseri",
+    "dateOfBirth": "2009-10-14T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "05ed3369-300c-4901-867f-772bb0bb2775",
+    "syncId": null,
+    "givenName": "ELYAS",
+    "familyName": "BANJAR",
+    "dateOfBirth": "2009-04-04T00:00:00",
+    "externalId": "1146524507",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "f7afdfd9-5161-4a73-8211-77733be793bb",
+    "syncId": null,
+    "givenName": "HASSAN",
+    "familyName": "BARNAWI",
+    "dateOfBirth": "2001-09-12T00:00:00",
+    "externalId": "1113531816",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "7a48f32c-4a44-412b-8b90-78115e939a22",
+    "syncId": null,
+    "givenName": "Sanad",
+    "familyName": "Sufyani",
+    "dateOfBirth": "2003-01-08T00:00:00",
+    "externalId": "1119038360",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "e115b2c2-ff02-4aa8-bb83-78ff584e69a3",
+    "syncId": null,
+    "givenName": " Ziyad ",
+    "familyName": "AlRifi",
+    "dateOfBirth": "2011-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "3c2f61a2-55de-4ba0-a71a-798d51bc6c13",
+    "syncId": null,
+    "givenName": "Bader",
+    "familyName": "Al Ghamdi",
+    "dateOfBirth": "2006-06-30T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "9a6877c7-a6fa-45dc-8f35-7a0b65a14fb7",
+    "syncId": null,
+    "givenName": "Fajr ",
+    "familyName": "AlKhaibari",
+    "dateOfBirth": "2011-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "095c8528-706c-42c1-9659-7ac9bd43bcd8",
+    "syncId": null,
+    "givenName": "Baptiste",
+    "familyName": "Baylac",
+    "dateOfBirth": "2005-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "44b86c5e-5529-4334-b4ef-7afb4cf0e89e",
+    "syncId": null,
+    "givenName": "Tarek",
+    "familyName": "Zawawi",
+    "dateOfBirth": "2008-03-11T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "be43c479-b736-4b48-a84a-7b3a3850a909",
+    "syncId": null,
+    "givenName": "FAISAL",
+    "familyName": "ALDOSSARY",
+    "dateOfBirth": "2002-09-30T00:00:00",
+    "externalId": "1117904977",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "084ae93a-b32e-4817-9713-7c35ac48b092",
+    "syncId": null,
+    "givenName": "Raghad",
+    "familyName": "Alzahrani",
+    "dateOfBirth": "1998-10-15T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "05466d27-4d01-43e8-884c-7c469f4237ad",
+    "syncId": null,
+    "givenName": "Abdullah",
+    "familyName": "Al-Ghamdi",
+    "dateOfBirth": "2010-12-25T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "7d1a4d3b-3852-4e3d-9b5d-7c5a8fef52b3",
+    "syncId": null,
+    "givenName": "Ahmed",
+    "familyName": "Alfihani",
+    "dateOfBirth": "2004-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "7c98f2ee-4ea4-495a-94c2-7c6065d9a5e2",
+    "syncId": null,
+    "givenName": "Michele",
+    "familyName": "Comparato",
+    "dateOfBirth": "1982-08-17T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "48d6e437-8777-4a9c-8711-7caeea2d6aad",
+    "syncId": null,
+    "givenName": "SAUD",
+    "familyName": "ALSUBAIE",
+    "dateOfBirth": "2004-10-23T00:00:00",
+    "externalId": "1127016473",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "434a2bef-51e5-4d71-8983-7ccd612619e2",
+    "syncId": null,
+    "givenName": "WALEED",
+    "familyName": "ALHAIDARI",
+    "dateOfBirth": "2009-11-23T00:00:00",
+    "externalId": "1149011254",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "60f5d3e2-9b51-4fcf-80f1-7cf172efa119",
+    "syncId": null,
+    "givenName": "Benoit",
+    "familyName": "Riffarth",
+    "dateOfBirth": "2006-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "cafc1dab-2068-465d-a19d-7d678543ecc7",
+    "syncId": null,
+    "givenName": "Aqeel",
+    "familyName": "Albadrani",
+    "dateOfBirth": "1974-04-25T00:00:00",
+    "externalId": "1016677211",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "549955e9-37b6-4cd1-858e-7e792ef5b605",
+    "syncId": null,
+    "givenName": "Sami",
+    "familyName": "AlYami",
+    "dateOfBirth": "1999-05-04T00:00:00",
+    "externalId": "1103345409",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "428efab5-d75d-4819-82b9-7e8782aed23c",
+    "syncId": null,
+    "givenName": "Munaira ",
+    "familyName": "Alakoz",
+    "dateOfBirth": "2007-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "58ec4757-3293-401d-bbaa-7e92679c439d",
+    "syncId": null,
+    "givenName": "ABDULZHALIL",
+    "familyName": "MUKHTAROV",
+    "dateOfBirth": "2005-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "c789fb39-a6bc-4e5d-b12c-7ef92cedeab5",
+    "syncId": null,
+    "givenName": "Aseel",
+    "familyName": "Judo",
+    "dateOfBirth": "2025-05-08T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "96f87908-aba8-4d5e-a036-7f726ebea42e",
+    "syncId": null,
+    "givenName": "Athari ",
+    "familyName": "Tikroni",
+    "dateOfBirth": "2008-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "31391b0a-d105-490a-8e25-7fd4d931e8d2",
+    "syncId": null,
+    "givenName": " Ghalla ",
+    "familyName": "AlDuwaihi",
+    "dateOfBirth": "2009-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "6bad98ea-8562-4e22-aab6-803ecef55f59",
+    "syncId": null,
+    "givenName": "Mohammed ",
+    "familyName": "Alarifi",
+    "dateOfBirth": "2001-05-22T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "3635771b-6f13-40fc-8e55-8054464c9640",
+    "syncId": null,
+    "givenName": "Ibrahim ",
+    "familyName": " Alhudaib ",
+    "dateOfBirth": "2005-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "5b06f785-1062-4574-91bc-80e6397cffc8",
+    "syncId": null,
+    "givenName": "Leonardo",
+    "familyName": "Dreossi",
+    "dateOfBirth": "1997-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "ee1b10a6-b755-4db6-9c3d-80ff001262a6",
+    "syncId": null,
+    "givenName": "Mohammed",
+    "familyName": "Al Halyu",
+    "dateOfBirth": "2007-06-18T00:00:00",
+    "externalId": "1138627169",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "e54c49df-965b-46bc-8fbb-81319338cbf1",
+    "syncId": null,
+    "givenName": "Loujayne",
+    "familyName": "Fahmi",
+    "dateOfBirth": "2007-12-23T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "139ae279-4817-4394-bcac-8138f7202338",
+    "syncId": null,
+    "givenName": "Turki",
+    "familyName": "Al Qahtani",
+    "dateOfBirth": "2010-05-08T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "aabd1f86-283e-4b53-9495-817ac1b72427",
+    "syncId": null,
+    "givenName": "Mohammed",
+    "familyName": "Al korani",
+    "dateOfBirth": "2005-05-04T00:00:00",
+    "externalId": "1157730407",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "6b9092ab-1212-48b0-8fc0-824de5823587",
+    "syncId": null,
+    "givenName": "ABDULLAH",
+    "familyName": "NADA",
+    "dateOfBirth": "2007-05-16T00:00:00",
+    "externalId": "1142360385",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "cf8997b5-2ec2-4886-a3ca-825b03042b91",
+    "syncId": null,
+    "givenName": "Waleed",
+    "familyName": "Alzahrani",
+    "dateOfBirth": "2006-05-29T00:00:00",
+    "externalId": "1134384138",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "ab85e341-04f2-418f-a932-82f219424691",
+    "syncId": null,
+    "givenName": "Seraj",
+    "familyName": "AlSaleem",
+    "dateOfBirth": "1996-02-10T00:00:00",
+    "externalId": "1089738536",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "84c70321-ef99-41a2-ab47-82f3de27bc04",
+    "syncId": null,
+    "givenName": "Abdulrahman",
+    "familyName": "Alhajrassi",
+    "dateOfBirth": "2004-06-07T00:00:00",
+    "externalId": "1125041689",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "23604672-8b23-45d8-8109-8343f9354aea",
+    "syncId": null,
+    "givenName": "Ahmed ",
+    "familyName": "Almalki",
+    "dateOfBirth": "2004-12-13T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "98facdd0-ca9f-4baa-86bf-83ca59277127",
+    "syncId": null,
+    "givenName": "Alhasna",
+    "familyName": "Alhammad",
+    "dateOfBirth": "2004-03-26T00:00:00",
+    "externalId": "1128538103",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "421b3d61-81c1-4544-87c2-843da8485ab4",
+    "syncId": null,
+    "givenName": "Ali Al",
+    "familyName": "Rumel",
+    "dateOfBirth": "2008-04-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "766b7926-831b-4ad5-8fd2-84445414f052",
+    "syncId": null,
+    "givenName": "Jana",
+    "familyName": "Alkudmani",
+    "dateOfBirth": "2006-12-12T00:00:00",
+    "externalId": "1136728001",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "604e9d94-b885-4929-9f92-849c2caba408",
+    "syncId": null,
+    "givenName": "Rakan",
+    "familyName": "Ali alsalamah",
+    "dateOfBirth": "2003-01-19T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "96d7bc5b-1205-4386-b741-849d1350fd4b",
+    "syncId": null,
+    "givenName": "Abdullah",
+    "familyName": "Alrashidi",
+    "dateOfBirth": "2002-10-04T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "7aa42c46-3b27-42ad-8963-8508c6dc7b48",
+    "syncId": null,
+    "givenName": "Fahad",
+    "familyName": "Alturki",
+    "dateOfBirth": "2005-02-26T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "228aa162-7704-4dc3-bcc5-869fb0ca1a05",
+    "syncId": null,
+    "givenName": "Abbas",
+    "familyName": "Al-Dawood",
+    "dateOfBirth": "2011-12-03T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "0579eab6-1ae3-4ead-b4df-86bc9293895c",
+    "syncId": null,
+    "givenName": "ABDULRAHMAN",
+    "familyName": "FAKEEH",
+    "dateOfBirth": "2009-07-17T00:00:00",
+    "externalId": "1147333742",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "305a7f6e-2bb1-4768-b14e-86ee10a5b4e8",
+    "syncId": null,
+    "givenName": "MUNTHIR",
+    "familyName": "JANDU",
+    "dateOfBirth": "2004-10-27T00:00:00",
+    "externalId": "1126851482",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "c8a5d125-e3ca-4f96-84c8-8747f01100f5",
+    "syncId": null,
+    "givenName": "Fahad",
+    "familyName": "alotaibi",
+    "dateOfBirth": "2006-04-04T00:00:00",
+    "externalId": "1133531572",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "b0ff3419-bc32-4dcf-99dd-876259f29358",
+    "syncId": null,
+    "givenName": "Zahraa",
+    "familyName": "Ahbeel",
+    "dateOfBirth": "2009-09-15T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "ae4acfe7-baa4-4e96-9c2e-881e021b6cf1",
+    "syncId": null,
+    "givenName": "Meshal",
+    "familyName": "Hazazi",
+    "dateOfBirth": "2008-02-12T00:00:00",
+    "externalId": "1141371003",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "f37ac9dd-78d9-4d9b-98f8-882f52e3dce6",
+    "syncId": null,
+    "givenName": "MOHAMMED",
+    "familyName": "BIN HURAYMIL",
+    "dateOfBirth": "2003-06-11T00:00:00",
+    "externalId": "1128434998",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "28f6c547-4178-478a-9469-885fe323fa0d",
+    "syncId": null,
+    "givenName": "Aljwhara",
+    "familyName": " Alshalhob",
+    "dateOfBirth": "2010-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "157ac1c9-2b88-4f07-a24e-8876fc60482e",
+    "syncId": null,
+    "givenName": "ABDULAZIZ",
+    "familyName": "ALHAIDARI",
+    "dateOfBirth": "2002-04-14T00:00:00",
+    "externalId": "1115773127",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "7f16cb12-1f53-4d35-8d92-88a3901e39aa",
+    "syncId": null,
+    "givenName": "FAHAD",
+    "familyName": "ALSAMIH",
+    "dateOfBirth": "2000-01-01T00:00:00",
+    "externalId": "1097917122",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "f05101bf-2152-41be-807b-8a121bb1ed8d",
+    "syncId": null,
+    "givenName": "Bader",
+    "familyName": "Naji",
+    "dateOfBirth": "2005-08-21T00:00:00",
+    "externalId": "1132504430",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "26736bfa-12c4-430a-8d8d-8a1a36cd3426",
+    "syncId": null,
+    "givenName": "Mohamad",
+    "familyName": "Salah",
+    "dateOfBirth": "2009-05-06T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "8b987248-977d-4b7d-9c6e-8a1d7688057e",
+    "syncId": null,
+    "givenName": "IBRAHIM",
+    "familyName": "FALLATAH",
+    "dateOfBirth": "2000-03-03T00:00:00",
+    "externalId": "1106955261",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "17155ef8-b138-419c-9e2b-8ae1cfad5a44",
+    "syncId": null,
+    "givenName": "Lameed ",
+    "familyName": "Almarri ",
+    "dateOfBirth": "2005-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "69af4b73-2718-4d38-85e1-8af95171eb3f",
+    "syncId": null,
+    "givenName": "Anwar",
+    "familyName": "Alfihani",
+    "dateOfBirth": "2004-06-20T00:00:00",
+    "externalId": "1125092203",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "2cda5a53-39ea-4a47-9f4e-8be26c676009",
+    "syncId": null,
+    "givenName": "Abdulrahman",
+    "familyName": "Hennawi",
+    "dateOfBirth": "2007-10-24T00:00:00",
+    "externalId": "1148814385",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "45c7331a-103d-486f-a044-8c026582a00b",
+    "syncId": null,
+    "givenName": "SAAD",
+    "familyName": "ALNATOUR",
+    "dateOfBirth": "2008-08-20T00:00:00",
+    "externalId": "1143648887",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "d7c17557-a880-483e-b9cf-8c605b2fb08b",
+    "syncId": null,
+    "givenName": "Mounis",
+    "familyName": "Hawsawi",
+    "dateOfBirth": "2000-07-07T00:00:00",
+    "externalId": "1108309400",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "d5f7a085-9228-494f-9070-8d19c6f6d79b",
+    "syncId": null,
+    "givenName": "Lamar",
+    "familyName": " Al-Enezi",
+    "dateOfBirth": "2009-01-27T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "d715462d-6bbf-4702-b975-8d80c9a0654e",
+    "syncId": null,
+    "givenName": "Meshari",
+    "familyName": "bamasood",
+    "dateOfBirth": "2009-12-06T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "59c1910f-518d-4ad4-9c7a-8dcc47a65e80",
+    "syncId": null,
+    "givenName": "Saud",
+    "familyName": "Manaie",
+    "dateOfBirth": "2003-05-19T00:00:00",
+    "externalId": "1120422132",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "ed7571ed-7641-461d-bb69-8e1ac6bb373e",
+    "syncId": null,
+    "givenName": "Ali",
+    "familyName": "AlMabrouk",
+    "dateOfBirth": "2002-12-20T00:00:00",
+    "externalId": "1118661741",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "6bfb2c4d-b359-4acd-9b2e-8e6b89fb2124",
+    "syncId": null,
+    "givenName": "Montathir",
+    "familyName": "Almohsin",
+    "dateOfBirth": "2007-01-16T00:00:00",
+    "externalId": "1136978986",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "b591efca-eb86-42f5-813f-8e9f98e4bd75",
+    "syncId": null,
+    "givenName": "DAREAH",
+    "familyName": "JOUDAH",
+    "dateOfBirth": "1992-08-15T00:00:00",
+    "externalId": "1081129791",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "15fe106f-5548-4798-aecd-8fa112236ba7",
+    "syncId": null,
+    "givenName": "AbdullahAqeel",
+    "familyName": "Alobaid",
+    "dateOfBirth": "2010-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "65a62d44-2ccd-4b01-915f-906d78eb1205",
+    "syncId": null,
+    "givenName": "Abdullah",
+    "familyName": "Alsharbatly",
+    "dateOfBirth": "1982-09-21T00:00:00",
+    "externalId": "1061101596",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "2837d27c-5a8d-4aeb-8bc5-91232cc484fa",
+    "syncId": null,
+    "givenName": "MOHAMMED",
+    "familyName": "ALMOTAWA",
+    "dateOfBirth": "2011-04-07T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "75ff3ad5-b0a6-4f1c-9176-91d44d91a4bd",
+    "syncId": null,
+    "givenName": "Mohammed Abbas",
+    "familyName": " Dawood",
+    "dateOfBirth": "2009-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "a5762de5-ecbe-48b8-b7c4-91ffbcc0959a",
+    "syncId": null,
+    "givenName": "Ali",
+    "familyName": "Barnawi",
+    "dateOfBirth": "1996-09-18T00:00:00",
+    "externalId": "1096565039",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "3f46e6ea-021d-4438-b12d-9237ae7e9055",
+    "syncId": null,
+    "givenName": "Rakan ",
+    "familyName": "Alghanam",
+    "dateOfBirth": "2005-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "7526b77c-6d9b-4ae3-9a0d-936ccd382006",
+    "syncId": null,
+    "givenName": " Basmah ",
+    "familyName": "AlSaeed",
+    "dateOfBirth": "2013-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "9b9d4e95-f69e-4332-9de1-93f0ed0982b3",
+    "syncId": null,
+    "givenName": "Fahad",
+    "familyName": "AlMutairi",
+    "dateOfBirth": "1988-04-03T00:00:00",
+    "externalId": "1080107129",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "a25f25e0-0d07-4356-982d-94518f414454",
+    "syncId": null,
+    "givenName": "Salah",
+    "familyName": "Alsuwilem",
+    "dateOfBirth": "2009-05-25T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "b9016446-ecb8-4410-abd8-9577b98d1e9b",
+    "syncId": null,
+    "givenName": "Mesfer",
+    "familyName": "AlAmmari",
+    "dateOfBirth": "1987-09-15T00:00:00",
+    "externalId": "1047481328",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "85107980-d24f-47f7-8b4f-95b9912a7e39",
+    "syncId": null,
+    "givenName": "Raed",
+    "familyName": "AlJadani",
+    "dateOfBirth": "1996-08-02T00:00:00",
+    "externalId": "1098107186",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "1533fafc-687a-4ca6-83ee-960d5cce65f2",
+    "syncId": null,
+    "givenName": "AHMED",
+    "familyName": "ALKAYYADI",
+    "dateOfBirth": "2008-04-17T00:00:00",
+    "externalId": "1142082815",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "864576d5-a362-4c36-9902-967da6c59928",
+    "syncId": null,
+    "givenName": "SAEED",
+    "familyName": "M",
+    "dateOfBirth": "2005-11-13T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "8c540227-5a09-45fc-a7f4-96eabd873469",
+    "syncId": null,
+    "givenName": "Bader ",
+    "familyName": "Batheq",
+    "dateOfBirth": "2009-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "94b92c8f-28fb-40b3-84ee-970d05591a5b",
+    "syncId": null,
+    "givenName": "MARWAN",
+    "familyName": "HAWASAWI",
+    "dateOfBirth": "2007-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "e129f9db-3904-4489-9970-97f36c5fecc5",
+    "syncId": null,
+    "givenName": "Saad",
+    "familyName": "Alzahrani",
+    "dateOfBirth": "2007-02-21T00:00:00",
+    "externalId": "1137401020",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "d098e233-a90a-40b2-9b8a-9824bea03b44",
+    "syncId": null,
+    "givenName": "Dana",
+    "familyName": "alomari",
+    "dateOfBirth": "2014-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "674c3116-d5af-4d77-aaa0-988be26ac151",
+    "syncId": null,
+    "givenName": "Nujom ",
+    "familyName": "Judo",
+    "dateOfBirth": "2025-05-08T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "f71def77-1064-42e4-b781-98b6e7bc64bd",
+    "syncId": null,
+    "givenName": "Nawaf",
+    "familyName": "Hussain",
+    "dateOfBirth": "2009-12-29T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "62eaf263-dbba-46fa-86ed-992df1f09231",
+    "syncId": null,
+    "givenName": "Mohammed",
+    "familyName": "Al Ojaian",
+    "dateOfBirth": "2009-06-20T00:00:00",
+    "externalId": "1147011009",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "0700e485-231a-4cf6-ac2d-99a5e9cdf908",
+    "syncId": null,
+    "givenName": "ALI",
+    "familyName": "ALNAKHLI",
+    "dateOfBirth": "2000-05-01T00:00:00",
+    "externalId": "1107461277",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "ebbec96c-bc1c-4e2f-82e9-9bb3775bff8a",
+    "syncId": null,
+    "givenName": "Luke",
+    "familyName": "Woodhouse",
+    "dateOfBirth": "1982-12-13T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "71dc59f7-0d89-4d81-b3a8-9ca286e18447",
+    "syncId": null,
+    "givenName": "Lateen",
+    "familyName": "Muthanna",
+    "dateOfBirth": "2008-09-01T00:00:00",
+    "externalId": "1143780995",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "d29a55b7-adea-4852-9fa9-9d621b14d1d2",
+    "syncId": null,
+    "givenName": "Manal",
+    "familyName": "Alzaid",
+    "dateOfBirth": "1989-06-20T00:00:00",
+    "externalId": "1071386575",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "cb30ca25-b104-4762-935c-9de9ef962109",
+    "syncId": null,
+    "givenName": "Hussain",
+    "familyName": "Al Busaeed",
+    "dateOfBirth": "2010-01-02T00:00:00",
+    "externalId": "1154893620",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "d093216e-12a9-437d-8aab-9ec311a7d0c2",
+    "syncId": null,
+    "givenName": "Jawad",
+    "familyName": "aldawood",
+    "dateOfBirth": "1999-03-18T00:00:00",
+    "externalId": "1103004162",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "2a0e406a-6f50-4cd1-b359-9f8cd6cfc772",
+    "syncId": null,
+    "givenName": "KHALID",
+    "familyName": "ALAHMARI",
+    "dateOfBirth": "1996-07-25T00:00:00",
+    "externalId": "1092243581",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "4bebb13d-feba-4b99-9bad-9fe2f692294f",
+    "syncId": null,
+    "givenName": "ABDULKHALIKOV",
+    "familyName": "KURBAN",
+    "dateOfBirth": "2005-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "88eb2058-edec-42e7-bf40-9ff202d13593",
+    "syncId": null,
+    "givenName": "Amro",
+    "familyName": "Fathalrhaman",
+    "dateOfBirth": "2008-03-27T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "a222ec22-e840-4904-be11-a00dde5746ac",
+    "syncId": null,
+    "givenName": " Lulu ",
+    "familyName": " AlBuqmi",
+    "dateOfBirth": "2009-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "5a9bf93c-c817-46f0-9df7-a0123c502774",
+    "syncId": null,
+    "givenName": "RAYAN",
+    "familyName": "HAWSAWI",
+    "dateOfBirth": "2001-12-31T00:00:00",
+    "externalId": "1114833385",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "fba7d34a-343a-4042-b45e-a0d8b0b4d536",
+    "syncId": null,
+    "givenName": "Khaled",
+    "familyName": "shahrany",
+    "dateOfBirth": "2009-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "a57e7acd-ce35-4985-9926-a17286d9c610",
+    "syncId": null,
+    "givenName": "Abdulrahman",
+    "familyName": "ALSHAHRANI",
+    "dateOfBirth": "2007-04-01T00:00:00",
+    "externalId": "1150033072",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "da1b925d-31f8-4b12-bc3c-a249202d70e7",
+    "syncId": null,
+    "givenName": "Nawaf",
+    "familyName": "Naif hussain",
+    "dateOfBirth": "2001-01-19T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "37e4d138-d7a8-4388-a256-a4dab2d28221",
+    "syncId": null,
+    "givenName": "Nawaf",
+    "familyName": "albishi",
+    "dateOfBirth": "2009-11-27T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "94dbc3f4-3cc5-49f3-ac8d-a4db4246e53a",
+    "syncId": null,
+    "givenName": "Riad",
+    "familyName": "Hamdi",
+    "dateOfBirth": "2004-04-02T00:00:00",
+    "externalId": "1125500171",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "2af5b440-1b39-43ea-8a3e-a5745af64a84",
+    "syncId": null,
+    "givenName": "BADIE",
+    "familyName": "EDREES",
+    "dateOfBirth": "2005-06-01T00:00:00",
+    "externalId": "1130031683",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "eae8a60b-ec27-48bb-865f-a603f5b6e8bb",
+    "syncId": null,
+    "givenName": "Abeer ",
+    "familyName": "Alshehri ",
+    "dateOfBirth": "2000-10-28T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "ea7e7fce-1947-43bf-b060-a68f7ee0bfc7",
+    "syncId": null,
+    "givenName": "Nada",
+    "familyName": "Abed",
+    "dateOfBirth": "2003-10-17T00:00:00",
+    "externalId": "1122531112",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "c5165136-cdc2-4913-b979-a6e57e81fc0c",
+    "syncId": null,
+    "givenName": "Ramzy",
+    "familyName": "AL Duhami",
+    "dateOfBirth": "1972-01-05T00:00:00",
+    "externalId": "1015804543",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "bc4cd90d-1742-43b6-9cbc-a701908bc856",
+    "syncId": null,
+    "givenName": "Ghala",
+    "familyName": "Alghamdi",
+    "dateOfBirth": "2008-06-19T00:00:00",
+    "externalId": "1147778805",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "64fd534e-3dba-402b-b027-a7288c366071",
+    "syncId": null,
+    "givenName": "Ahmad",
+    "familyName": "Alalwani",
+    "dateOfBirth": "2003-09-02T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "0b4508c4-91b6-426e-b33e-a85348d48d96",
+    "syncId": null,
+    "givenName": "KHALID",
+    "familyName": "ALMUTAIRI",
+    "dateOfBirth": "2004-04-09T00:00:00",
+    "externalId": "1126760022",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "cc7e8fa5-7509-4076-bcb2-a859f054d1e5",
+    "syncId": null,
+    "givenName": "Wajan",
+    "familyName": "alshehri",
+    "dateOfBirth": "2004-07-12T00:00:00",
+    "externalId": "1128384201",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "1661ede2-94c8-4845-81a9-a8c08fe59a12",
+    "syncId": null,
+    "givenName": "NOUR",
+    "familyName": "ALSANA",
+    "dateOfBirth": "1984-09-04T00:00:00",
+    "externalId": "1013718059",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "2a15a779-e2de-4cbb-939c-a93528a13a50",
+    "syncId": null,
+    "givenName": "Ali",
+    "familyName": "Alrumayh",
+    "dateOfBirth": "2007-09-19T00:00:00",
+    "externalId": "1139681751",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "1fd4c4a1-85fc-4260-9a1b-a944c1d46bbe",
+    "syncId": null,
+    "givenName": "Zaid",
+    "familyName": "Alalamah ",
+    "dateOfBirth": "2008-06-03T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "ce9826fb-50cf-48e6-bfa8-a99872841d51",
+    "syncId": null,
+    "givenName": "HUSSAM",
+    "familyName": "ASHOUR",
+    "dateOfBirth": "2003-03-18T00:00:00",
+    "externalId": "1119717492",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "fcae955f-80e5-4cb3-8168-a9f779f0effc",
+    "syncId": null,
+    "givenName": "Zayn ",
+    "familyName": "Alshami",
+    "dateOfBirth": "2007-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "51105656-2adc-49e9-9a05-aa1be0680028",
+    "syncId": null,
+    "givenName": "sara ",
+    "familyName": "Shael",
+    "dateOfBirth": "2014-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "b141fd1b-a476-4338-bcf6-ab2aa1342ee3",
+    "syncId": null,
+    "givenName": "Hassan",
+    "familyName": "Abed",
+    "dateOfBirth": "2006-12-19T00:00:00",
+    "externalId": "1136716618",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "0415cb0c-2882-441d-a483-abf8da3319ca",
+    "syncId": null,
+    "givenName": "Faten",
+    "familyName": "MIRZA",
+    "dateOfBirth": "1983-05-19T00:00:00",
+    "externalId": "1007526856",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "0d294558-e237-4909-9e58-abf99c0b3120",
+    "syncId": null,
+    "givenName": "Ghazi",
+    "familyName": "Baker",
+    "dateOfBirth": "1997-04-16T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "4a401d6c-9dcb-4f30-9f7e-ac1c37f8ef8d",
+    "syncId": null,
+    "givenName": "abdulla ",
+    "familyName": "saeed",
+    "dateOfBirth": "2009-05-15T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "014efb9d-0acf-4c62-9960-ac9f55222764",
+    "syncId": null,
+    "givenName": "Fahad ",
+    "familyName": "Alkhathami ",
+    "dateOfBirth": "1990-09-30T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "f902cc6f-fbf3-441a-8c45-acfd2cd8e96f",
+    "syncId": null,
+    "givenName": "FAHAD",
+    "familyName": "ALTURKI",
+    "dateOfBirth": "2005-02-26T00:00:00",
+    "externalId": "1128442215",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "6366f063-8a64-4464-9be8-add8f51f64b5",
+    "syncId": null,
+    "givenName": "Nouf ",
+    "familyName": "Alshalhoub ",
+    "dateOfBirth": "2000-06-15T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "558b7f43-01a5-41a0-971d-adfbadc4f030",
+    "syncId": null,
+    "givenName": " Dana ",
+    "familyName": "AlAbbas ",
+    "dateOfBirth": "2011-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "9a8ef754-4625-4a4a-b081-ae902316e7d8",
+    "syncId": null,
+    "givenName": "Yusuf",
+    "familyName": "Salah",
+    "dateOfBirth": "2000-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "33357093-ce34-494e-9760-af575d5a6973",
+    "syncId": null,
+    "givenName": "azzam ",
+    "familyName": "alharthi",
+    "dateOfBirth": "2012-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "4c9a1610-6451-465b-a4e2-af84304bba83",
+    "syncId": null,
+    "givenName": "Nada",
+    "familyName": "Mohamed ",
+    "dateOfBirth": "2000-11-11T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "96b9b16c-0b8a-4932-a508-af8a95f8b8ce",
+    "syncId": null,
+    "givenName": "Abdulrasheed ",
+    "familyName": "Bati ",
+    "dateOfBirth": "2008-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "605712b7-78cf-4594-86cd-af99ffe62187",
+    "syncId": null,
+    "givenName": "Ibrahim",
+    "familyName": "Sharahili",
+    "dateOfBirth": "2004-07-31T00:00:00",
+    "externalId": "1125629046",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "e488bb3f-3250-4156-aa97-b0165966ebf8",
+    "syncId": null,
+    "givenName": "Dana",
+    "familyName": "Al-Zureiqi",
+    "dateOfBirth": "2008-04-07T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "150a9698-98c2-4f64-a6e1-b0af8ff45ffb",
+    "syncId": null,
+    "givenName": "Haya ",
+    "familyName": " AlDosari",
+    "dateOfBirth": "2012-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "26352a78-8f96-4f14-b3a3-b127824fc9c7",
+    "syncId": null,
+    "givenName": " Turki ",
+    "familyName": "Jahfali",
+    "dateOfBirth": "2010-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "53fe8225-a190-49eb-9124-b1449fea3809",
+    "syncId": null,
+    "givenName": "Yasmin",
+    "familyName": "Alasabban",
+    "dateOfBirth": "2007-02-15T00:00:00",
+    "externalId": "1137970404",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "37cbfead-c5ff-43d5-88eb-b1cd3b0052e0",
+    "syncId": null,
+    "givenName": "Mohammed",
+    "familyName": "AlSowaiq",
+    "dateOfBirth": "2003-06-26T00:00:00",
+    "externalId": "1120999667",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "e5fa6533-46a6-43ad-8111-b219f595dbaf",
+    "syncId": null,
+    "givenName": "RAJAB",
+    "familyName": "BAITULLAEV",
+    "dateOfBirth": "2005-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "684cbdeb-dd1c-49ac-b48f-b22bbe13aa26",
+    "syncId": null,
+    "givenName": "Sultan",
+    "familyName": "Alqahtani",
+    "dateOfBirth": "2005-06-07T00:00:00",
+    "externalId": "1129754055",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "ae4d90f0-19dc-4ba9-9457-b26634dc07b4",
+    "syncId": null,
+    "givenName": "Turky",
+    "familyName": "Alarif",
+    "dateOfBirth": "1998-09-02T00:00:00",
+    "externalId": "1104742802",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "129c1821-862e-43e3-a736-b2cde03a6bd3",
+    "syncId": null,
+    "givenName": "Roba ",
+    "familyName": "khalil",
+    "dateOfBirth": "1999-11-27T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "717a80ac-c92b-4cb3-9564-b2e0f53120e7",
+    "syncId": null,
+    "givenName": "Wahid",
+    "familyName": "Moghis",
+    "dateOfBirth": "1999-01-23T00:00:00",
+    "externalId": "1114889403",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "15577954-7065-4fcf-88c1-b3d7e6715454",
+    "syncId": null,
+    "givenName": "Youssef  moaiad",
+    "familyName": "Elyas",
+    "dateOfBirth": "2006-03-11T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "b6d6b8a7-f398-4307-a551-b45d4da17a54",
+    "syncId": null,
+    "givenName": "Ahmad",
+    "familyName": "Abdullah",
+    "dateOfBirth": "2003-09-03T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "74052acd-d021-40a4-a076-b4a112a79e67",
+    "syncId": null,
+    "givenName": "Rayan",
+    "familyName": "Al Tariqi",
+    "dateOfBirth": "2006-07-23T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "6bc0a0d4-72f3-42a4-a714-b51ebe7a6905",
+    "syncId": null,
+    "givenName": "MUATH",
+    "familyName": "ALRASHDI",
+    "dateOfBirth": "2007-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "32995221-d41d-482a-983d-b5ee604b1cc0",
+    "syncId": null,
+    "givenName": " Abdullilah ",
+    "familyName": "Bati",
+    "dateOfBirth": "2013-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "64821b09-1ada-40a8-a24e-b6716dc19c5e",
+    "syncId": null,
+    "givenName": "Mohammed",
+    "familyName": "Almadawi",
+    "dateOfBirth": "2006-03-16T00:00:00",
+    "externalId": "1139210452",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "0928c4ad-bb2f-4213-8cd2-b77197e85a82",
+    "syncId": null,
+    "givenName": "Fayadh",
+    "familyName": "Alobaid",
+    "dateOfBirth": "2008-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "4826f141-bc8d-4c71-8358-b81feb137b48",
+    "syncId": null,
+    "givenName": "Jiu-Jitsu Test 1 ",
+    "familyName": "Jiu-Jitsu ",
+    "dateOfBirth": "2001-06-29T00:00:00",
+    "externalId": "123456789",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "9d6bbd17-5b34-4fd2-b897-b83a9e41efd1",
+    "syncId": null,
+    "givenName": "Mufleh ",
+    "familyName": "Alkhaldi",
+    "dateOfBirth": "2009-10-31T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "495cf808-9f83-48b3-b48f-b85781e6908d",
+    "syncId": null,
+    "givenName": "Jouri",
+    "familyName": "Alandijani",
+    "dateOfBirth": "2005-09-15T00:00:00",
+    "externalId": "1130965542",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "2c2efc8e-7ed9-4dc9-86a5-b873d91236f2",
+    "syncId": null,
+    "givenName": "HAMED",
+    "familyName": "AMBON",
+    "dateOfBirth": "2007-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "60d23f2c-fc66-490f-bb94-b97b5ad6e771",
+    "syncId": null,
+    "givenName": "ABDULRAHMAN",
+    "familyName": "ALOMAIR",
+    "dateOfBirth": "1991-04-29T00:00:00",
+    "externalId": "1120147077",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "e0a545d4-8de6-460a-b387-b97f79557dd4",
+    "syncId": null,
+    "givenName": "John",
+    "familyName": "Watson",
+    "dateOfBirth": "1983-06-27T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "360c05bb-9c37-4966-9226-ba33cedbeb84",
+    "syncId": null,
+    "givenName": "ABDULAEV",
+    "familyName": "ADAM",
+    "dateOfBirth": "2005-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "e65c0cf3-d7be-40a5-a9ab-ba572f97c639",
+    "syncId": null,
+    "givenName": "ALJwhara ",
+    "familyName": "Almari",
+    "dateOfBirth": "2009-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "14ad82b8-fb1f-4be0-8190-bb22c5186b81",
+    "syncId": null,
+    "givenName": "Dana Mohammed",
+    "familyName": "AlQahtani",
+    "dateOfBirth": "2010-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "1fc9b05e-bf52-4d86-8c0f-bd3366731d42",
+    "syncId": null,
+    "givenName": "Ali",
+    "familyName": "AlKhazal",
+    "dateOfBirth": "1998-08-21T00:00:00",
+    "externalId": "1100559663",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "2816df6e-7978-4bb7-85e3-bdf52e963cf2",
+    "syncId": null,
+    "givenName": "Tamim ",
+    "familyName": "AlOtaishan",
+    "dateOfBirth": "2008-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "2c187763-360f-4a1b-bc4c-be0aba950043",
+    "syncId": null,
+    "givenName": "mariyam",
+    "familyName": "al salah",
+    "dateOfBirth": "1993-07-01T00:00:00",
+    "externalId": "1082010628",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "dc2d5e4d-5350-48b9-9309-bf18e684d131",
+    "syncId": null,
+    "givenName": "Yaqoub",
+    "familyName": "Bu Khawwah",
+    "dateOfBirth": "2008-11-30T00:00:00",
+    "externalId": "1144903471",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "8df0ce12-37ae-4d6d-b993-bf4b115986b9",
+    "syncId": null,
+    "givenName": "ghanem",
+    "familyName": "alsulhi",
+    "dateOfBirth": "2009-03-03T00:00:00",
+    "externalId": "1145794663",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "3b5e04cb-7bd0-4ab4-96ec-bfa9b06afcc7",
+    "syncId": null,
+    "givenName": "Fahad",
+    "familyName": "Fadel",
+    "dateOfBirth": "2010-01-30T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "0fc8f41a-8026-4854-b111-c0164a8243db",
+    "syncId": null,
+    "givenName": "Lara",
+    "familyName": "matar",
+    "dateOfBirth": "2009-04-13T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "4774b479-f82e-4acb-8f22-c0a5d0b147a1",
+    "syncId": null,
+    "givenName": "Anas",
+    "familyName": "Alzahrani",
+    "dateOfBirth": "2005-06-05T00:00:00",
+    "externalId": "1127562914",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "77e6ca13-ef88-4b94-93f1-c0eca3f5903e",
+    "syncId": null,
+    "givenName": "Adnan",
+    "familyName": "Shaheen",
+    "dateOfBirth": "2009-05-13T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "2fd06877-6b09-46f7-96ae-c115f2ef5a8a",
+    "syncId": null,
+    "givenName": "Azzam",
+    "familyName": "Abo-bakr",
+    "dateOfBirth": "2004-09-13T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "1bfb8053-e73e-4692-96ca-c1401b0ec775",
+    "syncId": null,
+    "givenName": "Rafif",
+    "familyName": "Jear",
+    "dateOfBirth": "2008-10-10T00:00:00",
+    "externalId": "1153612815",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "7a633752-0978-4af1-8b01-c1fb6562fcfe",
+    "syncId": null,
+    "givenName": "mahdi",
+    "familyName": "alzoraqi",
+    "dateOfBirth": "2009-05-22T00:00:00",
+    "externalId": "1146652027",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "d308a8e2-e149-4f74-b9bc-c2fbb587414e",
+    "syncId": null,
+    "givenName": "ABDULELAH",
+    "familyName": "ALJAIZANY",
+    "dateOfBirth": "2000-03-27T00:00:00",
+    "externalId": "1107481176",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "0d5767e7-99a9-4d4a-b640-c39d5102ebad",
+    "syncId": null,
+    "givenName": "Abdullah",
+    "familyName": "Alqaisoom",
+    "dateOfBirth": "2007-10-02T00:00:00",
+    "externalId": "1140141274",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "25e57b1a-a66c-42aa-aae3-c3a7f06389d1",
+    "syncId": null,
+    "givenName": "Zayed",
+    "familyName": "albishi",
+    "dateOfBirth": "2004-03-25T00:00:00",
+    "externalId": "1124115278",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "581933cc-f4c0-4f32-bb65-c3d87246926c",
+    "syncId": null,
+    "givenName": "Khalid ",
+    "familyName": "Alshahrani tkd ",
+    "dateOfBirth": "2001-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "10445251-6656-426c-911a-c42786ec05cc",
+    "syncId": null,
+    "givenName": "Mohammed",
+    "familyName": "Al-Okaili",
+    "dateOfBirth": "2011-05-12T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "59d19a09-ad1f-43ca-99d5-c47007ac8d1c",
+    "syncId": null,
+    "givenName": "ABDULLAH",
+    "familyName": "HAMAD",
+    "dateOfBirth": "1997-05-27T00:00:00",
+    "externalId": "1095422125",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "3c44323c-46b3-4bd1-a55d-c4d43b9040c2",
+    "syncId": null,
+    "givenName": "Hessah",
+    "familyName": "Almelaiki",
+    "dateOfBirth": "1999-06-01T00:00:00",
+    "externalId": "1106593963",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "24dc4f1d-8c28-4195-b386-c5ba2deb2fcc",
+    "syncId": null,
+    "givenName": "Faisal",
+    "familyName": "Aldajani",
+    "dateOfBirth": "1989-03-28T00:00:00",
+    "externalId": "1068859881",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "b2609121-8ada-4d34-928c-c5fa7e4615ef",
+    "syncId": null,
+    "givenName": "Abdulaziz",
+    "familyName": "Almansaf",
+    "dateOfBirth": "2006-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "bf612a0a-492e-4bc5-8cf9-c627b2291610",
+    "syncId": null,
+    "givenName": "Othman",
+    "familyName": "hifni",
+    "dateOfBirth": "2011-10-23T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "2e075012-4c36-4ae3-a1d4-c7774d87eb75",
+    "syncId": null,
+    "givenName": "Ali",
+    "familyName": "Beedh",
+    "dateOfBirth": "2004-04-25T00:00:00",
+    "externalId": "1124463769",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "f66a0c63-1951-4a4a-914b-c7abe86bf1e1",
+    "syncId": null,
+    "givenName": "Maitham",
+    "familyName": "Alhakeem",
+    "dateOfBirth": "2007-06-14T00:00:00",
+    "externalId": "1138637796",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "4c351e2b-ca7c-40d2-ab8e-c7d3d674d920",
+    "syncId": null,
+    "givenName": "Nour",
+    "familyName": "Bashamalj",
+    "dateOfBirth": "2002-10-05T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "f30117d8-0bbb-4f48-93ff-c7ecc17a34a6",
+    "syncId": null,
+    "givenName": "Abdullah",
+    "familyName": "Alahmad",
+    "dateOfBirth": "2006-10-24T00:00:00",
+    "externalId": "1136069711",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "446ce9c6-bbf2-4c1b-b778-c84564f66394",
+    "syncId": null,
+    "givenName": "Ali",
+    "familyName": "Alothman",
+    "dateOfBirth": "2002-02-16T00:00:00",
+    "externalId": "1116487123",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "587932f1-1c30-4cb0-adba-c84808fd93c1",
+    "syncId": null,
+    "givenName": "Mohammed ",
+    "familyName": "Alassiri",
+    "dateOfBirth": "2001-05-22T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "66b06402-750c-4f59-8f2a-c880076a8bf9",
+    "syncId": null,
+    "givenName": "Rahmah",
+    "familyName": "Alkhawahr",
+    "dateOfBirth": "2005-08-06T00:00:00",
+    "externalId": "1130550351",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "66c5fcad-468b-4079-8dcb-c8f647500d8f",
+    "syncId": null,
+    "givenName": "Rayan",
+    "familyName": "Alatawi",
+    "dateOfBirth": "2006-01-01T00:00:00",
+    "externalId": "1136706627",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "9eb28abe-d2f3-4232-b9f6-c9bd49dbb6b5",
+    "syncId": null,
+    "givenName": "Khaled",
+    "familyName": "Almobty",
+    "dateOfBirth": "1998-10-19T00:00:00",
+    "externalId": "1106506056",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "6f9d8268-f111-4295-9b0a-c9c17d75e3da",
+    "syncId": null,
+    "givenName": "HAITHAM",
+    "familyName": "BARAHMAH",
+    "dateOfBirth": "2006-04-26T00:00:00",
+    "externalId": "1133743011",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "8ce80df5-ac2b-403e-86d1-ca477778797b",
+    "syncId": null,
+    "givenName": "Ahmed",
+    "familyName": "Al-Hujairi",
+    "dateOfBirth": "2011-08-12T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "17df1187-3a0f-40a3-ad0d-ca7b5a17f9fa",
+    "syncId": null,
+    "givenName": "Juman ",
+    "familyName": " Altaher",
+    "dateOfBirth": "2012-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "9e17e6b2-f4c3-4329-90bd-caede60a3c05",
+    "syncId": null,
+    "givenName": "ALBARAA",
+    "familyName": "ALQARNI",
+    "dateOfBirth": "2007-09-15T00:00:00",
+    "externalId": "1139984205",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "bffd39e4-7fee-4bc5-9315-caeec552afb0",
+    "syncId": null,
+    "givenName": "Faraj",
+    "familyName": "alajmi",
+    "dateOfBirth": "2006-01-18T00:00:00",
+    "externalId": "1132379890",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "1fa1259c-4154-453d-ba48-cb80608ec3d6",
+    "syncId": null,
+    "givenName": "Ali",
+    "familyName": "Albahrani",
+    "dateOfBirth": "2003-08-20T00:00:00",
+    "externalId": "1121732125",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "be251e84-1667-403b-87f2-cba5c44cc207",
+    "syncId": null,
+    "givenName": "Anas",
+    "familyName": "Algrnoos",
+    "dateOfBirth": "2024-07-16T00:00:00",
+    "externalId": "1140344589",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "73f92ccd-36b1-4bdf-9bd9-cc01e65756ad",
+    "syncId": null,
+    "givenName": "Abdulaziz",
+    "familyName": "Atafi",
+    "dateOfBirth": "2001-12-02T00:00:00",
+    "externalId": "1114451840",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "66c7fe75-b681-4f8c-b681-cce1a46470cd",
+    "syncId": null,
+    "givenName": "Mustafa",
+    "familyName": "Alkhawahr",
+    "dateOfBirth": "2006-08-12T00:00:00",
+    "externalId": "1135243044",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "124237eb-24bf-4751-96ab-cd0ff9df007a",
+    "syncId": null,
+    "givenName": "Leen ",
+    "familyName": "Alhamad ",
+    "dateOfBirth": "2002-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "ebc04e91-34f3-4e77-89bc-ce48f60fb502",
+    "syncId": null,
+    "givenName": "SAUD",
+    "familyName": "ALZHARANI",
+    "dateOfBirth": "2007-02-21T00:00:00",
+    "externalId": "1137401038",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "3025f2e6-4c29-495b-b1c4-ce76878565e9",
+    "syncId": null,
+    "givenName": "Ali",
+    "familyName": "Mugari",
+    "dateOfBirth": "2005-12-09T00:00:00",
+    "externalId": "1132076124",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "73a769a4-0985-47bc-a9fb-ce8ab01ac814",
+    "syncId": null,
+    "givenName": "Guilhem",
+    "familyName": "Jalabert",
+    "dateOfBirth": "2002-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "90ddce0c-7bba-43c8-81be-cee6bdb7cf8b",
+    "syncId": null,
+    "givenName": "TURKI",
+    "familyName": "ALHAJRI",
+    "dateOfBirth": "1993-12-04T00:00:00",
+    "externalId": "1080891052",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "4104d78b-e908-415d-abc2-cf06fa2c2a60",
+    "syncId": null,
+    "givenName": "Orlando",
+    "familyName": "Tardeli",
+    "dateOfBirth": "1992-05-21T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "18f214ff-05fd-4efc-9fa9-cf989be0cf9c",
+    "syncId": null,
+    "givenName": "Mohammed ",
+    "familyName": "Al-Hudayb",
+    "dateOfBirth": "2011-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "3ba2bfa0-15b5-4826-9bd5-cfa1637e97ce",
+    "syncId": null,
+    "givenName": "Alanoud",
+    "familyName": "Aldhefian",
+    "dateOfBirth": "1990-08-06T00:00:00",
+    "externalId": "1073560201",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "985a11ed-c3f8-40e2-b9a1-cfd50a17c828",
+    "syncId": null,
+    "givenName": "Mohamed",
+    "familyName": "Tolo",
+    "dateOfBirth": "2001-03-30T00:00:00",
+    "externalId": "2241150586",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "5aed78c9-9b8e-429c-b872-d0654bb0cecd",
+    "syncId": null,
+    "givenName": "MOHAMMED",
+    "familyName": "ALGHAREEB",
+    "dateOfBirth": "2011-05-03T00:00:00",
+    "externalId": "1149138883",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "1fe4c6ae-ad66-4a54-9e77-d17ff74a914d",
+    "syncId": null,
+    "givenName": "Mahmoud",
+    "familyName": "Al Shanqiti",
+    "dateOfBirth": "2007-07-19T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "5b604c59-bd7c-4b52-af41-d1aeb6195ac1",
+    "syncId": null,
+    "givenName": "Meshal ",
+    "familyName": "Mhotan ",
+    "dateOfBirth": "2000-08-22T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "fa09ed7e-a42c-419f-90fb-d2bfe0760815",
+    "syncId": null,
+    "givenName": "MUTEB",
+    "familyName": "ALMUWALLED",
+    "dateOfBirth": "2007-01-02T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "db34215f-b96c-4df8-bcb0-d3175e1ab192",
+    "syncId": null,
+    "givenName": "Mohammed",
+    "familyName": "AlZayer",
+    "dateOfBirth": "2002-03-17T00:00:00",
+    "externalId": "1115574277",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "38b33b7c-285c-4564-a442-d3bba57caa5b",
+    "syncId": null,
+    "givenName": "Saud",
+    "familyName": "Alfifi",
+    "dateOfBirth": "2008-07-14T00:00:00",
+    "externalId": "1143012764",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "a0429306-88df-48c7-8f0e-d53895bbd251",
+    "syncId": null,
+    "givenName": "Meral",
+    "familyName": "matar",
+    "dateOfBirth": "2011-06-15T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "d605272c-df2c-4060-afb9-d59af00a0db2",
+    "syncId": null,
+    "givenName": "Zainab",
+    "familyName": "Alzaqrati",
+    "dateOfBirth": "1998-08-15T00:00:00",
+    "externalId": "1100647872",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "60656eb2-d2c8-419d-bdbe-d5d23a6b7000",
+    "syncId": null,
+    "givenName": "SARAH",
+    "familyName": "ALJUMAAH",
+    "dateOfBirth": "1979-07-14T00:00:00",
+    "externalId": "1004372635",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "b2b160b3-03f4-4958-8978-d65e4a393bcc",
+    "syncId": null,
+    "givenName": "Ibrahim ",
+    "familyName": "Almarzooq",
+    "dateOfBirth": "2002-03-18T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "8764c00f-e4ff-4723-a8a7-d70494e32898",
+    "syncId": null,
+    "givenName": "Zaid",
+    "familyName": "Alsarraj",
+    "dateOfBirth": "2007-11-20T00:00:00",
+    "externalId": "1140757020",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "558fbb50-7f41-46f6-bc43-d75af3a925b4",
+    "syncId": null,
+    "givenName": "Mohammed",
+    "familyName": "Al-Muawi",
+    "dateOfBirth": "2001-03-25T00:00:00",
+    "externalId": "1111215560",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "6889e6e5-7966-4fb6-81af-d76379e99550",
+    "syncId": null,
+    "givenName": " Fatimah",
+    "familyName": "AlMatar",
+    "dateOfBirth": "2011-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "878d21fb-e721-4322-952a-d81382cd0a07",
+    "syncId": null,
+    "givenName": "MANAF",
+    "familyName": "ALRASHDI",
+    "dateOfBirth": "2007-06-10T00:00:00",
+    "externalId": "1138790074",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "53031bb5-4ef8-4687-b2c4-d83218874a02",
+    "syncId": null,
+    "givenName": "Yassin",
+    "familyName": "Rafiq",
+    "dateOfBirth": "2011-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "fefc96f0-897c-4d2b-918f-d9152d28b78a",
+    "syncId": null,
+    "givenName": "Louis",
+    "familyName": "Dallimore",
+    "dateOfBirth": "1988-07-23T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "b22e8ce9-ed78-49a6-9e39-da28b1fdd784",
+    "syncId": null,
+    "givenName": "HAIDAR",
+    "familyName": "SALAMI",
+    "dateOfBirth": "2003-11-01T00:00:00",
+    "externalId": "1123691246",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "e1200a15-9ff4-447e-ba12-da98df9b2c74",
+    "syncId": null,
+    "givenName": "Abdulaziz ",
+    "familyName": "Altwaijri",
+    "dateOfBirth": "2008-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "9dc5b174-a238-4a41-9363-daa4c515b2ae",
+    "syncId": null,
+    "givenName": "Naif ",
+    "familyName": "Almasrahe ",
+    "dateOfBirth": "1995-08-22T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "4aab60ae-e328-4dd7-947c-daebeef92525",
+    "syncId": null,
+    "givenName": "Noor",
+    "familyName": "Alsane ",
+    "dateOfBirth": "1993-08-22T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "eaf3981c-fdbe-4104-8e1b-dc0152547408",
+    "syncId": null,
+    "givenName": "Mahdi",
+    "familyName": "Almunajem",
+    "dateOfBirth": "2007-04-22T00:00:00",
+    "externalId": "1138558943",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "ee58c377-8cee-43fb-aa5b-dc276242dcdd",
+    "syncId": null,
+    "givenName": "Mohammed",
+    "familyName": "Almarzouq",
+    "dateOfBirth": "2007-09-25T00:00:00",
+    "externalId": "1139723223",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "08276f63-3ac1-4d6e-bf09-dc9e12e2ee8b",
+    "syncId": null,
+    "givenName": "ALHANUF",
+    "familyName": "ABUHAIMD",
+    "dateOfBirth": "1985-05-04T00:00:00",
+    "externalId": "1014017469",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "19f58653-ac5a-40d3-a83d-dcaa77920e86",
+    "syncId": null,
+    "givenName": "Saeed",
+    "familyName": "Majrashi",
+    "dateOfBirth": "2009-03-29T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "436096f7-51c4-4029-9c0d-dda73fc7ca3b",
+    "syncId": null,
+    "givenName": "Sarah ",
+    "familyName": "Bouhumeid ",
+    "dateOfBirth": "2012-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "bfc45b51-6f20-42f1-a956-ddc3c546ebcd",
+    "syncId": null,
+    "givenName": "Ahad",
+    "familyName": "Almuammar",
+    "dateOfBirth": "2005-03-01T00:00:00",
+    "externalId": "1131435099",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "af9d697a-3abe-451f-b064-debb57955e2f",
+    "syncId": null,
+    "givenName": "Essa",
+    "familyName": "Kzwani",
+    "dateOfBirth": "2002-08-14T00:00:00",
+    "externalId": "1135598504",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "8e01b4ce-c7c1-4716-80d5-ded2b47ff51d",
+    "syncId": null,
+    "givenName": "Mansour",
+    "familyName": "AlSaleem",
+    "dateOfBirth": "1988-03-16T00:00:00",
+    "externalId": "1050680063",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "3568fb08-82f1-4ffa-b48b-df29a80b28a5",
+    "syncId": null,
+    "givenName": "Thimar",
+    "familyName": "Alyamani",
+    "dateOfBirth": "2006-05-28T00:00:00",
+    "externalId": "1138139066",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "1980f4e9-d6cd-4333-8643-df6c79ce6ddd",
+    "syncId": null,
+    "givenName": "Hussain",
+    "familyName": "altaweel",
+    "dateOfBirth": "2003-05-25T00:00:00",
+    "externalId": "1120666845",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "e47107ce-27e8-41c2-8c90-dff3095baf4f",
+    "syncId": null,
+    "givenName": "Ibrahim",
+    "familyName": "Fatini",
+    "dateOfBirth": "1999-06-13T00:00:00",
+    "externalId": "1108715275",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "0670ae22-6370-45fd-81d3-e0142deba50a",
+    "syncId": null,
+    "givenName": "Ali",
+    "familyName": "Alariani",
+    "dateOfBirth": "2006-11-12T00:00:00",
+    "externalId": "1136348198",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "5503c922-a197-4cf2-be92-e03ab6828112",
+    "syncId": null,
+    "givenName": " Mahdi ",
+    "familyName": "AlMuwaishi",
+    "dateOfBirth": "2009-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "8983faa6-7216-435d-b23d-e1120c48c80e",
+    "syncId": null,
+    "givenName": "Fawzya",
+    "familyName": "Alkhibiri",
+    "dateOfBirth": "2005-08-26T00:00:00",
+    "externalId": "1130723057",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "000bdc1e-a714-4d73-8beb-e256a8c80e36",
+    "syncId": null,
+    "givenName": "Aljazi ",
+    "familyName": "Alibrahim",
+    "dateOfBirth": "2007-10-29T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "0570f249-154c-4b5b-83f0-e322d7cfa185",
+    "syncId": null,
+    "givenName": "Hasham",
+    "familyName": "Bin Dookhy",
+    "dateOfBirth": "2001-09-13T00:00:00",
+    "externalId": "1113475329",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "eb5b2a52-0928-467f-81d0-e3ef7716dde9",
+    "syncId": null,
+    "givenName": "Dali ",
+    "familyName": "Al reehan",
+    "dateOfBirth": "2006-02-24T00:00:00",
+    "externalId": "1139147019",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "46476664-e0fc-408d-9f97-e4149e1311e5",
+    "syncId": null,
+    "givenName": "Nasser ",
+    "familyName": "Mahmoud",
+    "dateOfBirth": "2002-03-25T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "85534c05-a5dc-4e9b-a6ee-e4991dc33910",
+    "syncId": null,
+    "givenName": "Basama ",
+    "familyName": "ALRashed",
+    "dateOfBirth": "2008-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "d3afabda-a900-4f52-8ada-e506b1a80019",
+    "syncId": null,
+    "givenName": "Sharifa",
+    "familyName": "Alsudairy",
+    "dateOfBirth": "2000-01-01T00:00:00",
+    "externalId": "1022229643",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "0586fc6c-1c83-48be-8c87-e52944a78b0c",
+    "syncId": null,
+    "givenName": "Faiz",
+    "familyName": "Alanazi",
+    "dateOfBirth": "1981-03-14T00:00:00",
+    "externalId": "1006469710",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "6017ce87-7b0d-4be7-998b-e5469562503b",
+    "syncId": null,
+    "givenName": "qasem ",
+    "familyName": "alYaqoub",
+    "dateOfBirth": "2011-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "ee089829-a89f-4e1d-af0c-e59738fec4f9",
+    "syncId": null,
+    "givenName": "Hassan",
+    "familyName": "Nada",
+    "dateOfBirth": "2009-11-26T00:00:00",
+    "externalId": "1140205327",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "2cdd732d-7a5f-4c5c-b3f7-e5eef700fcc5",
+    "syncId": null,
+    "givenName": "AMER",
+    "familyName": "ALOMAIRI",
+    "dateOfBirth": "2010-04-13T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "f300d33f-14ba-42bd-86a2-e6081e2f374a",
+    "syncId": null,
+    "givenName": "Shikha ",
+    "familyName": "Aldossry ",
+    "dateOfBirth": "2005-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "6cade147-4482-4891-8fdf-e66cce066b5f",
+    "syncId": null,
+    "givenName": "Mohammed",
+    "familyName": "Alhajri",
+    "dateOfBirth": "2003-06-16T00:00:00",
+    "externalId": "1122103367",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "41349cc0-2e58-4156-b0ce-e6b557676509",
+    "syncId": null,
+    "givenName": "Meshari",
+    "familyName": "ALHARBI",
+    "dateOfBirth": "1987-04-03T00:00:00",
+    "externalId": "1047213929",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "f0c7be84-5f5e-4ec2-9283-e6c83bb375e3",
+    "syncId": null,
+    "givenName": "Dhia",
+    "familyName": "Amara",
+    "dateOfBirth": "1991-08-23T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "9f38e512-4dbc-4bac-8275-e7b24778b291",
+    "syncId": null,
+    "givenName": "NORAH",
+    "familyName": "ALRASHED",
+    "dateOfBirth": "1997-12-24T00:00:00",
+    "externalId": "1098827296",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "42eecb62-07d7-4f61-a353-e7e8558ec3e4",
+    "syncId": null,
+    "givenName": "Lamees ",
+    "familyName": " AlAmri",
+    "dateOfBirth": "2011-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "fa93c9d9-3841-45df-baae-e807b388081f",
+    "syncId": null,
+    "givenName": "Muteb",
+    "familyName": "Hassan buhari",
+    "dateOfBirth": "2000-01-19T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "40f6bc3e-7ffc-463f-b9a2-e8546e6a1e72",
+    "syncId": null,
+    "givenName": "DINA",
+    "familyName": "ELIAS",
+    "dateOfBirth": "1991-10-23T00:00:00",
+    "externalId": "1074105659",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "711068c8-488b-4fa0-9106-e8a10bc1fe7e",
+    "syncId": null,
+    "givenName": "ALI",
+    "familyName": "ALZUBAIDI",
+    "dateOfBirth": "2007-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "1a60d262-6d3d-4b7f-9b35-e8a4f443f88c",
+    "syncId": null,
+    "givenName": "AHMED",
+    "familyName": "ALMEHMADI",
+    "dateOfBirth": "2009-05-01T00:00:00",
+    "externalId": "1146412794",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "c9352dc1-fedf-43ac-b7dd-e97c0734146c",
+    "syncId": null,
+    "givenName": "Hamdi",
+    "familyName": "Messaoudi ",
+    "dateOfBirth": "1994-07-20T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "185fd652-2560-4a03-abea-e9affba4b6d0",
+    "syncId": null,
+    "givenName": "Adel",
+    "familyName": "Almutairi",
+    "dateOfBirth": "1998-10-11T00:00:00",
+    "externalId": "1101169124",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "008c569b-b9f0-47c8-b719-e9fe1ccb1df4",
+    "syncId": null,
+    "givenName": "MOHAMMED",
+    "familyName": "AWAJI",
+    "dateOfBirth": "2007-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "16b933a6-3f1f-493b-b723-ea82d7586ace",
+    "syncId": null,
+    "givenName": "Baqer",
+    "familyName": "Al Jumah",
+    "dateOfBirth": "2001-03-07T00:00:00",
+    "externalId": "1111114110",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "5599105e-d4da-4e87-ac9a-eb04eb660a22",
+    "syncId": null,
+    "givenName": "Atheer",
+    "familyName": "Asiri",
+    "dateOfBirth": "2008-07-16T00:00:00",
+    "externalId": "1143340857",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "ff7ac094-d305-4cc6-9842-ec33472b6431",
+    "syncId": null,
+    "givenName": "Khalefah",
+    "familyName": "aloamiri",
+    "dateOfBirth": "1998-10-19T00:00:00",
+    "externalId": "1101434379",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "cdc5caf8-6422-48c8-bde2-ec74c3351e91",
+    "syncId": null,
+    "givenName": "Ward",
+    "familyName": "Alsedeq",
+    "dateOfBirth": "2004-01-15T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "665f03d6-dfa6-41d0-a5f2-ec9f11b5aa06",
+    "syncId": null,
+    "givenName": "FAHAD",
+    "familyName": "HAWSAH",
+    "dateOfBirth": "2007-12-12T00:00:00",
+    "externalId": "1140681576",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "14518bc0-6e1d-4b0b-ae9a-ecf3c79d8dcc",
+    "syncId": null,
+    "givenName": "Yousef ",
+    "familyName": "Al Madawi",
+    "dateOfBirth": "2009-04-04T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "f1d17ae2-f069-4274-81d5-ed961e8caa88",
+    "syncId": null,
+    "givenName": "Leila",
+    "familyName": "Obeid",
+    "dateOfBirth": "2011-10-08T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "be9b3ec9-7bfd-44f2-a213-eddcc3e5c14d",
+    "syncId": null,
+    "givenName": "Atallah",
+    "familyName": "AlAnazi",
+    "dateOfBirth": "1988-02-22T00:00:00",
+    "externalId": "1061101398",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "2a0d1848-9720-4ace-896b-ee2fda659704",
+    "syncId": null,
+    "givenName": "Mohammed",
+    "familyName": "Bubashait",
+    "dateOfBirth": "2003-12-12T00:00:00",
+    "externalId": "1122913385",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "50ee01af-3e00-4c0e-8c8d-ee7ad054b6fe",
+    "syncId": null,
+    "givenName": "DEEMA",
+    "familyName": "ALHAMMAD",
+    "dateOfBirth": "2008-11-30T00:00:00",
+    "externalId": "1144852041",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "095b2b72-bee4-469e-8bfa-eee587e60466",
+    "syncId": null,
+    "givenName": "ADAM",
+    "familyName": "ABDULKADIROV",
+    "dateOfBirth": "2005-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "a394551c-1fe5-4a92-80ee-eeef1675ea14",
+    "syncId": null,
+    "givenName": "Danah",
+    "familyName": "Alqahtani",
+    "dateOfBirth": "2005-06-19T00:00:00",
+    "externalId": "1130195132",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "9afaa162-8d1a-47b6-888f-ef1f5af713e7",
+    "syncId": null,
+    "givenName": "Sultan",
+    "familyName": "Alzahrani",
+    "dateOfBirth": "1998-12-19T00:00:00",
+    "externalId": "1124666809",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "02c25ae8-7927-4714-b0d4-efad3d392535",
+    "syncId": null,
+    "givenName": "Kariman",
+    "familyName": "Abuljadayel",
+    "dateOfBirth": "1994-05-11T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "5d8c2bd2-e0b4-4c0f-9016-efc96cbcfa5f",
+    "syncId": null,
+    "givenName": "Iqbal",
+    "familyName": " Abu Milha",
+    "dateOfBirth": "2009-07-02T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "000d8cce-a959-43d3-8183-efe29ae41d36",
+    "syncId": null,
+    "givenName": " Ali Hussain ",
+    "familyName": "AlShaheed",
+    "dateOfBirth": "2013-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "5ea63383-0a00-44ff-94c0-f0308c3c98bc",
+    "syncId": null,
+    "givenName": "Mohammed",
+    "familyName": "Alwabari",
+    "dateOfBirth": "2007-06-17T00:00:00",
+    "externalId": "1138683477",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "801ea008-6456-49d4-a77e-f0542bbddd51",
+    "syncId": null,
+    "givenName": "Moayed",
+    "familyName": "Alharbi",
+    "dateOfBirth": "2008-03-03T00:00:00",
+    "externalId": "1141636827",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "3f038f98-b089-4471-be43-f0bfbb9747cb",
+    "syncId": null,
+    "givenName": "Mazen",
+    "familyName": "AL Yassin",
+    "dateOfBirth": "1996-07-08T00:00:00",
+    "externalId": "1108167378",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "bf7e7c68-ba22-4337-884b-f0fb8a7df1f6",
+    "syncId": null,
+    "givenName": "Ali",
+    "familyName": "Al Nasfan",
+    "dateOfBirth": "2006-03-01T00:00:00",
+    "externalId": "1133089431",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "09b44f8b-0044-46eb-8294-f14bffd1da09",
+    "syncId": null,
+    "givenName": "abbas ",
+    "familyName": "altarouti",
+    "dateOfBirth": "2013-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "a1d4635a-aa5c-43a9-b47a-f267abeade70",
+    "syncId": null,
+    "givenName": "Khaled",
+    "familyName": "Alharbi",
+    "dateOfBirth": "2004-08-13T00:00:00",
+    "externalId": "1130252776",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "86072e64-cd7b-4f7f-8b01-f268c656d144",
+    "syncId": null,
+    "givenName": " Abdullah ",
+    "familyName": "Bukhari ",
+    "dateOfBirth": "2006-11-27T00:00:00",
+    "externalId": "1137210330",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "c44e3048-a60b-4d09-b034-f2e1cb0882c1",
+    "syncId": null,
+    "givenName": "Bader",
+    "familyName": "AlQahtani",
+    "dateOfBirth": "2006-09-24T00:00:00",
+    "externalId": "1135914206",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "57431d54-dc1c-4778-8f04-f2e9c16ff0d2",
+    "syncId": null,
+    "givenName": "Ahmed",
+    "familyName": "Yousif alkhawahir",
+    "dateOfBirth": "2003-01-19T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "0bfe7b6a-50eb-44ef-a9ee-f32e12f38609",
+    "syncId": null,
+    "givenName": "Abdullah",
+    "familyName": "Alhay",
+    "dateOfBirth": "1987-09-16T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "ac68f19a-aca0-4054-a8ec-f3aae6843801",
+    "syncId": null,
+    "givenName": "Abeer",
+    "familyName": "Alfuraih",
+    "dateOfBirth": "2010-08-22T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "e6572cc7-ac50-4dfb-9fb6-f3e46e03c343",
+    "syncId": null,
+    "givenName": "ABDULAH",
+    "familyName": "ALSALEM",
+    "dateOfBirth": "2003-08-22T00:00:00",
+    "externalId": "1122206400",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "c5c04216-a85f-446c-a26b-f404544f72fe",
+    "syncId": null,
+    "givenName": "Teste",
+    "familyName": "Athlete",
+    "dateOfBirth": "2000-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "e10d9dd1-7e5a-47e6-b3cc-f49aed9bf47b",
+    "syncId": null,
+    "givenName": "Abdullah",
+    "familyName": "Almansaf",
+    "dateOfBirth": "2004-01-15T00:00:00",
+    "externalId": "1123359919",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "f29edc7d-7891-4ef1-818a-f4f328326d26",
+    "syncId": null,
+    "givenName": "SAIID",
+    "familyName": "MUSAEV",
+    "dateOfBirth": "2005-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "a3cab4b0-9085-4eba-8867-f572e4301bbb",
+    "syncId": null,
+    "givenName": "Fatimah ",
+    "familyName": " AlQarous",
+    "dateOfBirth": "2013-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "55eeaa20-3afa-4be2-9dff-f58847d464df",
+    "syncId": null,
+    "givenName": "Maryam",
+    "familyName": "AlFuraih",
+    "dateOfBirth": "2012-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "07add9da-95e9-40b7-9d19-f6c7a9fe6b0a",
+    "syncId": null,
+    "givenName": "Abdulrahman ",
+    "familyName": "Alsuwayyid",
+    "dateOfBirth": "1986-02-18T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "51320335-ec3e-492d-aacb-f752a4d5ce64",
+    "syncId": null,
+    "givenName": "Tareg",
+    "familyName": "Hamedi",
+    "dateOfBirth": "1998-07-26T00:00:00",
+    "externalId": "1100188869",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "7dead5a5-26ec-4a0b-a243-f7864e5b62ab",
+    "syncId": null,
+    "givenName": "Ali",
+    "familyName": "Al Sadah",
+    "dateOfBirth": "2010-01-29T00:00:00",
+    "externalId": "1149516252",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "d3d0aa2d-6e9f-4297-a03c-f7b9bf8bd7f3",
+    "syncId": null,
+    "givenName": "Mohammed",
+    "familyName": "Alhusayni",
+    "dateOfBirth": "1993-10-10T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "c992f6b5-b7b0-4f12-996e-f7cd54139096",
+    "syncId": null,
+    "givenName": "Hussein",
+    "familyName": "Al Hizam",
+    "dateOfBirth": "1998-01-04T00:00:00",
+    "externalId": "1098493495",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "dc7a430e-3613-4ada-88eb-f8c3d6004d2f",
+    "syncId": null,
+    "givenName": "Abdalelah",
+    "familyName": "Algarni",
+    "dateOfBirth": "2006-04-10T00:00:00",
+    "externalId": "1133670495",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "61fe2207-93cf-40eb-a9c4-f8c81d3ff56e",
+    "syncId": null,
+    "givenName": "Ali ",
+    "familyName": "Bin Ali ",
+    "dateOfBirth": "1999-05-28T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "92a66bae-1cb5-4e08-a1b6-f8f0226587e2",
+    "syncId": null,
+    "givenName": "FAISAL",
+    "familyName": "ALBALBISi",
+    "dateOfBirth": "2011-04-10T00:00:00",
+    "externalId": "1154576241",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "38979518-77d1-478e-98f6-f976336b73b1",
+    "syncId": null,
+    "givenName": "Joud",
+    "familyName": "Farhoud",
+    "dateOfBirth": "2000-01-01T00:00:00",
+    "externalId": "1116066984",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "0f9e2c46-a25c-4529-ad6b-f995c9b7e33a",
+    "syncId": null,
+    "givenName": "Badah",
+    "familyName": "Albishi",
+    "dateOfBirth": "2006-09-29T00:00:00",
+    "externalId": "1133924140",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "c5a4b106-aae6-4c73-aa90-fa49b6dca1d0",
+    "syncId": null,
+    "givenName": "Ahmed",
+    "familyName": "Hazazi",
+    "dateOfBirth": "2007-03-25T00:00:00",
+    "externalId": "1137702575",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "b492639e-ef41-4ff4-96af-fa989d8cadc7",
+    "syncId": null,
+    "givenName": "Dana ",
+    "familyName": "Alqasim",
+    "dateOfBirth": "2003-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "e871ff6c-30a7-46ab-8f5c-fad49274fec9",
+    "syncId": null,
+    "givenName": "Huda",
+    "familyName": "Umar",
+    "dateOfBirth": "1997-01-01T00:00:00",
+    "externalId": "2144384118",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "d4f0637c-7157-4f88-8c5c-fb22b7551489",
+    "syncId": null,
+    "givenName": "Abdulaziz",
+    "familyName": "Al-Ghamdi",
+    "dateOfBirth": "2011-07-05T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "4e020f04-a775-4d00-9810-fb500a752b0b",
+    "syncId": null,
+    "givenName": "Ibrahim",
+    "familyName": "AL katheri",
+    "dateOfBirth": "2009-09-13T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "74e32968-eeea-447d-a787-fc50c210cc24",
+    "syncId": null,
+    "givenName": "Nawaf ",
+    "familyName": "AlJuhani",
+    "dateOfBirth": "2010-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "ab26810d-44e9-4062-94b3-fcebbdcbfbb1",
+    "syncId": null,
+    "givenName": "TURKI",
+    "familyName": "DAHAL",
+    "dateOfBirth": "2007-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "f747b90f-c652-4e5e-aeb5-fdd71edafe92",
+    "syncId": null,
+    "givenName": "RADHI",
+    "familyName": "ALHARTHI",
+    "dateOfBirth": "1992-04-12T00:00:00",
+    "externalId": "1078841051",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "624208e0-3c8c-4e71-8f34-fe045e773373",
+    "syncId": null,
+    "givenName": "Tariq",
+    "familyName": "Al Amri",
+    "dateOfBirth": "1990-12-23T00:00:00",
+    "externalId": "1070159981",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "8d0e0c82-d090-484d-8984-feee1b8547fc",
+    "syncId": null,
+    "givenName": "Fay ",
+    "familyName": "AlSanouni",
+    "dateOfBirth": "2010-01-01T00:00:00",
+    "externalId": null,
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "61ae3d44-0a1b-4ca6-b7ee-ff194cc923a2",
+    "syncId": null,
+    "givenName": "Mohammed",
+    "familyName": "Abdullah",
+    "dateOfBirth": "1993-12-31T00:00:00",
+    "externalId": "2135785570",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  },
+  {
+    "profileId": "3d0413f7-a4d6-48ba-b9f1-ff82e09d499b",
+    "syncId": null,
+    "givenName": "Saud",
+    "familyName": "Albasher",
+    "dateOfBirth": "1997-09-06T00:00:00",
+    "externalId": "1096341928",
+    "beingMergedWithProfileId": null,
+    "beingMergedWithProfileExpiryDateUtc": null
+  }
+]
