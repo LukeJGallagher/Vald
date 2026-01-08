@@ -3024,15 +3024,15 @@ with tabs[1]:
     # Import sport reports module
     try:
         from dashboard.utils.sport_reports import (
-            create_group_report, create_individual_report,
-            render_benchmark_legend, get_sport_benchmarks
+            create_group_report, create_group_report_v2, create_group_report_v3,
+            create_individual_report, render_benchmark_legend, get_sport_benchmarks
         )
         sport_reports_available = True
     except ImportError:
         try:
             from utils.sport_reports import (
-                create_group_report, create_individual_report,
-                render_benchmark_legend, get_sport_benchmarks
+                create_group_report, create_group_report_v2, create_group_report_v3,
+                create_individual_report, render_benchmark_legend, get_sport_benchmarks
             )
             sport_reports_available = True
         except ImportError:
@@ -3050,35 +3050,36 @@ with tabs[1]:
                 key="report_sport_selector"
             )
 
-            # Report type tabs
-            report_tabs = st.tabs(["👥 Group Report", "🏃 Individual Report"])
+            # Report type tabs - Group v1, v2, v3 and Individual
+            report_tabs = st.tabs(["👥 Group v1", "📊 Group v2", "📈 Group v3", "🏃 Individual Report"])
 
             # Render benchmark legend
             render_benchmark_legend()
 
-            with report_tabs[0]:
-                # Group Report
-                st.markdown("### Team Performance Overview")
+            # Filter data for selected sport (used by all tabs)
+            sport_mask = filtered_df['athlete_sport'].str.contains(
+                selected_report_sport.split()[0], case=False, na=False
+            ) if 'athlete_sport' in filtered_df.columns else pd.Series([True] * len(filtered_df))
 
-                # Filter data for selected sport
-                sport_mask = filtered_df['athlete_sport'].str.contains(
+            sport_data = filtered_df[sport_mask].copy()
+
+            # Filter ForceFrame and NordBord for sport
+            sport_ff = filtered_forceframe.copy() if not filtered_forceframe.empty else pd.DataFrame()
+            sport_nb = filtered_nordbord.copy() if not filtered_nordbord.empty else pd.DataFrame()
+
+            if 'athlete_sport' in sport_ff.columns:
+                sport_ff = sport_ff[sport_ff['athlete_sport'].str.contains(
                     selected_report_sport.split()[0], case=False, na=False
-                ) if 'athlete_sport' in filtered_df.columns else pd.Series([True] * len(filtered_df))
+                )]
+            if 'athlete_sport' in sport_nb.columns:
+                sport_nb = sport_nb[sport_nb['athlete_sport'].str.contains(
+                    selected_report_sport.split()[0], case=False, na=False
+                )]
 
-                sport_data = filtered_df[sport_mask].copy()
-
-                # Filter ForceFrame and NordBord for sport
-                sport_ff = filtered_forceframe.copy() if not filtered_forceframe.empty else pd.DataFrame()
-                sport_nb = filtered_nordbord.copy() if not filtered_nordbord.empty else pd.DataFrame()
-
-                if 'athlete_sport' in sport_ff.columns:
-                    sport_ff = sport_ff[sport_ff['athlete_sport'].str.contains(
-                        selected_report_sport.split()[0], case=False, na=False
-                    )]
-                if 'athlete_sport' in sport_nb.columns:
-                    sport_nb = sport_nb[sport_nb['athlete_sport'].str.contains(
-                        selected_report_sport.split()[0], case=False, na=False
-                    )]
+            with report_tabs[0]:
+                # Group Report v1 - Bar charts with benchmark zones
+                st.markdown("### Team Performance Overview")
+                st.caption("Bar charts with shaded benchmark zones")
 
                 create_group_report(
                     sport_data,
@@ -3088,6 +3089,30 @@ with tabs[1]:
                 )
 
             with report_tabs[1]:
+                # Group Report v2 - Summary table with RAG status
+                st.markdown("### Team Summary View")
+                st.caption("Summary table with RAG status indicators")
+
+                create_group_report_v2(
+                    sport_data,
+                    selected_report_sport,
+                    forceframe_df=sport_ff if not sport_ff.empty else None,
+                    nordbord_df=sport_nb if not sport_nb.empty else None
+                )
+
+            with report_tabs[2]:
+                # Group Report v3 - Alternative visualizations
+                st.markdown("### Alternative Visualizations")
+                st.caption("Bullet charts, radar plots, and distribution analysis")
+
+                create_group_report_v3(
+                    sport_data,
+                    selected_report_sport,
+                    forceframe_df=sport_ff if not sport_ff.empty else None,
+                    nordbord_df=sport_nb if not sport_nb.empty else None
+                )
+
+            with report_tabs[3]:
                 # Individual Report
                 st.markdown("### Individual Athlete Analysis")
 
