@@ -2367,10 +2367,10 @@ with tabs[5]:  # Trace (was tabs[8])
         col1, col2 = st.columns(2)
 
         with col1:
-            # Select athlete
+            # Select athlete (filter out NaN values)
             trace_athlete = st.selectbox(
                 "Select Athlete:",
-                options=sorted(filtered_df['Name'].unique()),
+                options=sorted([n for n in filtered_df['Name'].unique() if pd.notna(n)]),
                 key="trace_athlete"
             )
 
@@ -2532,13 +2532,13 @@ with tabs[5]:  # Trace (was tabs[8])
                 if comparison_mode == "Different Athletes - Same Test Type":
                     athlete1 = st.selectbox(
                         "Athlete 1:",
-                        options=sorted(filtered_df['Name'].unique()),
+                        options=sorted([n for n in filtered_df['Name'].unique() if pd.notna(n)]),
                         key="comp_athlete1"
                     )
                 else:
                     athlete1 = st.selectbox(
                         "Athlete:",
-                        options=sorted(filtered_df['Name'].unique()),
+                        options=sorted([n for n in filtered_df['Name'].unique() if pd.notna(n)]),
                         key="comp_athlete1_same"
                     )
 
@@ -2574,8 +2574,8 @@ with tabs[5]:  # Trace (was tabs[8])
 
             with col2a:
                 if comparison_mode == "Different Athletes - Same Test Type":
-                    # Filter to different athlete
-                    other_athletes = [a for a in sorted(filtered_df['Name'].unique()) if a != athlete1]
+                    # Filter to different athlete (filter out NaN values)
+                    other_athletes = [a for a in sorted([n for n in filtered_df['Name'].unique() if pd.notna(n)]) if a != athlete1]
                     athlete2 = st.selectbox(
                         "Athlete 2:",
                         options=other_athletes,
