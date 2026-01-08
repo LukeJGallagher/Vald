@@ -1887,9 +1887,10 @@ with tabs[5]:  # Trace (was tabs[8])
     if has_test_ids and env_loaded:
         # Step 1: Select Athlete
         st.markdown("#### Step 1: Select Athlete")
+        trace_athletes = sorted([n for n in filtered_df['Name'].unique() if pd.notna(n)])
         selected_trace_athlete = st.selectbox(
             "Choose athlete to view available tests:",
-            sorted(filtered_df['Name'].unique()),
+            trace_athletes if trace_athletes else ["No athletes available"],
             key="trace_athlete_select"
         )
 
