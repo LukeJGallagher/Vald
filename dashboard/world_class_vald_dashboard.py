@@ -2203,8 +2203,8 @@ with tabs[5]:  # Trace (was tabs[8])
     else:
         st.markdown("*Select multiple athletes to compare their force traces side-by-side*")
 
-        # Get athletes with test data
-        athletes_with_tests = sorted(filtered_df['Name'].unique().tolist())
+        # Get athletes with test data (filter out NaN values)
+        athletes_with_tests = sorted([n for n in filtered_df['Name'].unique() if pd.notna(n)])
 
         # Multi-select for athletes (up to 5)
         selected_athletes_compare = st.multiselect(
@@ -2897,18 +2897,18 @@ with tabs[6]:  # Data (was tabs[16])
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        # Test type filter
-        test_types = ['All'] + sorted(filtered_df['testType'].unique().tolist()) if 'testType' in filtered_df.columns else ['All']
+        # Test type filter (filter out NaN values)
+        test_types = ['All'] + sorted([t for t in filtered_df['testType'].unique() if pd.notna(t)]) if 'testType' in filtered_df.columns else ['All']
         selected_test_type = st.selectbox("Test Type:", test_types, key="table_test_type")
 
     with col2:
-        # Athlete filter
-        athletes = ['All'] + sorted(filtered_df['Name'].unique().tolist()) if 'Name' in filtered_df.columns else ['All']
+        # Athlete filter (filter out NaN values)
+        athletes = ['All'] + sorted([n for n in filtered_df['Name'].unique() if pd.notna(n)]) if 'Name' in filtered_df.columns else ['All']
         selected_athlete_table = st.selectbox("Athlete:", athletes, key="table_athlete")
 
     with col3:
-        # Sport filter
-        sports = ['All'] + sorted(filtered_df['athlete_sport'].unique().tolist()) if 'athlete_sport' in filtered_df.columns else ['All']
+        # Sport filter (filter out NaN values)
+        sports = ['All'] + sorted([s for s in filtered_df['athlete_sport'].unique() if pd.notna(s)]) if 'athlete_sport' in filtered_df.columns else ['All']
         selected_sport_table = st.selectbox("Sport:", sports, key="table_sport")
 
     # Apply filters
