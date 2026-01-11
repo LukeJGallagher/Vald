@@ -428,117 +428,124 @@ def load_env_credentials():
 
 @st.cache_data(ttl=3600, show_spinner=False)
 def get_force_trace(test_id, trial_id, token, tenant_id, region='euw'):
-    """Fetch force trace data from VALD API for a specific trial. Cached for 1 hour.
+    """Fetch force trace data from VALD API for a specific test. Cached for 1 hour.
 
-    Returns a DataFrame with time_ms and force_n columns, or empty DataFrame on failure.
+    Uses the /v2019q3/teams/{teamId}/tests/{testId}/recording endpoint.
+    Returns a DataFrame with force trace data, or empty DataFrame on failure.
+
+    Response format from VALD API:
+    - recordingDataHeader: column names like "Time", "Z Left", "Z Right", etc.
+    - recordingData: array of data points
+    - samplingFrequency: Hz (typically 200 or 1000)
     """
     import requests
 
-    # External VALD API endpoints (official API)
+    # External VALD API endpoints (official API per VALD documentation)
     ext_base_urls = {
         'euw': 'https://prd-euw-api-extforcedecks.valdperformance.com',
         'use': 'https://prd-use-api-extforcedecks.valdperformance.com',
         'aue': 'https://prd-aue-api-extforcedecks.valdperformance.com'
     }
 
-    # Internal ForceDecks endpoints (legacy/backup)
-    int_base_urls = {
-        'euw': 'https://prd-euw-webapi-1.forcedecks.com',
-        'use': 'https://prd-use-webapi-1.forcedecks.com',
-        'aue': 'https://prd-aue-webapi-1.forcedecks.com'
-    }
-
     ext_base = ext_base_urls.get(region, ext_base_urls['euw'])
-    int_base = int_base_urls.get(region, int_base_urls['euw'])
 
-    # Try multiple endpoint patterns - external API first, then internal
-    endpoints = [
-        # External VALD API endpoints
-        f"{ext_base}/v2019q3/teams/{tenant_id}/tests/{test_id}/trials",
-        f"{ext_base}/v2019q3/teams/{tenant_id}/tests/{test_id}/recording",
-        f"{ext_base}/api/v1/tests/{test_id}/recording",
-        # Internal ForceDecks endpoints (legacy)
-        f"{int_base}/api/trials/{trial_id}/trace",
-        f"{int_base}/api/tests/{test_id}/trials/{trial_id}/trace",
-        f"{int_base}/api/v1/trials/{trial_id}/recording",
-    ]
+    # Primary endpoint: /v2019q3/teams/{teamId}/tests/{testId}/recording
+    # This is the official VALD external API endpoint for force trace data
+    recording_url = f"{ext_base}/v2019q3/teams/{tenant_id}/tests/{test_id}/recording"
 
     headers = {
         'Authorization': f'Bearer {token}',
         'Accept': 'application/json'
     }
 
-    params = {'TenantId': tenant_id}  # Note: Capital T for external API
+    try:
+        response = requests.get(recording_url, headers=headers, timeout=60)
 
-    for url in endpoints:
-        try:
-            response = requests.get(url, headers=headers, params=params, timeout=30)
+        if response.status_code == 200:
+            data = response.json()
 
-            if response.status_code == 200:
-                data = response.json()
+            # Handle VALD recording response format
+            # Contains: recordingDataHeader, recordingData, samplingFrequency, etc.
+            if isinstance(data, dict):
+                # Official VALD format with recordingData and recordingDataHeader
+                if 'recordingData' in data and 'recordingDataHeader' in data:
+                    headers_list = data['recordingDataHeader']
+                    recording_data = data['recordingData']
+                    sampling_freq = data.get('samplingFrequency', 200)
 
-                # Handle different response formats
-                if isinstance(data, list):
-                    # If it's a list of force values
-                    if len(data) > 0 and isinstance(data[0], (int, float)):
+                    if recording_data and headers_list:
+                        # Create DataFrame with proper column names
+                        df = pd.DataFrame(recording_data, columns=headers_list)
+
+                        # Calculate time in ms based on sampling frequency
+                        if 'Time' not in df.columns:
+                            df['time_ms'] = np.arange(len(df)) * (1000 / sampling_freq)
+                        else:
+                            df['time_ms'] = df['Time']
+
+                        # Try to identify force columns (Z Left, Z Right, or combined)
+                        force_cols = [c for c in df.columns if 'Z ' in c or 'Force' in c.lower()]
+                        if force_cols:
+                            # Combine left and right for total force if both exist
+                            if 'Z Left' in df.columns and 'Z Right' in df.columns:
+                                df['force_n'] = df['Z Left'] + df['Z Right']
+                                df['force_left'] = df['Z Left']
+                                df['force_right'] = df['Z Right']
+                            elif force_cols:
+                                df['force_n'] = df[force_cols[0]]
+
+                        # Store metadata
+                        df.attrs['sampling_frequency'] = sampling_freq
+                        df.attrs['recording_type'] = data.get('recordingType', 'Unknown')
+                        df.attrs['duration'] = data.get('duration', 0)
+
+                        return df
+
+                # Handle other dict formats (legacy/alternative)
+                elif 'trace' in data:
+                    trace_data = data['trace']
+                    if isinstance(trace_data, list):
                         df = pd.DataFrame({
-                            'time_ms': np.arange(len(data)),
-                            'force_n': data
+                            'time_ms': np.arange(len(trace_data)),
+                            'force_n': trace_data
                         })
                         return df
-                    # If it's a list of dicts
-                    elif len(data) > 0 and isinstance(data[0], dict):
-                        df = pd.DataFrame(data)
-                        # Normalize column names
-                        col_mapping = {}
-                        for col in df.columns:
-                            col_lower = col.lower()
-                            if 'time' in col_lower:
-                                col_mapping[col] = 'time_ms'
-                            elif 'force' in col_lower or col_lower in ['value', 'y', 'data']:
-                                col_mapping[col] = 'force_n'
-                        if col_mapping:
-                            df = df.rename(columns=col_mapping)
-                        return df
 
-                elif isinstance(data, dict):
-                    # Handle dict with trace data
-                    if 'trace' in data:
-                        trace_data = data['trace']
-                        if isinstance(trace_data, list):
-                            df = pd.DataFrame({
-                                'time_ms': np.arange(len(trace_data)),
-                                'force_n': trace_data
-                            })
-                            return df
-                    # Handle dict with left/right/combined forces
-                    elif 'combinedForce' in data or 'leftForce' in data:
-                        force_data = data.get('combinedForce') or data.get('leftForce', [])
-                        if force_data:
-                            df = pd.DataFrame({
-                                'time_ms': np.arange(len(force_data)),
-                                'force_n': force_data
-                            })
-                            return df
-                    # Handle dict with time and force arrays
-                    elif 'time' in data and 'force' in data:
+                elif 'combinedForce' in data or 'leftForce' in data:
+                    force_data = data.get('combinedForce') or data.get('leftForce', [])
+                    if force_data:
                         df = pd.DataFrame({
-                            'time_ms': data['time'],
-                            'force_n': data['force']
+                            'time_ms': np.arange(len(force_data)),
+                            'force_n': force_data
                         })
                         return df
-                    # Try to convert dict directly
-                    else:
-                        df = pd.DataFrame(data)
-                        if not df.empty:
-                            return df
 
-        except requests.exceptions.RequestException:
-            continue
-        except Exception:
-            continue
+            # Handle list response (raw force values)
+            elif isinstance(data, list) and len(data) > 0:
+                if isinstance(data[0], (int, float)):
+                    df = pd.DataFrame({
+                        'time_ms': np.arange(len(data)),
+                        'force_n': data
+                    })
+                    return df
+                elif isinstance(data[0], dict):
+                    df = pd.DataFrame(data)
+                    return df
 
-    # Return empty DataFrame if all attempts fail
+        # Log non-200 responses for debugging
+        elif response.status_code == 401:
+            st.warning("API authentication failed. Check your credentials.")
+        elif response.status_code == 404:
+            st.info(f"Recording not found for test {test_id[:8]}...")
+
+    except requests.exceptions.Timeout:
+        st.warning("API request timed out. Try again.")
+    except requests.exceptions.RequestException as e:
+        st.warning(f"API request error: {str(e)[:100]}")
+    except Exception as e:
+        st.warning(f"Error processing response: {str(e)[:100]}")
+
+    # Return empty DataFrame if request fails
     return pd.DataFrame()
 
 
