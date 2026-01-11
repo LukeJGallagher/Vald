@@ -53,8 +53,8 @@ _TO_DELETE/
 # Data files - Contains PII, excluded from git
 data/master_files/*.csv
 dashboard/data/*.csv
+!dashboard/data/training_distances.csv
 dashboard/data/*.json
-*.csv
 
 # Windows artifacts
 nul
