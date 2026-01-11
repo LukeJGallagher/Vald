@@ -428,7 +428,10 @@ def load_env_credentials():
 
 @st.cache_data(ttl=3600, show_spinner=False)
 def get_force_trace(test_id, trial_id, token, tenant_id, region='euw'):
-    """Fetch force trace data from VALD API for a specific trial. Cached for 1 hour."""
+    """Fetch force trace data from VALD API for a specific trial. Cached for 1 hour.
+
+    Returns a DataFrame with time_ms and force_n columns, or empty DataFrame on failure.
+    """
     import requests
 
     base_urls = {
@@ -438,7 +441,13 @@ def get_force_trace(test_id, trial_id, token, tenant_id, region='euw'):
     }
 
     base_url = base_urls.get(region, base_urls['euw'])
-    url = f"{base_url}/api/trials/{trial_id}/trace"
+
+    # Try multiple endpoint patterns
+    endpoints = [
+        f"{base_url}/api/trials/{trial_id}/trace",
+        f"{base_url}/api/tests/{test_id}/trials/{trial_id}/trace",
+        f"{base_url}/api/v1/trials/{trial_id}/recording",
+    ]
 
     headers = {
         'Authorization': f'Bearer {token}',
@@ -447,15 +456,76 @@ def get_force_trace(test_id, trial_id, token, tenant_id, region='euw'):
 
     params = {'tenantId': tenant_id}
 
-    try:
-        response = requests.get(url, headers=headers, params=params, timeout=30)
+    for url in endpoints:
+        try:
+            response = requests.get(url, headers=headers, params=params, timeout=30)
 
-        if response.status_code == 200:
-            return response.json(), None
-        else:
-            return None, f"API Error {response.status_code}: {response.text[:200]}"
-    except Exception as e:
-        return None, f"Request failed: {str(e)}"
+            if response.status_code == 200:
+                data = response.json()
+
+                # Handle different response formats
+                if isinstance(data, list):
+                    # If it's a list of force values
+                    if len(data) > 0 and isinstance(data[0], (int, float)):
+                        df = pd.DataFrame({
+                            'time_ms': np.arange(len(data)),
+                            'force_n': data
+                        })
+                        return df
+                    # If it's a list of dicts
+                    elif len(data) > 0 and isinstance(data[0], dict):
+                        df = pd.DataFrame(data)
+                        # Normalize column names
+                        col_mapping = {}
+                        for col in df.columns:
+                            col_lower = col.lower()
+                            if 'time' in col_lower:
+                                col_mapping[col] = 'time_ms'
+                            elif 'force' in col_lower or col_lower in ['value', 'y', 'data']:
+                                col_mapping[col] = 'force_n'
+                        if col_mapping:
+                            df = df.rename(columns=col_mapping)
+                        return df
+
+                elif isinstance(data, dict):
+                    # Handle dict with trace data
+                    if 'trace' in data:
+                        trace_data = data['trace']
+                        if isinstance(trace_data, list):
+                            df = pd.DataFrame({
+                                'time_ms': np.arange(len(trace_data)),
+                                'force_n': trace_data
+                            })
+                            return df
+                    # Handle dict with left/right/combined forces
+                    elif 'combinedForce' in data or 'leftForce' in data:
+                        force_data = data.get('combinedForce') or data.get('leftForce', [])
+                        if force_data:
+                            df = pd.DataFrame({
+                                'time_ms': np.arange(len(force_data)),
+                                'force_n': force_data
+                            })
+                            return df
+                    # Handle dict with time and force arrays
+                    elif 'time' in data and 'force' in data:
+                        df = pd.DataFrame({
+                            'time_ms': data['time'],
+                            'force_n': data['force']
+                        })
+                        return df
+                    # Try to convert dict directly
+                    else:
+                        df = pd.DataFrame(data)
+                        if not df.empty:
+                            return df
+
+        except requests.exceptions.RequestException:
+            continue
+        except Exception:
+            continue
+
+    # Return empty DataFrame if all attempts fail
+    return pd.DataFrame()
 
 
 # ============================================================================
@@ -1703,11 +1773,11 @@ st.sidebar.metric("Sports", filtered_df['athlete_sport'].nunique() if 'athlete_s
 # TABS - Streamlined (removed tabs preserved in docs/DASHBOARD_TABS_REFERENCE.md)
 # ============================================================================
 
-# New tab order: Home, Reports, ForceFrame, NordBord, Throws, Trace, Data
+# New tab order: Home, Reports, ForceFrame, NordBord, Throws, Data Entry, Trace, Data
 # Original indices: 0=Home, 1=Reports, 2=ForceFrame, 3=NordBord, 7=Throws, 8=Trace, 16=Data
-# New indices:      0=Home, 1=Reports, 2=ForceFrame, 3=NordBord, 4=Throws, 5=Trace, 6=Data
+# New indices:      0=Home, 1=Reports, 2=ForceFrame, 3=NordBord, 4=Throws, 5=Data Entry, 6=Trace, 7=Data
 tabs = st.tabs([
-    "🏠 Home", "📊 Reports", "🔲 ForceFrame", "🦵 NordBord", "🥏 Throws", "📉 Trace", "📋 Data"
+    "🏠 Home", "📊 Reports", "🔲 ForceFrame", "🦵 NordBord", "🥏 Throws", "✏️ Data Entry", "📉 Trace", "📋 Data"
 ])
 
 # ============================================================================
@@ -1859,12 +1929,481 @@ with tabs[4]:  # Throws (was tabs[7])
 # ============================================================================
 
 # ============================================================================
+# TAB 5: DATA ENTRY - Training Distances & External Data
+# ============================================================================
+
+with tabs[5]:  # Data Entry
+    st.markdown("## ✏️ Data Entry")
+    st.markdown("*Record training distances, throws data, and other external metrics*")
+
+    # Initialize session state for training data
+    if 'training_distances' not in st.session_state:
+        st.session_state.training_distances = pd.DataFrame()
+
+    # Load existing training data from CSV if available
+    training_data_path = os.path.join(os.path.dirname(__file__), 'data', 'training_distances.csv')
+
+    @st.cache_data(ttl=300)
+    def load_training_distances():
+        """Load training distances from CSV file."""
+        if os.path.exists(training_data_path):
+            df = pd.read_csv(training_data_path)
+            if 'date' in df.columns:
+                df['date'] = pd.to_datetime(df['date'])
+            return df
+        return pd.DataFrame()
+
+    # Load existing data
+    if st.session_state.training_distances.empty:
+        st.session_state.training_distances = load_training_distances()
+
+    # Create sub-tabs for different entry types
+    entry_tabs = st.tabs(["🥏 Throws Distance", "📊 View Data", "📈 Charts"])
+
+    # -------------------------------------------------------------------------
+    # SUB-TAB: Throws Distance Entry Form
+    # -------------------------------------------------------------------------
+    with entry_tabs[0]:
+        st.markdown("### 🥏 Record Throw Distance")
+
+        st.markdown("""
+        <div style="
+            background: linear-gradient(135deg, #007167 0%, #005a51 100%);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            color: white;
+        ">
+            <p style="margin: 0; font-size: 0.95rem;">
+                📝 Record training throw distances for Athletics athletes. Data is saved locally and can be exported.
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        with st.form("throw_distance_form", clear_on_submit=True):
+            col1, col2 = st.columns(2)
+
+            with col1:
+                # Get athlete list from existing data
+                athletes_list = []
+                if 'Name' in filtered_df.columns:
+                    athletes_list = sorted([a for a in filtered_df['Name'].unique() if pd.notna(a)])
+
+                selected_athlete = st.selectbox(
+                    "Athlete *",
+                    options=athletes_list if athletes_list else ["No athletes loaded"],
+                    key="entry_athlete"
+                )
+
+                entry_date = st.date_input(
+                    "Date *",
+                    value=datetime.now().date(),
+                    key="entry_date"
+                )
+
+                event_type = st.selectbox(
+                    "Event *",
+                    options=["Shot Put", "Discus", "Javelin", "Hammer"],
+                    key="entry_event"
+                )
+
+            with col2:
+                implement_weight = st.selectbox(
+                    "Implement Weight (kg)",
+                    options=["Competition", "1.5", "2.0", "3.0", "4.0", "5.0", "6.0", "7.26", "Other"],
+                    key="entry_implement"
+                )
+
+                if implement_weight == "Other":
+                    custom_weight = st.number_input(
+                        "Custom Weight (kg)",
+                        min_value=0.5,
+                        max_value=20.0,
+                        value=4.0,
+                        step=0.5,
+                        key="entry_custom_weight"
+                    )
+
+                distance = st.number_input(
+                    "Distance (m) *",
+                    min_value=0.0,
+                    max_value=100.0,
+                    value=0.0,
+                    step=0.01,
+                    format="%.2f",
+                    key="entry_distance"
+                )
+
+            # Additional fields
+            col3, col4 = st.columns(2)
+
+            with col3:
+                session_type = st.selectbox(
+                    "Session Type",
+                    options=["Training", "Competition", "Testing", "Warm-up"],
+                    key="entry_session"
+                )
+
+                attempt_number = st.number_input(
+                    "Attempt #",
+                    min_value=1,
+                    max_value=20,
+                    value=1,
+                    key="entry_attempt"
+                )
+
+            with col4:
+                conditions = st.selectbox(
+                    "Conditions",
+                    options=["Indoor", "Outdoor - Calm", "Outdoor - Windy", "Outdoor - Rain"],
+                    key="entry_conditions"
+                )
+
+                notes = st.text_area(
+                    "Notes (optional)",
+                    placeholder="Technical cues, RPE, feelings...",
+                    max_chars=500,
+                    key="entry_notes"
+                )
+
+            submitted = st.form_submit_button("💾 Save Entry", use_container_width=True)
+
+            if submitted:
+                if distance > 0 and selected_athlete != "No athletes loaded":
+                    # Determine weight value
+                    weight_value = implement_weight
+                    if implement_weight == "Other":
+                        weight_value = str(custom_weight)
+
+                    # Create new entry
+                    new_entry = pd.DataFrame([{
+                        'date': entry_date,
+                        'athlete': selected_athlete,
+                        'event': event_type,
+                        'implement_kg': weight_value,
+                        'distance_m': distance,
+                        'session_type': session_type,
+                        'attempt': attempt_number,
+                        'conditions': conditions,
+                        'notes': notes,
+                        'created_at': datetime.now().isoformat()
+                    }])
+
+                    # Append to existing data
+                    if st.session_state.training_distances.empty:
+                        st.session_state.training_distances = new_entry
+                    else:
+                        st.session_state.training_distances = pd.concat(
+                            [st.session_state.training_distances, new_entry],
+                            ignore_index=True
+                        )
+
+                    # Save to CSV
+                    os.makedirs(os.path.dirname(training_data_path), exist_ok=True)
+                    st.session_state.training_distances.to_csv(training_data_path, index=False)
+
+                    # Clear cache to reload data
+                    load_training_distances.clear()
+
+                    st.success(f"✅ Saved: {selected_athlete} - {event_type} - {distance}m")
+                    st.balloons()
+                else:
+                    st.error("Please enter a valid distance and select an athlete")
+
+        # Quick entry for multiple throws
+        st.markdown("---")
+        st.markdown("### ⚡ Quick Entry (Multiple Throws)")
+        st.markdown("*Paste data from a spreadsheet (Date, Athlete, Event, Weight, Distance)*")
+
+        bulk_data = st.text_area(
+            "Paste CSV data (one row per line, comma-separated)",
+            placeholder="2024-01-15, John Smith, Shot Put, 7.26, 18.5\n2024-01-15, John Smith, Shot Put, 7.26, 19.2",
+            key="bulk_entry"
+        )
+
+        if st.button("📥 Import Bulk Data", key="import_bulk"):
+            if bulk_data.strip():
+                try:
+                    from io import StringIO
+                    bulk_df = pd.read_csv(
+                        StringIO(bulk_data),
+                        names=['date', 'athlete', 'event', 'implement_kg', 'distance_m'],
+                        skipinitialspace=True
+                    )
+                    bulk_df['date'] = pd.to_datetime(bulk_df['date'])
+                    bulk_df['session_type'] = 'Training'
+                    bulk_df['attempt'] = 1
+                    bulk_df['conditions'] = ''
+                    bulk_df['notes'] = ''
+                    bulk_df['created_at'] = datetime.now().isoformat()
+
+                    if st.session_state.training_distances.empty:
+                        st.session_state.training_distances = bulk_df
+                    else:
+                        st.session_state.training_distances = pd.concat(
+                            [st.session_state.training_distances, bulk_df],
+                            ignore_index=True
+                        )
+
+                    # Save to CSV
+                    os.makedirs(os.path.dirname(training_data_path), exist_ok=True)
+                    st.session_state.training_distances.to_csv(training_data_path, index=False)
+                    load_training_distances.clear()
+
+                    st.success(f"✅ Imported {len(bulk_df)} entries")
+                except Exception as e:
+                    st.error(f"Error parsing data: {str(e)}")
+
+    # -------------------------------------------------------------------------
+    # SUB-TAB: View Data
+    # -------------------------------------------------------------------------
+    with entry_tabs[1]:
+        st.markdown("### 📊 Recorded Training Data")
+
+        training_df = st.session_state.training_distances
+
+        if not training_df.empty:
+            # Filters
+            filter_col1, filter_col2, filter_col3 = st.columns(3)
+
+            with filter_col1:
+                filter_athletes = ['All'] + sorted(training_df['athlete'].unique().tolist())
+                selected_filter_athlete = st.selectbox("Filter by Athlete:", filter_athletes, key="view_filter_athlete")
+
+            with filter_col2:
+                filter_events = ['All'] + sorted(training_df['event'].unique().tolist())
+                selected_filter_event = st.selectbox("Filter by Event:", filter_events, key="view_filter_event")
+
+            with filter_col3:
+                sort_options = ['Date (Newest)', 'Date (Oldest)', 'Distance (Best)', 'Distance (Worst)']
+                sort_by = st.selectbox("Sort by:", sort_options, key="view_sort")
+
+            # Apply filters
+            display_training_df = training_df.copy()
+
+            if selected_filter_athlete != 'All':
+                display_training_df = display_training_df[display_training_df['athlete'] == selected_filter_athlete]
+
+            if selected_filter_event != 'All':
+                display_training_df = display_training_df[display_training_df['event'] == selected_filter_event]
+
+            # Apply sorting
+            if 'date' in display_training_df.columns:
+                display_training_df['date'] = pd.to_datetime(display_training_df['date'])
+                if sort_by == 'Date (Newest)':
+                    display_training_df = display_training_df.sort_values('date', ascending=False)
+                elif sort_by == 'Date (Oldest)':
+                    display_training_df = display_training_df.sort_values('date', ascending=True)
+                elif sort_by == 'Distance (Best)':
+                    display_training_df = display_training_df.sort_values('distance_m', ascending=False)
+                elif sort_by == 'Distance (Worst)':
+                    display_training_df = display_training_df.sort_values('distance_m', ascending=True)
+
+            # Display stats
+            stat_col1, stat_col2, stat_col3, stat_col4 = st.columns(4)
+
+            with stat_col1:
+                st.metric("Total Entries", len(display_training_df))
+            with stat_col2:
+                st.metric("Athletes", display_training_df['athlete'].nunique())
+            with stat_col3:
+                if 'distance_m' in display_training_df.columns:
+                    st.metric("Best Distance", f"{display_training_df['distance_m'].max():.2f}m")
+            with stat_col4:
+                if 'distance_m' in display_training_df.columns:
+                    st.metric("Avg Distance", f"{display_training_df['distance_m'].mean():.2f}m")
+
+            # Display table
+            st.dataframe(
+                display_training_df,
+                use_container_width=True,
+                hide_index=True,
+                height=400
+            )
+
+            # Export options
+            st.markdown("### 📥 Export Data")
+            col1, col2 = st.columns(2)
+
+            with col1:
+                csv_export = display_training_df.to_csv(index=False)
+                st.download_button(
+                    "📥 Download as CSV",
+                    data=csv_export,
+                    file_name=f"training_distances_{datetime.now().strftime('%Y%m%d')}.csv",
+                    mime="text/csv"
+                )
+
+            with col2:
+                if st.button("🗑️ Clear All Data", type="secondary"):
+                    if st.checkbox("⚠️ Confirm delete all data"):
+                        st.session_state.training_distances = pd.DataFrame()
+                        if os.path.exists(training_data_path):
+                            os.remove(training_data_path)
+                        load_training_distances.clear()
+                        st.success("All data cleared")
+                        st.rerun()
+        else:
+            st.info("📭 No training data recorded yet. Use the 'Throws Distance' tab to add entries.")
+
+    # -------------------------------------------------------------------------
+    # SUB-TAB: Charts
+    # -------------------------------------------------------------------------
+    with entry_tabs[2]:
+        st.markdown("### 📈 Training Distance Charts")
+
+        training_df = st.session_state.training_distances
+
+        if not training_df.empty and 'date' in training_df.columns:
+            training_df['date'] = pd.to_datetime(training_df['date'])
+
+            # Chart filters
+            chart_col1, chart_col2 = st.columns(2)
+
+            with chart_col1:
+                chart_athletes = sorted(training_df['athlete'].unique().tolist())
+                selected_chart_athlete = st.selectbox(
+                    "Select Athlete:",
+                    options=chart_athletes,
+                    key="chart_athlete"
+                )
+
+            with chart_col2:
+                chart_events = sorted(training_df[training_df['athlete'] == selected_chart_athlete]['event'].unique().tolist())
+                selected_chart_event = st.selectbox(
+                    "Select Event:",
+                    options=chart_events if chart_events else ['No events'],
+                    key="chart_event"
+                )
+
+            # Filter data for charts
+            chart_df = training_df[
+                (training_df['athlete'] == selected_chart_athlete) &
+                (training_df['event'] == selected_chart_event)
+            ].sort_values('date')
+
+            if not chart_df.empty:
+                # Distance over time chart
+                st.markdown("#### 📈 Distance Progression")
+
+                fig = go.Figure()
+
+                # Add scatter points
+                fig.add_trace(go.Scatter(
+                    x=chart_df['date'],
+                    y=chart_df['distance_m'],
+                    mode='markers+lines',
+                    name='Throws',
+                    marker=dict(size=10, color='#007167'),
+                    line=dict(color='#007167', width=2),
+                    hovertemplate='<b>%{x|%d %b %Y}</b><br>Distance: %{y:.2f}m<extra></extra>'
+                ))
+
+                # Add best distance line
+                best_distance = chart_df['distance_m'].max()
+                fig.add_hline(
+                    y=best_distance,
+                    line_dash="dash",
+                    line_color="#a08e66",
+                    annotation_text=f"PB: {best_distance:.2f}m",
+                    annotation_position="top right"
+                )
+
+                # Add rolling average
+                if len(chart_df) >= 3:
+                    chart_df_copy = chart_df.copy()
+                    chart_df_copy['rolling_avg'] = chart_df_copy['distance_m'].rolling(window=3, min_periods=1).mean()
+                    fig.add_trace(go.Scatter(
+                        x=chart_df_copy['date'],
+                        y=chart_df_copy['rolling_avg'],
+                        mode='lines',
+                        name='3-Throw Avg',
+                        line=dict(color='#005a51', width=2, dash='dot'),
+                        hovertemplate='<b>%{x|%d %b %Y}</b><br>3-Throw Avg: %{y:.2f}m<extra></extra>'
+                    ))
+
+                fig.update_layout(
+                    title=f"{selected_chart_athlete} - {selected_chart_event} Progression",
+                    xaxis_title="Date",
+                    yaxis_title="Distance (m)",
+                    height=400,
+                    showlegend=True,
+                    legend=dict(orientation='h', yanchor='bottom', y=1.02),
+                    plot_bgcolor='white',
+                    font=dict(family='Inter, sans-serif')
+                )
+
+                fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
+                fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
+
+                st.plotly_chart(fig, use_container_width=True)
+
+                # Session distribution chart
+                st.markdown("#### 📊 Performance by Session Type")
+
+                if 'session_type' in chart_df.columns:
+                    session_stats = chart_df.groupby('session_type')['distance_m'].agg(['mean', 'max', 'count']).reset_index()
+                    session_stats.columns = ['Session Type', 'Average', 'Best', 'Count']
+
+                    fig2 = go.Figure()
+
+                    fig2.add_trace(go.Bar(
+                        x=session_stats['Session Type'],
+                        y=session_stats['Average'],
+                        name='Average',
+                        marker_color='#007167',
+                        text=session_stats['Average'].round(2),
+                        textposition='outside'
+                    ))
+
+                    fig2.add_trace(go.Bar(
+                        x=session_stats['Session Type'],
+                        y=session_stats['Best'],
+                        name='Best',
+                        marker_color='#a08e66',
+                        text=session_stats['Best'].round(2),
+                        textposition='outside'
+                    ))
+
+                    fig2.update_layout(
+                        title="Distance by Session Type",
+                        xaxis_title="Session Type",
+                        yaxis_title="Distance (m)",
+                        height=350,
+                        barmode='group',
+                        showlegend=True,
+                        plot_bgcolor='white',
+                        font=dict(family='Inter, sans-serif')
+                    )
+
+                    st.plotly_chart(fig2, use_container_width=True)
+
+                # Summary stats
+                st.markdown("#### 📋 Summary Statistics")
+
+                summary_col1, summary_col2, summary_col3, summary_col4 = st.columns(4)
+
+                with summary_col1:
+                    st.metric("Total Throws", len(chart_df))
+                with summary_col2:
+                    st.metric("Best Distance", f"{chart_df['distance_m'].max():.2f}m")
+                with summary_col3:
+                    st.metric("Average", f"{chart_df['distance_m'].mean():.2f}m")
+                with summary_col4:
+                    std_dev = chart_df['distance_m'].std()
+                    st.metric("Std Dev", f"{std_dev:.2f}m" if pd.notna(std_dev) else "N/A")
+            else:
+                st.info("No data available for the selected athlete and event")
+        else:
+            st.info("📭 No training data available. Add entries in the 'Throws Distance' tab to see charts.")
+
+# ============================================================================
 # TAB 11: FORCE TRACE ANALYSIS
 # ============================================================================
 
 
 
-with tabs[5]:  # Trace (was tabs[8])
+with tabs[6]:  # Trace (was tabs[8], now tabs[6])
     st.markdown("## 📉 Force Trace Analysis")
 
     # =========================================================================
@@ -2144,10 +2683,35 @@ with tabs[5]:  # Trace (was tabs[8])
 
                             else:
                                 st.error("❌ Could not fetch traces. Check API credentials and test IDs.")
-                                if trace1 is None:
-                                    st.warning(f"Trial 1 failed: testId={test1_data['testId'][:20]}...")
-                                if trace2 is None:
-                                    st.warning(f"Trial 2 failed: testId={test2_data['testId'][:20]}...")
+
+                                # Debug info
+                                with st.expander("🔍 Debug Information"):
+                                    st.markdown("**Trace 1 Status:**")
+                                    if isinstance(trace1, pd.DataFrame):
+                                        st.write(f"DataFrame with {len(trace1)} rows, columns: {list(trace1.columns)}")
+                                    else:
+                                        st.write(f"Type: {type(trace1)}, Value: {trace1}")
+
+                                    st.markdown("**Trace 2 Status:**")
+                                    if isinstance(trace2, pd.DataFrame):
+                                        st.write(f"DataFrame with {len(trace2)} rows, columns: {list(trace2.columns)}")
+                                    else:
+                                        st.write(f"Type: {type(trace2)}, Value: {trace2}")
+
+                                    st.markdown("**Request Details:**")
+                                    st.code(f"""
+Test 1: testId={test1_data['testId']}
+        trialId={test1_data['trialId']}
+
+Test 2: testId={test2_data['testId']}
+        trialId={test2_data['trialId']}
+
+Region: {env_creds['region']}
+Token: {env_creds['token'][:20]}... (truncated)
+Tenant: {env_creds['tenant_id']}
+""")
+
+                                st.info("💡 **Tip:** Force trace data may not be available for all tests. The API endpoint varies by test type and VALD version.")
 
                         except Exception as e:
                             st.error(f"❌ Error fetching traces: {str(e)}")
@@ -2889,7 +3453,7 @@ with tabs[5]:  # Trace (was tabs[8])
 
 
 
-with tabs[6]:  # Data (was tabs[16])
+with tabs[7]:  # Data (was tabs[16], now tabs[7])
     st.markdown("## 📋 Data Table View")
     st.markdown("Browse and export all testing data in table format")
 

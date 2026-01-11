@@ -990,7 +990,7 @@ class ThrowsTrainingModule:
         row1_col1, row1_col2 = st.columns(2)
 
         with row1_col1:
-            ThrowsTrainingModule._display_training_distances_section(athlete_df)
+            ThrowsTrainingModule._display_training_distances_section(athlete_df, athlete_name)
 
         with row1_col2:
             ThrowsTrainingModule._display_imtp_section(athlete_df)
@@ -1006,10 +1006,93 @@ class ThrowsTrainingModule:
             ThrowsTrainingModule._display_cmj_depth_section(athlete_df)
 
     @staticmethod
-    def _display_training_distances_section(athlete_df: pd.DataFrame):
-        """Training Distances - External data placeholder."""
+    def _display_training_distances_section(athlete_df: pd.DataFrame, athlete_name: str = None):
+        """Training Distances - Display recorded training data or placeholder."""
         st.markdown("#### 📊 Training Distances")
 
+        # Try to load training distances from session state or CSV
+        import os
+        training_data_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'training_distances.csv')
+        training_df = pd.DataFrame()
+
+        # Check session state first
+        if hasattr(st, 'session_state') and 'training_distances' in st.session_state:
+            training_df = st.session_state.training_distances
+
+        # Fall back to CSV file
+        if training_df.empty and os.path.exists(training_data_path):
+            try:
+                training_df = pd.read_csv(training_data_path)
+                if 'date' in training_df.columns:
+                    training_df['date'] = pd.to_datetime(training_df['date'])
+            except Exception:
+                pass
+
+        # Filter for this athlete if name provided
+        if not training_df.empty and athlete_name:
+            athlete_training = training_df[training_df['athlete'] == athlete_name].copy()
+
+            if not athlete_training.empty:
+                # Sort by date
+                athlete_training = athlete_training.sort_values('date', ascending=False)
+
+                # Get latest throws by event
+                latest_throws = athlete_training.groupby('event').first().reset_index()
+
+                # Display metrics
+                if len(latest_throws) > 0:
+                    for _, row in latest_throws.iterrows():
+                        event = row['event']
+                        distance = row['distance_m']
+                        date = pd.to_datetime(row['date']).strftime('%d %b')
+                        implement = row.get('implement_kg', 'N/A')
+
+                        st.markdown(f"""
+                        <div style="
+                            background: linear-gradient(135deg, #007167 0%, #005a51 100%);
+                            border-radius: 8px;
+                            padding: 0.75rem 1rem;
+                            margin-bottom: 0.5rem;
+                            color: white;
+                        ">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-weight: 600;">{event}</span>
+                                <span style="font-size: 1.2rem; font-weight: bold;">{distance:.2f}m</span>
+                            </div>
+                            <div style="font-size: 0.8rem; opacity: 0.8; margin-top: 0.25rem;">
+                                {implement}kg • {date}
+                            </div>
+                        </div>
+                        """, unsafe_allow_html=True)
+
+                    # Show trend chart for most recent event
+                    most_recent_event = athlete_training['event'].iloc[0]
+                    event_data = athlete_training[athlete_training['event'] == most_recent_event].tail(5)
+
+                    if len(event_data) > 1:
+                        fig = go.Figure()
+                        fig.add_trace(go.Scatter(
+                            x=event_data['date'],
+                            y=event_data['distance_m'],
+                            mode='markers+lines',
+                            marker=dict(size=8, color='#007167'),
+                            line=dict(color='#007167', width=2),
+                            hovertemplate='%{y:.2f}m<extra></extra>'
+                        ))
+                        fig.update_layout(
+                            height=150,
+                            margin=dict(l=10, r=10, t=10, b=30),
+                            showlegend=False,
+                            plot_bgcolor='white',
+                            xaxis=dict(showgrid=False),
+                            yaxis=dict(title="m", showgrid=True, gridcolor='lightgray')
+                        )
+                        st.plotly_chart(fig, use_container_width=True)
+
+                    st.markdown(f"*{len(athlete_training)} total throws recorded*")
+                    return
+
+        # Show placeholder if no data
         st.markdown("""
         <div style="
             background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
@@ -1019,10 +1102,10 @@ class ThrowsTrainingModule:
             margin-bottom: 1rem;
         ">
             <p style="margin: 0; color: #495057; font-size: 0.95rem;">
-                <strong>Coming Soon:</strong> Upload external training distance data to track actual throw performance alongside strength/power metrics.
+                <strong>No throws recorded</strong> - Use the <strong>✏️ Data Entry</strong> tab to record training distances.
             </p>
             <p style="margin: 0.5rem 0 0 0; color: #6c757d; font-size: 0.85rem;">
-                Supported: Shot Put, Discus, Javelin, Hammer (1.5kg, 2kg, 3kg implements)
+                Supported: Shot Put, Discus, Javelin, Hammer (various implement weights)
             </p>
         </div>
         """, unsafe_allow_html=True)
