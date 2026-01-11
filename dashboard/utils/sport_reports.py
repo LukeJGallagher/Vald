@@ -504,10 +504,25 @@ def create_group_report(df: pd.DataFrame,
     # =========================================================================
     st.markdown("### Upper Body Strength & Power")
 
+    # Try to load S&C data from session state or CSV
+    import os as _os
+    sc_upper_body_path = _os.path.join(_os.path.dirname(_os.path.dirname(__file__)), 'data', 'sc_upper_body.csv')
+    sc_df = pd.DataFrame()
+
+    if hasattr(st, 'session_state') and 'sc_upper_body' in st.session_state:
+        sc_df = st.session_state.sc_upper_body
+    elif _os.path.exists(sc_upper_body_path):
+        try:
+            sc_df = pd.read_csv(sc_upper_body_path)
+            if 'date' in sc_df.columns:
+                sc_df['date'] = pd.to_datetime(sc_df['date'])
+        except Exception:
+            pass
+
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        # Bench Press
+        # Bench Press - check VALD data first, then S&C data
         bench_df = sport_df[sport_df['testType'].str.contains('Bench|Press', case=False, na=False)]
         if not bench_df.empty:
             metric_col = get_metric_column(bench_df, 'peak_force')
@@ -518,11 +533,34 @@ def create_group_report(df: pd.DataFrame,
                 )
                 if fig:
                     st.plotly_chart(fig, use_container_width=True)
+        elif not sc_df.empty and 'exercise' in sc_df.columns:
+            # Show S&C manual entry data
+            bench_sc = sc_df[sc_df['exercise'].str.contains('Bench', case=False, na=False)]
+            if not bench_sc.empty:
+                st.markdown("**Bench Press (Manual Entry)**")
+                # Get best 1RM per athlete
+                best_bench = bench_sc.groupby('athlete').agg({
+                    'estimated_1rm': 'max',
+                    'weight_kg': 'max',
+                    'reps': 'first',
+                    'date': 'max'
+                }).reset_index()
+
+                for _, row in best_bench.iterrows():
+                    st.markdown(f"""
+                    <div style="background: linear-gradient(135deg, #007167 0%, #005a51 100%); border-radius: 8px; padding: 0.75rem; margin-bottom: 0.5rem; color: white;">
+                        <div style="font-weight: 600;">{row['athlete']}</div>
+                        <div style="font-size: 1.2rem; font-weight: bold;">Est. 1RM: {row['estimated_1rm']:.1f}kg</div>
+                        <div style="font-size: 0.8rem; opacity: 0.8;">Best: {row['weight_kg']:.1f}kg | {pd.to_datetime(row['date']).strftime('%d %b %Y')}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+            else:
+                st.info("Bench Press data not available - Use ✏️ Data Entry tab")
         else:
-            st.info("Bench Press data not available")
+            st.info("Bench Press data not available - Use ✏️ Data Entry tab")
 
     with col2:
-        # Pull Up
+        # Pull Up - check VALD data first, then S&C data
         pullup_df = sport_df[sport_df['testType'].str.contains('Pull|Chin', case=False, na=False)]
         if not pullup_df.empty:
             metric_col = get_metric_column(pullup_df, 'peak_force')
@@ -533,8 +571,31 @@ def create_group_report(df: pd.DataFrame,
                 )
                 if fig:
                     st.plotly_chart(fig, use_container_width=True)
+        elif not sc_df.empty and 'exercise' in sc_df.columns:
+            # Show S&C manual entry data
+            pullup_sc = sc_df[sc_df['exercise'].str.contains('Pull Up|Pullup|Pull-up|Chin', case=False, na=False)]
+            if not pullup_sc.empty:
+                st.markdown("**Pull Up (Manual Entry)**")
+                # Get best per athlete
+                best_pullup = pullup_sc.groupby('athlete').agg({
+                    'weight_kg': 'max',
+                    'reps': 'max',
+                    'date': 'max'
+                }).reset_index()
+
+                for _, row in best_pullup.iterrows():
+                    weight_text = f"+{row['weight_kg']:.1f}kg" if row['weight_kg'] > 0 else "Bodyweight"
+                    st.markdown(f"""
+                    <div style="background: linear-gradient(135deg, #007167 0%, #005a51 100%); border-radius: 8px; padding: 0.75rem; margin-bottom: 0.5rem; color: white;">
+                        <div style="font-weight: 600;">{row['athlete']}</div>
+                        <div style="font-size: 1.2rem; font-weight: bold;">{int(row['reps'])} reps</div>
+                        <div style="font-size: 0.8rem; opacity: 0.8;">{weight_text} | {pd.to_datetime(row['date']).strftime('%d %b %Y')}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+            else:
+                st.info("Pull Up data not available - Use ✏️ Data Entry tab")
         else:
-            st.info("Pull Up data not available")
+            st.info("Pull Up data not available - Use ✏️ Data Entry tab")
 
     with col3:
         # Plyo Push Up
@@ -1772,6 +1833,20 @@ def create_group_report_v3(df: pd.DataFrame,
     # =========================================================================
     st.markdown("### 💪 Upper Body Strength & Power")
 
+    # Try to load S&C data from session state or CSV
+    sc_upper_body_path_v3 = _os.path.join(_os.path.dirname(_os.path.dirname(__file__)), 'data', 'sc_upper_body.csv')
+    sc_df_v3 = pd.DataFrame()
+
+    if hasattr(st, 'session_state') and 'sc_upper_body' in st.session_state:
+        sc_df_v3 = st.session_state.sc_upper_body
+    elif _os.path.exists(sc_upper_body_path_v3):
+        try:
+            sc_df_v3 = pd.read_csv(sc_upper_body_path_v3)
+            if 'date' in sc_df_v3.columns:
+                sc_df_v3['date'] = pd.to_datetime(sc_df_v3['date'])
+        except Exception:
+            pass
+
     col1, col2, col3 = st.columns(3)
 
     with col1:
@@ -1787,9 +1862,30 @@ def create_group_report_v3(df: pd.DataFrame,
                 if fig:
                     st.plotly_chart(fig, use_container_width=True, key="v3_bench_lollipop")
             else:
-                st.info("Bench Press data not available")
+                st.info("Bench Press data not available - Use ✏️ Data Entry tab")
+        elif not sc_df_v3.empty and 'exercise' in sc_df_v3.columns:
+            # Show S&C manual entry data
+            bench_sc_v3 = sc_df_v3[sc_df_v3['exercise'].str.contains('Bench', case=False, na=False)]
+            if not bench_sc_v3.empty:
+                st.markdown("**Bench Press (Manual Entry)**")
+                best_bench_v3 = bench_sc_v3.groupby('athlete').agg({
+                    'estimated_1rm': 'max',
+                    'weight_kg': 'max',
+                    'date': 'max'
+                }).reset_index().sort_values('estimated_1rm', ascending=False)
+
+                for _, row in best_bench_v3.iterrows():
+                    st.markdown(f"""
+                    <div style="background: linear-gradient(135deg, #007167 0%, #005a51 100%); border-radius: 8px; padding: 0.75rem; margin-bottom: 0.5rem; color: white;">
+                        <div style="font-weight: 600;">{row['athlete']}</div>
+                        <div style="font-size: 1.2rem; font-weight: bold;">Est. 1RM: {row['estimated_1rm']:.1f}kg</div>
+                        <div style="font-size: 0.8rem; opacity: 0.8;">Best: {row['weight_kg']:.1f}kg | {pd.to_datetime(row['date']).strftime('%d %b %Y')}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+            else:
+                st.info("Bench Press data not available - Use ✏️ Data Entry tab")
         else:
-            st.info("Bench Press data not available")
+            st.info("Bench Press data not available - Use ✏️ Data Entry tab")
 
     with col2:
         # Pull Up - Lollipop Chart
@@ -1804,9 +1900,30 @@ def create_group_report_v3(df: pd.DataFrame,
                 if fig:
                     st.plotly_chart(fig, use_container_width=True, key="v3_pullup_lollipop")
             else:
-                st.info("Pull Up data not available")
+                st.info("Pull Up data not available - Use ✏️ Data Entry tab")
+        elif not sc_df_v3.empty and 'exercise' in sc_df_v3.columns:
+            pullup_sc_v3 = sc_df_v3[sc_df_v3['exercise'].str.contains('Pull Up|Pullup|Pull-up|Chin', case=False, na=False)]
+            if not pullup_sc_v3.empty:
+                st.markdown("**Pull Up (Manual Entry)**")
+                best_pullup_v3 = pullup_sc_v3.groupby('athlete').agg({
+                    'weight_kg': 'max',
+                    'reps': 'max',
+                    'date': 'max'
+                }).reset_index().sort_values('reps', ascending=False)
+
+                for _, row in best_pullup_v3.iterrows():
+                    weight_text = f"+{row['weight_kg']:.1f}kg" if row['weight_kg'] > 0 else "Bodyweight"
+                    st.markdown(f"""
+                    <div style="background: linear-gradient(135deg, #007167 0%, #005a51 100%); border-radius: 8px; padding: 0.75rem; margin-bottom: 0.5rem; color: white;">
+                        <div style="font-weight: 600;">{row['athlete']}</div>
+                        <div style="font-size: 1.2rem; font-weight: bold;">{int(row['reps'])} reps</div>
+                        <div style="font-size: 0.8rem; opacity: 0.8;">{weight_text} | {pd.to_datetime(row['date']).strftime('%d %b %Y')}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+            else:
+                st.info("Pull Up data not available - Use ✏️ Data Entry tab")
         else:
-            st.info("Pull Up data not available")
+            st.info("Pull Up data not available - Use ✏️ Data Entry tab")
 
     with col3:
         # Plyo Push Up - Box plot with dots

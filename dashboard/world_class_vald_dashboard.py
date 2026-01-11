@@ -1934,14 +1934,19 @@ with tabs[4]:  # Throws (was tabs[7])
 
 with tabs[5]:  # Data Entry
     st.markdown("## ✏️ Data Entry")
-    st.markdown("*Record training distances, throws data, and other external metrics*")
+    st.markdown("*Record training distances, S&C metrics, and other external data*")
 
     # Initialize session state for training data
     if 'training_distances' not in st.session_state:
         st.session_state.training_distances = pd.DataFrame()
 
+    # Initialize session state for S&C data
+    if 'sc_upper_body' not in st.session_state:
+        st.session_state.sc_upper_body = pd.DataFrame()
+
     # Load existing training data from CSV if available
     training_data_path = os.path.join(os.path.dirname(__file__), 'data', 'training_distances.csv')
+    sc_upper_body_path = os.path.join(os.path.dirname(__file__), 'data', 'sc_upper_body.csv')
 
     @st.cache_data(ttl=300)
     def load_training_distances():
@@ -1953,12 +1958,25 @@ with tabs[5]:  # Data Entry
             return df
         return pd.DataFrame()
 
+    @st.cache_data(ttl=300)
+    def load_sc_upper_body():
+        """Load S&C upper body data from CSV file."""
+        if os.path.exists(sc_upper_body_path):
+            df = pd.read_csv(sc_upper_body_path)
+            if 'date' in df.columns:
+                df['date'] = pd.to_datetime(df['date'])
+            return df
+        return pd.DataFrame()
+
     # Load existing data
     if st.session_state.training_distances.empty:
         st.session_state.training_distances = load_training_distances()
 
+    if st.session_state.sc_upper_body.empty:
+        st.session_state.sc_upper_body = load_sc_upper_body()
+
     # Create sub-tabs for different entry types
-    entry_tabs = st.tabs(["🥏 Throws Distance", "📊 View Data", "📈 Charts"])
+    entry_tabs = st.tabs(["🥏 Throws Distance", "💪 S&C Upper Body", "📊 View Data", "📈 Charts"])
 
     # -------------------------------------------------------------------------
     # SUB-TAB: Throws Distance Entry Form
@@ -2191,9 +2209,256 @@ with tabs[5]:  # Data Entry
                     st.error(f"Error parsing data: {str(e)}")
 
     # -------------------------------------------------------------------------
-    # SUB-TAB: View Data (with Edit/Delete)
+    # SUB-TAB: S&C Upper Body (Bench Press, Pull Ups, etc.)
     # -------------------------------------------------------------------------
     with entry_tabs[1]:
+        st.markdown("### 💪 S&C Upper Body Strength & Power")
+
+        st.markdown("""
+        <div style="
+            background: linear-gradient(135deg, #007167 0%, #005a51 100%);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            color: white;
+        ">
+            <p style="margin: 0; font-size: 0.95rem;">
+                📝 Record upper body strength metrics: Bench Press, Pull Ups, Overhead Press, and more.
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        with st.form("sc_upper_body_form", clear_on_submit=True):
+            sc_col1, sc_col2 = st.columns(2)
+
+            with sc_col1:
+                # Get athlete list from existing data
+                sc_athletes_list = []
+                if 'Name' in filtered_df.columns:
+                    sc_athletes_list = sorted([a for a in filtered_df['Name'].unique() if pd.notna(a)])
+
+                sc_selected_athlete = st.selectbox(
+                    "Athlete *",
+                    options=sc_athletes_list if sc_athletes_list else ["No athletes loaded"],
+                    key="sc_entry_athlete"
+                )
+
+                sc_entry_date = st.date_input(
+                    "Date *",
+                    value=datetime.now().date(),
+                    key="sc_entry_date"
+                )
+
+                sc_exercise = st.selectbox(
+                    "Exercise *",
+                    options=[
+                        "Bench Press",
+                        "Incline Bench Press",
+                        "Overhead Press",
+                        "Push Press",
+                        "Pull Up",
+                        "Weighted Pull Up",
+                        "Lat Pulldown",
+                        "Bent Over Row",
+                        "Dumbbell Row",
+                        "Shoulder Press (DB)",
+                        "Floor Press",
+                        "Close Grip Bench",
+                        "Other"
+                    ],
+                    key="sc_entry_exercise"
+                )
+
+                if sc_exercise == "Other":
+                    sc_custom_exercise = st.text_input(
+                        "Custom Exercise Name",
+                        key="sc_custom_exercise"
+                    )
+
+            with sc_col2:
+                sc_weight = st.number_input(
+                    "Weight (kg) *",
+                    min_value=0.0,
+                    max_value=500.0,
+                    value=0.0,
+                    step=2.5,
+                    format="%.1f",
+                    key="sc_entry_weight"
+                )
+
+                sc_reps = st.number_input(
+                    "Reps *",
+                    min_value=1,
+                    max_value=100,
+                    value=1,
+                    key="sc_entry_reps"
+                )
+
+                sc_sets = st.number_input(
+                    "Sets",
+                    min_value=1,
+                    max_value=20,
+                    value=1,
+                    key="sc_entry_sets"
+                )
+
+                sc_rpe = st.slider(
+                    "RPE (Rate of Perceived Exertion)",
+                    min_value=1,
+                    max_value=10,
+                    value=7,
+                    key="sc_entry_rpe"
+                )
+
+            # Additional fields
+            sc_col3, sc_col4 = st.columns(2)
+
+            with sc_col3:
+                sc_test_type = st.selectbox(
+                    "Test Type",
+                    options=["Working Set", "1RM Test", "3RM Test", "5RM Test", "AMRAP", "Warm-up"],
+                    key="sc_entry_test_type"
+                )
+
+                sc_equipment = st.selectbox(
+                    "Equipment",
+                    options=["Barbell", "Dumbbell", "Machine", "Cable", "Bodyweight", "Kettlebell", "Other"],
+                    key="sc_entry_equipment"
+                )
+
+            with sc_col4:
+                sc_location = st.text_input(
+                    "Location",
+                    placeholder="e.g., Aspire Zone, Home Gym...",
+                    key="sc_entry_location"
+                )
+
+                sc_notes = st.text_area(
+                    "Notes (optional)",
+                    placeholder="Technique cues, how it felt...",
+                    max_chars=500,
+                    key="sc_entry_notes"
+                )
+
+            sc_submitted = st.form_submit_button("💾 Save S&C Entry", use_container_width=True)
+
+            if sc_submitted:
+                if sc_weight > 0 and sc_selected_athlete != "No athletes loaded":
+                    # Determine exercise name
+                    exercise_name = sc_exercise
+                    if sc_exercise == "Other" and sc_custom_exercise:
+                        exercise_name = sc_custom_exercise
+
+                    # Calculate estimated 1RM using Brzycki formula
+                    if sc_reps > 0 and sc_reps <= 12:
+                        estimated_1rm = sc_weight * (36 / (37 - sc_reps))
+                    else:
+                        estimated_1rm = sc_weight  # For higher reps, just use weight
+
+                    # Create new entry
+                    sc_new_entry = pd.DataFrame([{
+                        'date': sc_entry_date,
+                        'athlete': sc_selected_athlete,
+                        'exercise': exercise_name,
+                        'weight_kg': sc_weight,
+                        'reps': sc_reps,
+                        'sets': sc_sets,
+                        'rpe': sc_rpe,
+                        'test_type': sc_test_type,
+                        'equipment': sc_equipment,
+                        'estimated_1rm': round(estimated_1rm, 1),
+                        'location': sc_location,
+                        'notes': sc_notes,
+                        'created_at': datetime.now().isoformat()
+                    }])
+
+                    # Append to existing data
+                    if st.session_state.sc_upper_body.empty:
+                        st.session_state.sc_upper_body = sc_new_entry
+                    else:
+                        st.session_state.sc_upper_body = pd.concat(
+                            [st.session_state.sc_upper_body, sc_new_entry],
+                            ignore_index=True
+                        )
+
+                    # Add row_id
+                    st.session_state.sc_upper_body = st.session_state.sc_upper_body.reset_index(drop=True)
+                    st.session_state.sc_upper_body['row_id'] = st.session_state.sc_upper_body.index
+
+                    # Save to CSV
+                    os.makedirs(os.path.dirname(sc_upper_body_path), exist_ok=True)
+                    st.session_state.sc_upper_body.to_csv(sc_upper_body_path, index=False)
+
+                    # Clear cache to reload data
+                    load_sc_upper_body.clear()
+
+                    st.success(f"✅ Saved: {sc_selected_athlete} - {exercise_name} - {sc_weight}kg x {sc_reps} (Est. 1RM: {estimated_1rm:.1f}kg)")
+                    st.balloons()
+                else:
+                    st.error("Please enter a valid weight and select an athlete")
+
+        # Quick reference for 1RM estimation
+        st.markdown("---")
+        with st.expander("📊 1RM Estimation Reference"):
+            st.markdown("""
+            **Estimated 1RM** is calculated using the Brzycki formula:
+
+            `1RM = Weight × (36 / (37 - Reps))`
+
+            | Reps | % of 1RM |
+            |------|----------|
+            | 1    | 100%     |
+            | 2    | 95%      |
+            | 3    | 93%      |
+            | 4    | 90%      |
+            | 5    | 87%      |
+            | 6    | 85%      |
+            | 8    | 80%      |
+            | 10   | 75%      |
+            | 12   | 70%      |
+
+            *Note: Estimates become less accurate above 10 reps*
+            """)
+
+        # Display recent S&C entries
+        st.markdown("---")
+        st.markdown("### 📋 Recent S&C Entries")
+
+        sc_df = st.session_state.sc_upper_body
+
+        if not sc_df.empty:
+            # Show last 10 entries
+            recent_sc = sc_df.sort_values('date', ascending=False).head(10)
+
+            # Display columns
+            display_cols = ['date', 'athlete', 'exercise', 'weight_kg', 'reps', 'sets', 'estimated_1rm', 'rpe', 'test_type']
+            available_cols = [c for c in display_cols if c in recent_sc.columns]
+
+            st.dataframe(
+                recent_sc[available_cols],
+                use_container_width=True,
+                hide_index=True
+            )
+
+            # Summary stats
+            st.markdown("#### 💪 Personal Bests (Estimated 1RM)")
+
+            if 'estimated_1rm' in sc_df.columns:
+                pb_df = sc_df.groupby(['athlete', 'exercise'])['estimated_1rm'].max().reset_index()
+                pb_df.columns = ['Athlete', 'Exercise', 'Best Est. 1RM (kg)']
+
+                st.dataframe(
+                    pb_df.sort_values('Best Est. 1RM (kg)', ascending=False),
+                    use_container_width=True,
+                    hide_index=True
+                )
+        else:
+            st.info("📭 No S&C data recorded yet. Use the form above to add entries.")
+
+    # -------------------------------------------------------------------------
+    # SUB-TAB: View Data (with Edit/Delete)
+    # -------------------------------------------------------------------------
+    with entry_tabs[2]:
         st.markdown("### 📊 Recorded Training Data")
 
         training_df = st.session_state.training_distances
@@ -2445,7 +2710,7 @@ with tabs[5]:  # Data Entry
     # -------------------------------------------------------------------------
     # SUB-TAB: Charts
     # -------------------------------------------------------------------------
-    with entry_tabs[2]:
+    with entry_tabs[3]:
         st.markdown("### 📈 Training Distance Charts")
 
         training_df = st.session_state.training_distances
