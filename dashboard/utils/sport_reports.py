@@ -14,6 +14,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from typing import Dict, List, Optional, Tuple
 from datetime import datetime
+import os
 
 # Team Saudi colors
 TEAL_PRIMARY = '#007167'
@@ -505,13 +506,12 @@ def create_group_report(df: pd.DataFrame,
     st.markdown("### Upper Body Strength & Power")
 
     # Try to load S&C data from session state or CSV
-    import os as _os
-    sc_upper_body_path = _os.path.join(_os.path.dirname(_os.path.dirname(__file__)), 'data', 'sc_upper_body.csv')
+        sc_upper_body_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'sc_upper_body.csv')
     sc_df = pd.DataFrame()
 
     if hasattr(st, 'session_state') and 'sc_upper_body' in st.session_state:
         sc_df = st.session_state.sc_upper_body
-    elif _os.path.exists(sc_upper_body_path):
+    elif os.path.exists(sc_upper_body_path):
         try:
             sc_df = pd.read_csv(sc_upper_body_path)
             if 'date' in sc_df.columns:
@@ -534,26 +534,34 @@ def create_group_report(df: pd.DataFrame,
                 if fig:
                     st.plotly_chart(fig, use_container_width=True)
         elif not sc_df.empty and 'exercise' in sc_df.columns:
-            # Show S&C manual entry data
+            # Show S&C manual entry data as bar chart
             bench_sc = sc_df[sc_df['exercise'].str.contains('Bench', case=False, na=False)]
             if not bench_sc.empty:
-                st.markdown("**Bench Press (Manual Entry)**")
                 # Get best 1RM per athlete
                 best_bench = bench_sc.groupby('athlete').agg({
                     'estimated_1rm': 'max',
                     'weight_kg': 'max',
-                    'reps': 'first',
                     'date': 'max'
-                }).reset_index()
+                }).reset_index().sort_values('estimated_1rm', ascending=True)
 
-                for _, row in best_bench.iterrows():
-                    st.markdown(f"""
-                    <div style="background: linear-gradient(135deg, #007167 0%, #005a51 100%); border-radius: 8px; padding: 0.75rem; margin-bottom: 0.5rem; color: white;">
-                        <div style="font-weight: 600;">{row['athlete']}</div>
-                        <div style="font-size: 1.2rem; font-weight: bold;">Est. 1RM: {row['estimated_1rm']:.1f}kg</div>
-                        <div style="font-size: 0.8rem; opacity: 0.8;">Best: {row['weight_kg']:.1f}kg | {pd.to_datetime(row['date']).strftime('%d %b %Y')}</div>
-                    </div>
-                    """, unsafe_allow_html=True)
+                # Create horizontal bar chart
+                fig = go.Figure()
+                fig.add_trace(go.Bar(
+                    y=best_bench['athlete'],
+                    x=best_bench['estimated_1rm'],
+                    orientation='h',
+                    marker_color=TEAL_PRIMARY,
+                    text=[f"{v:.0f}kg" for v in best_bench['estimated_1rm']],
+                    textposition='outside'
+                ))
+                fig.update_layout(
+                    title="Bench Press - Est. 1RM (Manual Entry)",
+                    xaxis_title="Estimated 1RM (kg)",
+                    yaxis_title="",
+                    height=max(250, len(best_bench) * 40),
+                    margin=dict(l=10, r=10, t=40, b=10)
+                )
+                st.plotly_chart(fig, use_container_width=True)
             else:
                 st.info("Bench Press data not available - Use ✏️ Data Entry tab")
         else:
@@ -572,26 +580,34 @@ def create_group_report(df: pd.DataFrame,
                 if fig:
                     st.plotly_chart(fig, use_container_width=True)
         elif not sc_df.empty and 'exercise' in sc_df.columns:
-            # Show S&C manual entry data
+            # Show S&C manual entry data as bar chart
             pullup_sc = sc_df[sc_df['exercise'].str.contains('Pull Up|Pullup|Pull-up|Chin', case=False, na=False)]
             if not pullup_sc.empty:
-                st.markdown("**Pull Up (Manual Entry)**")
-                # Get best per athlete
+                # Get best reps per athlete
                 best_pullup = pullup_sc.groupby('athlete').agg({
-                    'weight_kg': 'max',
                     'reps': 'max',
+                    'weight_kg': 'max',
                     'date': 'max'
-                }).reset_index()
+                }).reset_index().sort_values('reps', ascending=True)
 
-                for _, row in best_pullup.iterrows():
-                    weight_text = f"+{row['weight_kg']:.1f}kg" if row['weight_kg'] > 0 else "Bodyweight"
-                    st.markdown(f"""
-                    <div style="background: linear-gradient(135deg, #007167 0%, #005a51 100%); border-radius: 8px; padding: 0.75rem; margin-bottom: 0.5rem; color: white;">
-                        <div style="font-weight: 600;">{row['athlete']}</div>
-                        <div style="font-size: 1.2rem; font-weight: bold;">{int(row['reps'])} reps</div>
-                        <div style="font-size: 0.8rem; opacity: 0.8;">{weight_text} | {pd.to_datetime(row['date']).strftime('%d %b %Y')}</div>
-                    </div>
-                    """, unsafe_allow_html=True)
+                # Create horizontal bar chart
+                fig = go.Figure()
+                fig.add_trace(go.Bar(
+                    y=best_pullup['athlete'],
+                    x=best_pullup['reps'],
+                    orientation='h',
+                    marker_color=TEAL_PRIMARY,
+                    text=[f"{int(v)} reps" for v in best_pullup['reps']],
+                    textposition='outside'
+                ))
+                fig.update_layout(
+                    title="Pull Up - Max Reps (Manual Entry)",
+                    xaxis_title="Reps",
+                    yaxis_title="",
+                    height=max(250, len(best_pullup) * 40),
+                    margin=dict(l=10, r=10, t=40, b=10)
+                )
+                st.plotly_chart(fig, use_container_width=True)
             else:
                 st.info("Pull Up data not available - Use ✏️ Data Entry tab")
         else:
@@ -1834,12 +1850,12 @@ def create_group_report_v3(df: pd.DataFrame,
     st.markdown("### 💪 Upper Body Strength & Power")
 
     # Try to load S&C data from session state or CSV
-    sc_upper_body_path_v3 = _os.path.join(_os.path.dirname(_os.path.dirname(__file__)), 'data', 'sc_upper_body.csv')
+    sc_upper_body_path_v3 = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'sc_upper_body.csv')
     sc_df_v3 = pd.DataFrame()
 
     if hasattr(st, 'session_state') and 'sc_upper_body' in st.session_state:
         sc_df_v3 = st.session_state.sc_upper_body
-    elif _os.path.exists(sc_upper_body_path_v3):
+    elif os.path.exists(sc_upper_body_path_v3):
         try:
             sc_df_v3 = pd.read_csv(sc_upper_body_path_v3)
             if 'date' in sc_df_v3.columns:
@@ -1864,24 +1880,33 @@ def create_group_report_v3(df: pd.DataFrame,
             else:
                 st.info("Bench Press data not available - Use ✏️ Data Entry tab")
         elif not sc_df_v3.empty and 'exercise' in sc_df_v3.columns:
-            # Show S&C manual entry data
+            # Show S&C manual entry data as bar chart
             bench_sc_v3 = sc_df_v3[sc_df_v3['exercise'].str.contains('Bench', case=False, na=False)]
             if not bench_sc_v3.empty:
-                st.markdown("**Bench Press (Manual Entry)**")
                 best_bench_v3 = bench_sc_v3.groupby('athlete').agg({
                     'estimated_1rm': 'max',
                     'weight_kg': 'max',
                     'date': 'max'
-                }).reset_index().sort_values('estimated_1rm', ascending=False)
+                }).reset_index().sort_values('estimated_1rm', ascending=True)
 
-                for _, row in best_bench_v3.iterrows():
-                    st.markdown(f"""
-                    <div style="background: linear-gradient(135deg, #007167 0%, #005a51 100%); border-radius: 8px; padding: 0.75rem; margin-bottom: 0.5rem; color: white;">
-                        <div style="font-weight: 600;">{row['athlete']}</div>
-                        <div style="font-size: 1.2rem; font-weight: bold;">Est. 1RM: {row['estimated_1rm']:.1f}kg</div>
-                        <div style="font-size: 0.8rem; opacity: 0.8;">Best: {row['weight_kg']:.1f}kg | {pd.to_datetime(row['date']).strftime('%d %b %Y')}</div>
-                    </div>
-                    """, unsafe_allow_html=True)
+                # Create horizontal bar chart
+                fig = go.Figure()
+                fig.add_trace(go.Bar(
+                    y=best_bench_v3['athlete'],
+                    x=best_bench_v3['estimated_1rm'],
+                    orientation='h',
+                    marker_color=TEAL_PRIMARY,
+                    text=[f"{v:.0f}kg" for v in best_bench_v3['estimated_1rm']],
+                    textposition='outside'
+                ))
+                fig.update_layout(
+                    title="Bench Press - Est. 1RM (Manual Entry)",
+                    xaxis_title="Estimated 1RM (kg)",
+                    yaxis_title="",
+                    height=max(250, len(best_bench_v3) * 40),
+                    margin=dict(l=10, r=10, t=40, b=10)
+                )
+                st.plotly_chart(fig, use_container_width=True, key="v3_bench_manual")
             else:
                 st.info("Bench Press data not available - Use ✏️ Data Entry tab")
         else:
@@ -1904,22 +1929,30 @@ def create_group_report_v3(df: pd.DataFrame,
         elif not sc_df_v3.empty and 'exercise' in sc_df_v3.columns:
             pullup_sc_v3 = sc_df_v3[sc_df_v3['exercise'].str.contains('Pull Up|Pullup|Pull-up|Chin', case=False, na=False)]
             if not pullup_sc_v3.empty:
-                st.markdown("**Pull Up (Manual Entry)**")
                 best_pullup_v3 = pullup_sc_v3.groupby('athlete').agg({
-                    'weight_kg': 'max',
                     'reps': 'max',
+                    'weight_kg': 'max',
                     'date': 'max'
-                }).reset_index().sort_values('reps', ascending=False)
+                }).reset_index().sort_values('reps', ascending=True)
 
-                for _, row in best_pullup_v3.iterrows():
-                    weight_text = f"+{row['weight_kg']:.1f}kg" if row['weight_kg'] > 0 else "Bodyweight"
-                    st.markdown(f"""
-                    <div style="background: linear-gradient(135deg, #007167 0%, #005a51 100%); border-radius: 8px; padding: 0.75rem; margin-bottom: 0.5rem; color: white;">
-                        <div style="font-weight: 600;">{row['athlete']}</div>
-                        <div style="font-size: 1.2rem; font-weight: bold;">{int(row['reps'])} reps</div>
-                        <div style="font-size: 0.8rem; opacity: 0.8;">{weight_text} | {pd.to_datetime(row['date']).strftime('%d %b %Y')}</div>
-                    </div>
-                    """, unsafe_allow_html=True)
+                # Create horizontal bar chart
+                fig = go.Figure()
+                fig.add_trace(go.Bar(
+                    y=best_pullup_v3['athlete'],
+                    x=best_pullup_v3['reps'],
+                    orientation='h',
+                    marker_color=TEAL_PRIMARY,
+                    text=[f"{int(v)} reps" for v in best_pullup_v3['reps']],
+                    textposition='outside'
+                ))
+                fig.update_layout(
+                    title="Pull Up - Max Reps (Manual Entry)",
+                    xaxis_title="Reps",
+                    yaxis_title="",
+                    height=max(250, len(best_pullup_v3) * 40),
+                    margin=dict(l=10, r=10, t=40, b=10)
+                )
+                st.plotly_chart(fig, use_container_width=True, key="v3_pullup_manual")
             else:
                 st.info("Pull Up data not available - Use ✏️ Data Entry tab")
         else:

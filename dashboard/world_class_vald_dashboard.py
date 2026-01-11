@@ -2066,7 +2066,7 @@ with tabs[5]:  # Data Entry
                 location_label = "Competition Name" if session_type == "Competition" else "Training Location"
                 location = st.text_input(
                     f"{location_label}",
-                    placeholder="e.g., Arab Championships, Aspire Zone, Home Stadium...",
+                    placeholder="e.g., Arab Championships, King Fahd Stadium, Riyadh...",
                     key="entry_location"
                 )
 
@@ -2133,7 +2133,6 @@ with tabs[5]:  # Data Entry
                     load_training_distances.clear()
 
                     st.success(f"✅ Saved: {selected_athlete} - {event_type} - {distance}m")
-                    st.balloons()
                 else:
                     st.error("Please enter a valid distance and select an athlete")
 
@@ -2144,7 +2143,7 @@ with tabs[5]:  # Data Entry
 
         bulk_data = st.text_area(
             "Paste CSV data (one row per line, comma-separated)",
-            placeholder="2024-01-15, John Smith, Shot Put, 7.26, 18.5, Training, Aspire Zone\n2024-01-15, John Smith, Shot Put, 7.26, 19.2, Competition, Arab Championships",
+            placeholder="2024-01-15, Mohamed Tolo, Shot Put, 7.26, 18.5, Training, King Fahd Stadium\n2024-01-15, Mohamed Tolo, Shot Put, 7.26, 19.2, Competition, Arab Championships",
             key="bulk_entry"
         )
 
@@ -2329,7 +2328,7 @@ with tabs[5]:  # Data Entry
             with sc_col4:
                 sc_location = st.text_input(
                     "Location",
-                    placeholder="e.g., Aspire Zone, Home Gym...",
+                    placeholder="e.g., King Fahd Stadium, SAOC Gym, Riyadh...",
                     key="sc_entry_location"
                 )
 
@@ -2393,7 +2392,6 @@ with tabs[5]:  # Data Entry
                     load_sc_upper_body.clear()
 
                     st.success(f"✅ Saved: {sc_selected_athlete} - {exercise_name} - {sc_weight}kg x {sc_reps} (Est. 1RM: {estimated_1rm:.1f}kg)")
-                    st.balloons()
                 else:
                     st.error("Please enter a valid weight and select an athlete")
 
