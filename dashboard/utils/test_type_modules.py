@@ -1028,6 +1028,21 @@ class ThrowsTrainingModule:
             except Exception:
                 pass
 
+        # Color mapping for session types
+        session_colors = {
+            'Training': ('#007167', '#005a51'),      # Teal gradient
+            'Competition': ('#FFB800', '#E5A600'),   # Gold gradient
+            'Testing': ('#0077B6', '#005a8c'),       # Blue gradient
+            'Warm-up': ('#6c757d', '#495057')        # Gray gradient
+        }
+
+        session_icons = {
+            'Training': '🟢',
+            'Competition': '🏆',
+            'Testing': '🔵',
+            'Warm-up': '⚪'
+        }
+
         # Filter for this athlete if name provided
         if not training_df.empty and athlete_name:
             athlete_training = training_df[training_df['athlete'] == athlete_name].copy()
@@ -1046,50 +1061,99 @@ class ThrowsTrainingModule:
                         distance = row['distance_m']
                         date = pd.to_datetime(row['date']).strftime('%d %b')
                         implement = row.get('implement_kg', 'N/A')
+                        session_type = row.get('session_type', 'Training')
+
+                        # Get colors based on session type
+                        color1, color2 = session_colors.get(session_type, ('#007167', '#005a51'))
+                        icon = session_icons.get(session_type, '🟢')
 
                         st.markdown(f"""
                         <div style="
-                            background: linear-gradient(135deg, #007167 0%, #005a51 100%);
+                            background: linear-gradient(135deg, {color1} 0%, {color2} 100%);
                             border-radius: 8px;
                             padding: 0.75rem 1rem;
                             margin-bottom: 0.5rem;
                             color: white;
                         ">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <span style="font-weight: 600;">{event}</span>
+                                <span style="font-weight: 600;">{icon} {event}</span>
                                 <span style="font-size: 1.2rem; font-weight: bold;">{distance:.2f}m</span>
                             </div>
                             <div style="font-size: 0.8rem; opacity: 0.8; margin-top: 0.25rem;">
-                                {implement}kg • {date}
+                                {implement}kg • {date} • {session_type}
                             </div>
                         </div>
                         """, unsafe_allow_html=True)
 
-                    # Show trend chart for most recent event
+                    # Show trend chart for most recent event with color by session type
                     most_recent_event = athlete_training['event'].iloc[0]
-                    event_data = athlete_training[athlete_training['event'] == most_recent_event].tail(5)
+                    event_data = athlete_training[athlete_training['event'] == most_recent_event].sort_values('date').tail(8)
 
                     if len(event_data) > 1:
                         fig = go.Figure()
-                        fig.add_trace(go.Scatter(
-                            x=event_data['date'],
-                            y=event_data['distance_m'],
-                            mode='markers+lines',
-                            marker=dict(size=8, color='#007167'),
-                            line=dict(color='#007167', width=2),
-                            hovertemplate='%{y:.2f}m<extra></extra>'
-                        ))
+
+                        # Color mapping for chart
+                        chart_colors = {
+                            'Training': '#007167',
+                            'Competition': '#FFB800',
+                            'Testing': '#0077B6',
+                            'Warm-up': '#6c757d'
+                        }
+
+                        # Add points colored by session type
+                        if 'session_type' in event_data.columns:
+                            for session_type in event_data['session_type'].unique():
+                                session_data = event_data[event_data['session_type'] == session_type]
+                                color = chart_colors.get(session_type, '#007167')
+
+                                fig.add_trace(go.Scatter(
+                                    x=session_data['date'],
+                                    y=session_data['distance_m'],
+                                    mode='markers',
+                                    name=session_type,
+                                    marker=dict(
+                                        size=10 if session_type == 'Competition' else 8,
+                                        color=color,
+                                        symbol='star' if session_type == 'Competition' else 'circle'
+                                    ),
+                                    hovertemplate=f'{session_type}: %{{y:.2f}}m<extra></extra>'
+                                ))
+
+                            # Connecting line
+                            fig.add_trace(go.Scatter(
+                                x=event_data['date'],
+                                y=event_data['distance_m'],
+                                mode='lines',
+                                line=dict(color='rgba(0,113,103,0.3)', width=1),
+                                hoverinfo='skip',
+                                showlegend=False
+                            ))
+                        else:
+                            fig.add_trace(go.Scatter(
+                                x=event_data['date'],
+                                y=event_data['distance_m'],
+                                mode='markers+lines',
+                                marker=dict(size=8, color='#007167'),
+                                line=dict(color='#007167', width=2),
+                                hovertemplate='%{y:.2f}m<extra></extra>'
+                            ))
+
                         fig.update_layout(
-                            height=150,
+                            height=180,
                             margin=dict(l=10, r=10, t=10, b=30),
-                            showlegend=False,
+                            showlegend=True,
+                            legend=dict(orientation='h', yanchor='bottom', y=1.0, font=dict(size=9)),
                             plot_bgcolor='white',
                             xaxis=dict(showgrid=False),
                             yaxis=dict(title="m", showgrid=True, gridcolor='lightgray')
                         )
                         st.plotly_chart(fig, use_container_width=True)
 
-                    st.markdown(f"*{len(athlete_training)} total throws recorded*")
+                    # Summary stats
+                    total_throws = len(athlete_training)
+                    comp_throws = len(athlete_training[athlete_training.get('session_type', '') == 'Competition']) if 'session_type' in athlete_training.columns else 0
+
+                    st.markdown(f"*{total_throws} throws recorded ({comp_throws} competitions)*")
                     return
 
         # Show placeholder if no data

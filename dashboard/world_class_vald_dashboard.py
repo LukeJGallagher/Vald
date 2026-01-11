@@ -2044,6 +2044,14 @@ with tabs[5]:  # Data Entry
                     key="entry_session"
                 )
 
+                # Location/Competition Name field - changes label based on session type
+                location_label = "Competition Name" if session_type == "Competition" else "Training Location"
+                location = st.text_input(
+                    f"{location_label}",
+                    placeholder="e.g., Arab Championships, Aspire Zone, Home Stadium...",
+                    key="entry_location"
+                )
+
                 attempt_number = st.number_input(
                     "Attempt #",
                     min_value=1,
@@ -2083,6 +2091,7 @@ with tabs[5]:  # Data Entry
                         'implement_kg': weight_value,
                         'distance_m': distance,
                         'session_type': session_type,
+                        'location': location,
                         'attempt': attempt_number,
                         'conditions': conditions,
                         'notes': notes,
@@ -2113,11 +2122,11 @@ with tabs[5]:  # Data Entry
         # Quick entry for multiple throws
         st.markdown("---")
         st.markdown("### ⚡ Quick Entry (Multiple Throws)")
-        st.markdown("*Paste data from a spreadsheet (Date, Athlete, Event, Weight, Distance)*")
+        st.markdown("*Paste data from a spreadsheet (Date, Athlete, Event, Weight, Distance, Session, Location)*")
 
         bulk_data = st.text_area(
             "Paste CSV data (one row per line, comma-separated)",
-            placeholder="2024-01-15, John Smith, Shot Put, 7.26, 18.5\n2024-01-15, John Smith, Shot Put, 7.26, 19.2",
+            placeholder="2024-01-15, John Smith, Shot Put, 7.26, 18.5, Training, Aspire Zone\n2024-01-15, John Smith, Shot Put, 7.26, 19.2, Competition, Arab Championships",
             key="bulk_entry"
         )
 
@@ -2125,13 +2134,40 @@ with tabs[5]:  # Data Entry
             if bulk_data.strip():
                 try:
                     from io import StringIO
-                    bulk_df = pd.read_csv(
-                        StringIO(bulk_data),
-                        names=['date', 'athlete', 'event', 'implement_kg', 'distance_m'],
-                        skipinitialspace=True
-                    )
+                    # Try to detect number of columns
+                    first_line = bulk_data.strip().split('\n')[0]
+                    num_cols = len(first_line.split(','))
+
+                    if num_cols >= 7:
+                        # Full format with session type and location
+                        bulk_df = pd.read_csv(
+                            StringIO(bulk_data),
+                            names=['date', 'athlete', 'event', 'implement_kg', 'distance_m', 'session_type', 'location'],
+                            skipinitialspace=True
+                        )
+                    elif num_cols >= 6:
+                        # With session type but no location
+                        bulk_df = pd.read_csv(
+                            StringIO(bulk_data),
+                            names=['date', 'athlete', 'event', 'implement_kg', 'distance_m', 'session_type'],
+                            skipinitialspace=True
+                        )
+                        bulk_df['location'] = ''
+                    else:
+                        # Basic format
+                        bulk_df = pd.read_csv(
+                            StringIO(bulk_data),
+                            names=['date', 'athlete', 'event', 'implement_kg', 'distance_m'],
+                            skipinitialspace=True
+                        )
+                        bulk_df['session_type'] = 'Training'
+                        bulk_df['location'] = ''
+
                     bulk_df['date'] = pd.to_datetime(bulk_df['date'])
-                    bulk_df['session_type'] = 'Training'
+                    if 'session_type' not in bulk_df.columns:
+                        bulk_df['session_type'] = 'Training'
+                    if 'location' not in bulk_df.columns:
+                        bulk_df['location'] = ''
                     bulk_df['attempt'] = 1
                     bulk_df['conditions'] = ''
                     bulk_df['notes'] = ''
@@ -2155,7 +2191,7 @@ with tabs[5]:  # Data Entry
                     st.error(f"Error parsing data: {str(e)}")
 
     # -------------------------------------------------------------------------
-    # SUB-TAB: View Data
+    # SUB-TAB: View Data (with Edit/Delete)
     # -------------------------------------------------------------------------
     with entry_tabs[1]:
         st.markdown("### 📊 Recorded Training Data")
@@ -2163,6 +2199,12 @@ with tabs[5]:  # Data Entry
         training_df = st.session_state.training_distances
 
         if not training_df.empty:
+            # Ensure index is set for editing
+            if 'row_id' not in training_df.columns:
+                training_df = training_df.reset_index(drop=True)
+                training_df['row_id'] = training_df.index
+                st.session_state.training_distances = training_df
+
             # Filters
             filter_col1, filter_col2, filter_col3 = st.columns(3)
 
@@ -2213,20 +2255,173 @@ with tabs[5]:  # Data Entry
                 if 'distance_m' in display_training_df.columns:
                     st.metric("Avg Distance", f"{display_training_df['distance_m'].mean():.2f}m")
 
-            # Display table
+            # Display table with color coding by session type
+            st.markdown("#### Data Table")
+            st.markdown("*🟢 Training | 🟡 Competition | 🔵 Testing | ⚪ Other*")
+
+            # Add color column for display
+            def get_session_color(session_type):
+                colors = {
+                    'Training': '🟢',
+                    'Competition': '🟡',
+                    'Testing': '🔵',
+                    'Warm-up': '⚪'
+                }
+                return colors.get(session_type, '⚪')
+
+            display_df_styled = display_training_df.copy()
+            if 'session_type' in display_df_styled.columns:
+                display_df_styled['Type'] = display_df_styled['session_type'].apply(get_session_color)
+                # Reorder columns to put Type first
+                cols = ['Type'] + [c for c in display_df_styled.columns if c != 'Type' and c != 'row_id' and c != 'created_at']
+                display_df_styled = display_df_styled[cols]
+
             st.dataframe(
-                display_training_df,
+                display_df_styled,
                 use_container_width=True,
                 hide_index=True,
-                height=400
+                height=350
             )
 
-            # Export options
-            st.markdown("### 📥 Export Data")
-            col1, col2 = st.columns(2)
+            # -----------------------------------------------------------------
+            # EDIT / DELETE Section
+            # -----------------------------------------------------------------
+            st.markdown("---")
+            st.markdown("### ✏️ Edit or Delete Entry")
 
-            with col1:
-                csv_export = display_training_df.to_csv(index=False)
+            # Create selection options
+            row_options = []
+            for idx, row in display_training_df.iterrows():
+                date_str = pd.to_datetime(row['date']).strftime('%Y-%m-%d') if pd.notna(row.get('date')) else 'N/A'
+                session_icon = get_session_color(row.get('session_type', ''))
+                label = f"{session_icon} {row['athlete']} | {row['event']} | {row['distance_m']:.2f}m | {date_str}"
+                row_options.append({'label': label, 'row_id': row.get('row_id', idx), 'idx': idx})
+
+            if row_options:
+                selected_row_idx = st.selectbox(
+                    "Select entry to edit/delete:",
+                    range(len(row_options)),
+                    format_func=lambda i: row_options[i]['label'],
+                    key="edit_row_select"
+                )
+
+                selected_row_id = row_options[selected_row_idx]['row_id']
+                selected_row = training_df[training_df['row_id'] == selected_row_id].iloc[0]
+
+                edit_col1, edit_col2 = st.columns(2)
+
+                with edit_col1:
+                    st.markdown("#### Edit Entry")
+
+                    with st.form("edit_entry_form"):
+                        edit_date = st.date_input(
+                            "Date",
+                            value=pd.to_datetime(selected_row['date']).date() if pd.notna(selected_row.get('date')) else datetime.now().date(),
+                            key="edit_date"
+                        )
+
+                        edit_event = st.selectbox(
+                            "Event",
+                            options=["Shot Put", "Discus", "Javelin", "Hammer"],
+                            index=["Shot Put", "Discus", "Javelin", "Hammer"].index(selected_row['event']) if selected_row['event'] in ["Shot Put", "Discus", "Javelin", "Hammer"] else 0,
+                            key="edit_event"
+                        )
+
+                        edit_distance = st.number_input(
+                            "Distance (m)",
+                            min_value=0.0,
+                            max_value=100.0,
+                            value=float(selected_row['distance_m']),
+                            step=0.01,
+                            format="%.2f",
+                            key="edit_distance"
+                        )
+
+                        edit_session = st.selectbox(
+                            "Session Type",
+                            options=["Training", "Competition", "Testing", "Warm-up"],
+                            index=["Training", "Competition", "Testing", "Warm-up"].index(selected_row.get('session_type', 'Training')) if selected_row.get('session_type') in ["Training", "Competition", "Testing", "Warm-up"] else 0,
+                            key="edit_session"
+                        )
+
+                        edit_location_label = "Competition Name" if edit_session == "Competition" else "Training Location"
+                        edit_location = st.text_input(
+                            edit_location_label,
+                            value=str(selected_row.get('location', '')),
+                            key="edit_location"
+                        )
+
+                        edit_implement = st.text_input(
+                            "Implement (kg)",
+                            value=str(selected_row.get('implement_kg', '')),
+                            key="edit_implement"
+                        )
+
+                        edit_notes = st.text_area(
+                            "Notes",
+                            value=str(selected_row.get('notes', '')),
+                            key="edit_notes"
+                        )
+
+                        save_edit = st.form_submit_button("💾 Save Changes", use_container_width=True)
+
+                        if save_edit:
+                            # Update the row
+                            mask = st.session_state.training_distances['row_id'] == selected_row_id
+                            st.session_state.training_distances.loc[mask, 'date'] = edit_date
+                            st.session_state.training_distances.loc[mask, 'event'] = edit_event
+                            st.session_state.training_distances.loc[mask, 'distance_m'] = edit_distance
+                            st.session_state.training_distances.loc[mask, 'session_type'] = edit_session
+                            st.session_state.training_distances.loc[mask, 'location'] = edit_location
+                            st.session_state.training_distances.loc[mask, 'implement_kg'] = edit_implement
+                            st.session_state.training_distances.loc[mask, 'notes'] = edit_notes
+
+                            # Save to CSV
+                            st.session_state.training_distances.to_csv(training_data_path, index=False)
+                            load_training_distances.clear()
+                            st.success("✅ Entry updated!")
+                            st.rerun()
+
+                with edit_col2:
+                    st.markdown("#### Delete Entry")
+
+                    st.warning(f"""
+                    **Selected Entry:**
+                    - Athlete: {selected_row['athlete']}
+                    - Event: {selected_row['event']}
+                    - Distance: {selected_row['distance_m']:.2f}m
+                    - Date: {pd.to_datetime(selected_row['date']).strftime('%Y-%m-%d') if pd.notna(selected_row.get('date')) else 'N/A'}
+                    """)
+
+                    delete_confirm = st.checkbox("⚠️ I confirm I want to delete this entry", key="delete_confirm")
+
+                    if st.button("🗑️ Delete Entry", type="secondary", disabled=not delete_confirm, use_container_width=True):
+                        # Remove the row
+                        st.session_state.training_distances = st.session_state.training_distances[
+                            st.session_state.training_distances['row_id'] != selected_row_id
+                        ].reset_index(drop=True)
+
+                        # Re-assign row IDs
+                        st.session_state.training_distances['row_id'] = st.session_state.training_distances.index
+
+                        # Save to CSV
+                        if not st.session_state.training_distances.empty:
+                            st.session_state.training_distances.to_csv(training_data_path, index=False)
+                        else:
+                            if os.path.exists(training_data_path):
+                                os.remove(training_data_path)
+
+                        load_training_distances.clear()
+                        st.success("✅ Entry deleted!")
+                        st.rerun()
+
+            # Export options
+            st.markdown("---")
+            st.markdown("### 📥 Export Data")
+            exp_col1, exp_col2 = st.columns(2)
+
+            with exp_col1:
+                csv_export = display_training_df.drop(columns=['row_id'], errors='ignore').to_csv(index=False)
                 st.download_button(
                     "📥 Download as CSV",
                     data=csv_export,
@@ -2234,9 +2429,10 @@ with tabs[5]:  # Data Entry
                     mime="text/csv"
                 )
 
-            with col2:
-                if st.button("🗑️ Clear All Data", type="secondary"):
-                    if st.checkbox("⚠️ Confirm delete all data"):
+            with exp_col2:
+                if st.button("🗑️ Clear ALL Data", type="secondary"):
+                    clear_confirm = st.checkbox("⚠️ Confirm delete ALL data", key="clear_all_confirm")
+                    if clear_confirm:
                         st.session_state.training_distances = pd.DataFrame()
                         if os.path.exists(training_data_path):
                             os.remove(training_data_path)
@@ -2257,7 +2453,7 @@ with tabs[5]:  # Data Entry
         if not training_df.empty and 'date' in training_df.columns:
             training_df['date'] = pd.to_datetime(training_df['date'])
 
-            # Chart filters
+            # Chart filters - Row 1: Athlete and Event
             chart_col1, chart_col2 = st.columns(2)
 
             with chart_col1:
@@ -2276,28 +2472,106 @@ with tabs[5]:  # Data Entry
                     key="chart_event"
                 )
 
+            # Chart filters - Row 2: Implement Weight and Session Type
+            chart_col3, chart_col4 = st.columns(2)
+
+            # Get available implement weights for this athlete/event
+            athlete_event_df = training_df[
+                (training_df['athlete'] == selected_chart_athlete) &
+                (training_df['event'] == selected_chart_event)
+            ]
+
+            with chart_col3:
+                if 'implement_kg' in athlete_event_df.columns:
+                    implement_weights = ['All'] + sorted([str(w) for w in athlete_event_df['implement_kg'].unique() if pd.notna(w)])
+                    selected_implement = st.selectbox(
+                        "Implement Weight:",
+                        options=implement_weights,
+                        key="chart_implement"
+                    )
+                else:
+                    selected_implement = 'All'
+
+            with chart_col4:
+                session_filter_options = ['All', 'Training', 'Competition', 'Testing', 'Warm-up']
+                selected_session_filter = st.selectbox(
+                    "Session Type:",
+                    options=session_filter_options,
+                    key="chart_session_filter"
+                )
+
             # Filter data for charts
             chart_df = training_df[
                 (training_df['athlete'] == selected_chart_athlete) &
                 (training_df['event'] == selected_chart_event)
-            ].sort_values('date')
+            ]
+
+            # Apply implement weight filter
+            if selected_implement != 'All' and 'implement_kg' in chart_df.columns:
+                chart_df = chart_df[chart_df['implement_kg'].astype(str) == selected_implement]
+
+            # Apply session type filter
+            if selected_session_filter != 'All' and 'session_type' in chart_df.columns:
+                chart_df = chart_df[chart_df['session_type'] == selected_session_filter]
+
+            chart_df = chart_df.sort_values('date')
 
             if not chart_df.empty:
-                # Distance over time chart
+                # Distance over time chart with color by session type
                 st.markdown("#### 📈 Distance Progression")
+                st.markdown("*🟢 Training | 🟡 Competition | 🔵 Testing | ⚪ Warm-up*")
 
                 fig = go.Figure()
 
-                # Add scatter points
-                fig.add_trace(go.Scatter(
-                    x=chart_df['date'],
-                    y=chart_df['distance_m'],
-                    mode='markers+lines',
-                    name='Throws',
-                    marker=dict(size=10, color='#007167'),
-                    line=dict(color='#007167', width=2),
-                    hovertemplate='<b>%{x|%d %b %Y}</b><br>Distance: %{y:.2f}m<extra></extra>'
-                ))
+                # Color mapping for session types
+                session_colors = {
+                    'Training': '#007167',      # Teal (green)
+                    'Competition': '#FFB800',   # Gold/Yellow
+                    'Testing': '#0077B6',       # Blue
+                    'Warm-up': '#6c757d'        # Gray
+                }
+
+                # Add scatter points colored by session type
+                if 'session_type' in chart_df.columns:
+                    for session_type in chart_df['session_type'].unique():
+                        session_data = chart_df[chart_df['session_type'] == session_type]
+                        color = session_colors.get(session_type, '#007167')
+
+                        fig.add_trace(go.Scatter(
+                            x=session_data['date'],
+                            y=session_data['distance_m'],
+                            mode='markers',
+                            name=session_type,
+                            marker=dict(
+                                size=12 if session_type == 'Competition' else 10,
+                                color=color,
+                                symbol='star' if session_type == 'Competition' else 'circle',
+                                line=dict(width=1, color='white')
+                            ),
+                            hovertemplate=f'<b>%{{x|%d %b %Y}}</b><br>{session_type}<br>Distance: %{{y:.2f}}m<extra></extra>'
+                        ))
+
+                    # Add connecting line for all points
+                    fig.add_trace(go.Scatter(
+                        x=chart_df['date'],
+                        y=chart_df['distance_m'],
+                        mode='lines',
+                        name='Trend',
+                        line=dict(color='rgba(0,113,103,0.3)', width=1),
+                        hoverinfo='skip',
+                        showlegend=False
+                    ))
+                else:
+                    # Fallback if no session_type column
+                    fig.add_trace(go.Scatter(
+                        x=chart_df['date'],
+                        y=chart_df['distance_m'],
+                        mode='markers+lines',
+                        name='Throws',
+                        marker=dict(size=10, color='#007167'),
+                        line=dict(color='#007167', width=2),
+                        hovertemplate='<b>%{x|%d %b %Y}</b><br>Distance: %{y:.2f}m<extra></extra>'
+                    ))
 
                 # Add best distance line
                 best_distance = chart_df['distance_m'].max()
@@ -2308,6 +2582,20 @@ with tabs[5]:  # Data Entry
                     annotation_text=f"PB: {best_distance:.2f}m",
                     annotation_position="top right"
                 )
+
+                # Highlight competition PB if different from overall PB
+                if 'session_type' in chart_df.columns:
+                    comp_df = chart_df[chart_df['session_type'] == 'Competition']
+                    if not comp_df.empty:
+                        comp_best = comp_df['distance_m'].max()
+                        if comp_best < best_distance:
+                            fig.add_hline(
+                                y=comp_best,
+                                line_dash="dot",
+                                line_color="#FFB800",
+                                annotation_text=f"Comp PB: {comp_best:.2f}m",
+                                annotation_position="bottom right"
+                            )
 
                 # Add rolling average
                 if len(chart_df) >= 3:
@@ -2326,7 +2614,7 @@ with tabs[5]:  # Data Entry
                     title=f"{selected_chart_athlete} - {selected_chart_event} Progression",
                     xaxis_title="Date",
                     yaxis_title="Distance (m)",
-                    height=400,
+                    height=450,
                     showlegend=True,
                     legend=dict(orientation='h', yanchor='bottom', y=1.02),
                     plot_bgcolor='white',
