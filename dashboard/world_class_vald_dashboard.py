@@ -434,19 +434,33 @@ def get_force_trace(test_id, trial_id, token, tenant_id, region='euw'):
     """
     import requests
 
-    base_urls = {
+    # External VALD API endpoints (official API)
+    ext_base_urls = {
+        'euw': 'https://prd-euw-api-extforcedecks.valdperformance.com',
+        'use': 'https://prd-use-api-extforcedecks.valdperformance.com',
+        'aue': 'https://prd-aue-api-extforcedecks.valdperformance.com'
+    }
+
+    # Internal ForceDecks endpoints (legacy/backup)
+    int_base_urls = {
         'euw': 'https://prd-euw-webapi-1.forcedecks.com',
         'use': 'https://prd-use-webapi-1.forcedecks.com',
         'aue': 'https://prd-aue-webapi-1.forcedecks.com'
     }
 
-    base_url = base_urls.get(region, base_urls['euw'])
+    ext_base = ext_base_urls.get(region, ext_base_urls['euw'])
+    int_base = int_base_urls.get(region, int_base_urls['euw'])
 
-    # Try multiple endpoint patterns
+    # Try multiple endpoint patterns - external API first, then internal
     endpoints = [
-        f"{base_url}/api/trials/{trial_id}/trace",
-        f"{base_url}/api/tests/{test_id}/trials/{trial_id}/trace",
-        f"{base_url}/api/v1/trials/{trial_id}/recording",
+        # External VALD API endpoints
+        f"{ext_base}/v2019q3/teams/{tenant_id}/tests/{test_id}/trials",
+        f"{ext_base}/v2019q3/teams/{tenant_id}/tests/{test_id}/recording",
+        f"{ext_base}/api/v1/tests/{test_id}/recording",
+        # Internal ForceDecks endpoints (legacy)
+        f"{int_base}/api/trials/{trial_id}/trace",
+        f"{int_base}/api/tests/{test_id}/trials/{trial_id}/trace",
+        f"{int_base}/api/v1/trials/{trial_id}/recording",
     ]
 
     headers = {
@@ -454,7 +468,7 @@ def get_force_trace(test_id, trial_id, token, tenant_id, region='euw'):
         'Accept': 'application/json'
     }
 
-    params = {'tenantId': tenant_id}
+    params = {'TenantId': tenant_id}  # Note: Capital T for external API
 
     for url in endpoints:
         try:
