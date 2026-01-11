@@ -506,7 +506,7 @@ def create_group_report(df: pd.DataFrame,
     st.markdown("### Upper Body Strength & Power")
 
     # Try to load S&C data from session state or CSV
-        sc_upper_body_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'sc_upper_body.csv')
+    sc_upper_body_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'sc_upper_body.csv')
     sc_df = pd.DataFrame()
 
     if hasattr(st, 'session_state') and 'sc_upper_body' in st.session_state:
