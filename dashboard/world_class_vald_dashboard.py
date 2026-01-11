@@ -357,6 +357,9 @@ def load_env_credentials():
     Priority:
     1. Streamlit secrets (for Cloud deployment)
     2. Local .env file (for local development)
+
+    If MANUAL_TOKEN is not provided but CLIENT_ID and CLIENT_SECRET are,
+    automatically fetches an OAuth token from the VALD API.
     """
     credentials = {
         'token': '',
@@ -365,6 +368,8 @@ def load_env_credentials():
         'client_secret': '',
         'region': 'euw'
     }
+
+    found = False
 
     # Try Streamlit secrets first (for Streamlit Cloud)
     try:
@@ -375,55 +380,71 @@ def load_env_credentials():
             credentials['client_secret'] = st.secrets['vald'].get('CLIENT_SECRET', '')
             credentials['region'] = st.secrets['vald'].get('VALD_REGION', 'euw')
             if credentials['tenant_id'] and (credentials['token'] or (credentials['client_id'] and credentials['client_secret'])):
-                return credentials, True
+                found = True
     except Exception:
         pass  # Fall through to .env file
 
     # Try multiple possible locations for .env file (relative paths for cloud compatibility)
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    parent_dir = os.path.dirname(script_dir)
-    possible_paths = [
-        # config/local_secrets/.env (primary location for local development)
-        os.path.join(parent_dir, 'config', 'local_secrets', '.env'),
-        # In same directory as dashboard (Streamlit Cloud)
-        os.path.join(script_dir, '.env'),
-        # Relative to dashboard directory
-        os.path.join(parent_dir, 'vald_api_pulls-main', 'forcedecks', '.env'),
-        # In parent directory
-        os.path.join(parent_dir, '.env'),
-    ]
+    if not found:
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        parent_dir = os.path.dirname(script_dir)
+        possible_paths = [
+            # config/local_secrets/.env (primary location for local development)
+            os.path.join(parent_dir, 'config', 'local_secrets', '.env'),
+            # In same directory as dashboard (Streamlit Cloud)
+            os.path.join(script_dir, '.env'),
+            # Relative to dashboard directory
+            os.path.join(parent_dir, 'vald_api_pulls-main', 'forcedecks', '.env'),
+            # In parent directory
+            os.path.join(parent_dir, '.env'),
+        ]
 
-    env_path = None
-    for path in possible_paths:
-        if os.path.exists(path):
-            env_path = path
-            break
+        env_path = None
+        for path in possible_paths:
+            if os.path.exists(path):
+                env_path = path
+                break
 
-    if not env_path:
-        return credentials, False
+        if env_path:
+            try:
+                with open(env_path, 'r') as f:
+                    for line in f:
+                        line = line.strip()
+                        if line and not line.startswith('#') and '=' in line:
+                            key, value = line.split('=', 1)
+                            key = key.strip()
+                            value = value.strip()
 
-    try:
-        with open(env_path, 'r') as f:
-            for line in f:
-                line = line.strip()
-                if line and not line.startswith('#') and '=' in line:
-                    key, value = line.split('=', 1)
-                    key = key.strip()
-                    value = value.strip()
+                            if key == 'MANUAL_TOKEN':
+                                credentials['token'] = value
+                            elif key == 'TENANT_ID':
+                                credentials['tenant_id'] = value
+                            elif key == 'CLIENT_ID':
+                                credentials['client_id'] = value
+                            elif key == 'CLIENT_SECRET':
+                                credentials['client_secret'] = value
+                            elif key == 'VALD_REGION':
+                                credentials['region'] = value
+                found = True
+            except Exception:
+                pass
 
-                    if key == 'MANUAL_TOKEN':
-                        credentials['token'] = value
-                    elif key == 'TENANT_ID':
-                        credentials['tenant_id'] = value
-                    elif key == 'CLIENT_ID':
-                        credentials['client_id'] = value
-                    elif key == 'CLIENT_SECRET':
-                        credentials['client_secret'] = value
-                    elif key == 'VALD_REGION':
-                        credentials['region'] = value
+    # If we have client credentials but no token, fetch OAuth token automatically
+    if not credentials['token'] and credentials['client_id'] and credentials['client_secret']:
+        oauth_token = get_oauth_token(
+            credentials['client_id'],
+            credentials['client_secret'],
+            credentials['region']
+        )
+        if oauth_token:
+            credentials['token'] = oauth_token
+            found = True
+
+    # Final check: do we have what we need?
+    if credentials['tenant_id'] and credentials['token']:
         return credentials, True
-    except Exception:
-        return credentials, False
+
+    return credentials, found
 
 
 @st.cache_data(ttl=3600, show_spinner=False)
