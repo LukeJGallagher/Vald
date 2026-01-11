@@ -2948,6 +2948,154 @@ with tabs[5]:  # Data Entry
         else:
             st.info("📭 No training data available. Add entries in the 'Throws Distance' tab to see charts.")
 
+        # ---------------------------------------------------------------------
+        # S&C UPPER BODY CHARTS
+        # ---------------------------------------------------------------------
+        st.markdown("---")
+        st.markdown("### 💪 S&C Upper Body Charts")
+
+        sc_df = st.session_state.sc_upper_body
+
+        if not sc_df.empty and 'date' in sc_df.columns:
+            sc_df['date'] = pd.to_datetime(sc_df['date'])
+
+            # Chart filters
+            sc_chart_col1, sc_chart_col2 = st.columns(2)
+
+            with sc_chart_col1:
+                sc_chart_athletes = sorted(sc_df['athlete'].unique().tolist())
+                selected_sc_athlete = st.selectbox(
+                    "Select Athlete:",
+                    options=sc_chart_athletes,
+                    key="sc_chart_athlete"
+                )
+
+            with sc_chart_col2:
+                sc_exercises = sorted(sc_df[sc_df['athlete'] == selected_sc_athlete]['exercise'].unique().tolist())
+                selected_sc_exercise = st.selectbox(
+                    "Select Exercise:",
+                    options=sc_exercises if sc_exercises else ['No exercises'],
+                    key="sc_chart_exercise"
+                )
+
+            # Filter data
+            sc_chart_df = sc_df[
+                (sc_df['athlete'] == selected_sc_athlete) &
+                (sc_df['exercise'] == selected_sc_exercise)
+            ].sort_values('date')
+
+            if not sc_chart_df.empty:
+                # 1RM Progression Chart
+                st.markdown("#### 📈 Estimated 1RM Progression")
+
+                fig_1rm = go.Figure()
+
+                # Add scatter points
+                fig_1rm.add_trace(go.Scatter(
+                    x=sc_chart_df['date'],
+                    y=sc_chart_df['estimated_1rm'],
+                    mode='markers+lines',
+                    name='Estimated 1RM',
+                    marker=dict(size=10, color='#007167'),
+                    line=dict(color='#007167', width=2),
+                    hovertemplate='<b>%{x|%d %b %Y}</b><br>Est. 1RM: %{y:.1f}kg<extra></extra>'
+                ))
+
+                # Add best 1RM line
+                best_1rm = sc_chart_df['estimated_1rm'].max()
+                fig_1rm.add_hline(
+                    y=best_1rm,
+                    line_dash="dash",
+                    line_color="#a08e66",
+                    annotation_text=f"Best: {best_1rm:.1f}kg",
+                    annotation_position="top right"
+                )
+
+                fig_1rm.update_layout(
+                    title=f"{selected_sc_athlete} - {selected_sc_exercise} 1RM Progression",
+                    xaxis_title="Date",
+                    yaxis_title="Estimated 1RM (kg)",
+                    height=400,
+                    showlegend=True,
+                    plot_bgcolor='white',
+                    font=dict(family='Inter, sans-serif')
+                )
+
+                fig_1rm.update_xaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
+                fig_1rm.update_yaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
+
+                st.plotly_chart(fig_1rm, use_container_width=True)
+
+                # Weight x Reps Chart
+                st.markdown("#### 🏋️ Training Volume (Weight × Reps)")
+
+                if 'weight_kg' in sc_chart_df.columns and 'reps' in sc_chart_df.columns:
+                    fig_volume = go.Figure()
+
+                    # Bubble chart - size represents reps
+                    fig_volume.add_trace(go.Scatter(
+                        x=sc_chart_df['date'],
+                        y=sc_chart_df['weight_kg'],
+                        mode='markers',
+                        name='Weight',
+                        marker=dict(
+                            size=sc_chart_df['reps'] * 4,  # Scale reps for visibility
+                            color='#007167',
+                            opacity=0.7,
+                            line=dict(width=1, color='white')
+                        ),
+                        text=[f"{r} reps" for r in sc_chart_df['reps']],
+                        hovertemplate='<b>%{x|%d %b %Y}</b><br>Weight: %{y:.1f}kg<br>%{text}<extra></extra>'
+                    ))
+
+                    fig_volume.update_layout(
+                        title=f"{selected_sc_athlete} - {selected_sc_exercise} Training Load",
+                        xaxis_title="Date",
+                        yaxis_title="Weight (kg)",
+                        height=350,
+                        showlegend=False,
+                        plot_bgcolor='white',
+                        font=dict(family='Inter, sans-serif')
+                    )
+
+                    fig_volume.update_xaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
+                    fig_volume.update_yaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
+
+                    st.plotly_chart(fig_volume, use_container_width=True)
+
+                # Summary stats
+                st.markdown("#### 📋 S&C Summary Statistics")
+
+                sc_summary_col1, sc_summary_col2, sc_summary_col3, sc_summary_col4 = st.columns(4)
+
+                with sc_summary_col1:
+                    st.metric("Total Sessions", len(sc_chart_df))
+                with sc_summary_col2:
+                    st.metric("Best Est. 1RM", f"{sc_chart_df['estimated_1rm'].max():.1f}kg")
+                with sc_summary_col3:
+                    st.metric("Max Weight Used", f"{sc_chart_df['weight_kg'].max():.1f}kg")
+                with sc_summary_col4:
+                    avg_rpe = sc_chart_df['rpe'].mean() if 'rpe' in sc_chart_df.columns else None
+                    st.metric("Avg RPE", f"{avg_rpe:.1f}" if pd.notna(avg_rpe) else "N/A")
+
+                # Personal Bests across all exercises for this athlete
+                st.markdown("#### 🏆 All Personal Bests")
+                athlete_all_sc = sc_df[sc_df['athlete'] == selected_sc_athlete]
+                if not athlete_all_sc.empty:
+                    pb_table = athlete_all_sc.groupby('exercise').agg({
+                        'estimated_1rm': 'max',
+                        'weight_kg': 'max',
+                        'date': 'max'
+                    }).reset_index()
+                    pb_table.columns = ['Exercise', 'Best Est. 1RM (kg)', 'Max Weight (kg)', 'Last Session']
+                    pb_table = pb_table.sort_values('Best Est. 1RM (kg)', ascending=False)
+
+                    st.dataframe(pb_table, use_container_width=True, hide_index=True)
+            else:
+                st.info("No data for selected athlete and exercise")
+        else:
+            st.info("📭 No S&C data available. Add entries in the 'S&C Upper Body' tab to see charts.")
+
 # ============================================================================
 # TAB 11: FORCE TRACE ANALYSIS
 # ============================================================================
