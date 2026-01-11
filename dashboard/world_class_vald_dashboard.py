@@ -4327,17 +4327,28 @@ with tabs[1]:
             sport_data = filtered_df[sport_mask].copy()
 
             # Filter ForceFrame and NordBord for sport
+            # Note: ForceFrame/NordBord may have limited sport info from Profiles API
+            # If sport filter returns empty, show all data instead
             sport_ff = filtered_forceframe.copy() if not filtered_forceframe.empty else pd.DataFrame()
             sport_nb = filtered_nordbord.copy() if not filtered_nordbord.empty else pd.DataFrame()
 
-            if 'athlete_sport' in sport_ff.columns:
-                sport_ff = sport_ff[sport_ff['athlete_sport'].str.contains(
-                    selected_report_sport.split()[0], case=False, na=False
+            if 'athlete_sport' in sport_ff.columns and not sport_ff.empty:
+                sport_keyword = selected_report_sport.split()[0]
+                filtered_ff = sport_ff[sport_ff['athlete_sport'].str.contains(
+                    sport_keyword, case=False, na=False
                 )]
-            if 'athlete_sport' in sport_nb.columns:
-                sport_nb = sport_nb[sport_nb['athlete_sport'].str.contains(
-                    selected_report_sport.split()[0], case=False, na=False
+                # Only apply filter if it returns results, otherwise show all
+                if not filtered_ff.empty:
+                    sport_ff = filtered_ff
+
+            if 'athlete_sport' in sport_nb.columns and not sport_nb.empty:
+                sport_keyword = selected_report_sport.split()[0]
+                filtered_nb = sport_nb[sport_nb['athlete_sport'].str.contains(
+                    sport_keyword, case=False, na=False
                 )]
+                # Only apply filter if it returns results, otherwise show all
+                if not filtered_nb.empty:
+                    sport_nb = filtered_nb
 
             with report_tabs[0]:
                 # Group Report v1 - Bar charts with benchmark zones
