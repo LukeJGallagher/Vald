@@ -45,8 +45,9 @@ DEFAULT_BENCHMARKS = {
 }
 
 # Metric column mappings
+# Note: Jump Height (Imp-Mom) is preferred over Flight Time method for accuracy
 METRIC_COLUMNS = {
-    'cmj_height': ['Jump Height (Flight Time)_Trial', 'Jump Height (Imp-Mom)_Trial'],
+    'cmj_height': ['Jump Height (Imp-Mom)_Trial', 'Jump Height (Flight Time)_Trial'],
     'peak_power': ['Peak Power / BM_Trial', 'Peak Power_Trial'],
     'relative_power': ['Peak Power / BM_Trial'],
     'peak_force': ['Peak Force / BM_Trial', 'Peak Vertical Force / BM_Trial'],

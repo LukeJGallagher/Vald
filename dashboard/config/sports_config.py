@@ -871,7 +871,7 @@ SPORT_REPORT_LAYOUTS = {
     'Swimming': {
         'lower_body': {
             'tests': ['IMTP', 'CMJ'],
-            'metrics': ['Peak Force / BM_Trial', 'Jump Height (Flight Time)_Trial', 'Peak Power / BM_Trial'],
+            'metrics': ['Peak Force / BM_Trial', 'Jump Height (Imp-Mom)_Trial', 'Peak Power / BM_Trial'],
             'show_repeat_hop': True,
         },
         'upper_body': {
@@ -895,7 +895,7 @@ SPORT_REPORT_LAYOUTS = {
     'Athletics - Throws': {
         'lower_body': {
             'tests': ['IMTP', 'CMJ', 'SJ'],
-            'metrics': ['Peak Force / BM_Trial', 'Jump Height (Flight Time)_Trial', 'Peak Power / BM_Trial'],
+            'metrics': ['Peak Force / BM_Trial', 'Jump Height (Imp-Mom)_Trial', 'Peak Power / BM_Trial'],
             'show_repeat_hop': True,
         },
         'upper_body': {
@@ -919,7 +919,7 @@ SPORT_REPORT_LAYOUTS = {
     'Rowing': {
         'lower_body': {
             'tests': ['IMTP', 'CMJ'],
-            'metrics': ['Peak Force / BM_Trial', 'Jump Height (Flight Time)_Trial', 'Peak Power / BM_Trial'],
+            'metrics': ['Peak Force / BM_Trial', 'Jump Height (Imp-Mom)_Trial', 'Peak Power / BM_Trial'],
             'show_repeat_hop': False,
         },
         'upper_body': {
@@ -944,7 +944,7 @@ SPORT_REPORT_LAYOUTS = {
     'Default': {
         'lower_body': {
             'tests': ['IMTP', 'CMJ'],
-            'metrics': ['Peak Force / BM_Trial', 'Jump Height (Flight Time)_Trial', 'Peak Power / BM_Trial'],
+            'metrics': ['Peak Force / BM_Trial', 'Jump Height (Imp-Mom)_Trial', 'Peak Power / BM_Trial'],
             'show_repeat_hop': True,
         },
         'upper_body': {

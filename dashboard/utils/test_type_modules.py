@@ -300,16 +300,20 @@ class CMJAnalysisModule:
     @staticmethod
     def _display_jump_height_card(cmj_df: pd.DataFrame, date_col: str):
         """Jump Height with bilateral comparison or progression."""
-        st.markdown("#### Jump Height (Imp-Dis) [cm]")
+        st.markdown("#### Jump Height (Imp-Mom) [cm]")
 
-        # Find jump height columns - use exact match first
+        # Find jump height columns - prioritize Impulse-Momentum method
         left_col = None
         right_col = None
         trial_col = None
 
-        # Try exact match first
-        if 'Jump Height (Imp-Dis)_Trial' in cmj_df.columns:
+        # Try Impulse-Momentum first (preferred), then Impulse-Displacement, then Flight Time
+        if 'Jump Height (Imp-Mom)_Trial' in cmj_df.columns:
+            trial_col = 'Jump Height (Imp-Mom)_Trial'
+        elif 'Jump Height (Imp-Dis)_Trial' in cmj_df.columns:
             trial_col = 'Jump Height (Imp-Dis)_Trial'
+        elif 'Jump Height (Flight Time)_Trial' in cmj_df.columns:
+            trial_col = 'Jump Height (Flight Time)_Trial'
 
         # Fall back to search if exact match not found
         if not trial_col:
@@ -320,7 +324,9 @@ class CMJAnalysisModule:
                         left_col = col
                     elif 'right' in col_lower or '_r_' in col_lower:
                         right_col = col
-                    elif 'trial' in col_lower and 'imp' in col_lower:
+                    elif 'trial' in col_lower and 'imp-mom' in col_lower:
+                        trial_col = col
+                    elif 'trial' in col_lower and 'imp' in col_lower and not trial_col:
                         trial_col = col
 
         if left_col and right_col:
@@ -612,10 +618,12 @@ class CMJAnalysisModule:
         body_mass_col = None
         height_col = None
 
-        # Try exact matches first
+        # Try exact matches first - prioritize Impulse-Momentum for jump height
         if 'Peak Power / BM_Trial' in cmj_df.columns:
             rel_power_col = 'Peak Power / BM_Trial'
-        if 'Jump Height (Imp-Dis)_Trial' in cmj_df.columns:
+        if 'Jump Height (Imp-Mom)_Trial' in cmj_df.columns:
+            height_col = 'Jump Height (Imp-Mom)_Trial'
+        elif 'Jump Height (Imp-Dis)_Trial' in cmj_df.columns:
             height_col = 'Jump Height (Imp-Dis)_Trial'
 
         # Fall back to search if exact matches not found
