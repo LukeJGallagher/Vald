@@ -1986,9 +1986,13 @@ with tabs[5]:  # Data Entry
     if 'sc_upper_body' not in st.session_state:
         st.session_state.sc_upper_body = pd.DataFrame()
 
+    if 'sc_lower_body' not in st.session_state:
+        st.session_state.sc_lower_body = pd.DataFrame()
+
     # Load existing training data from CSV if available
     training_data_path = os.path.join(os.path.dirname(__file__), 'data', 'training_distances.csv')
     sc_upper_body_path = os.path.join(os.path.dirname(__file__), 'data', 'sc_upper_body.csv')
+    sc_lower_body_path = os.path.join(os.path.dirname(__file__), 'data', 'sc_lower_body.csv')
 
     @st.cache_data(ttl=300)
     def load_training_distances():
@@ -2010,6 +2014,16 @@ with tabs[5]:  # Data Entry
             return df
         return pd.DataFrame()
 
+    @st.cache_data(ttl=300)
+    def load_sc_lower_body():
+        """Load S&C lower body data from CSV file."""
+        if os.path.exists(sc_lower_body_path):
+            df = pd.read_csv(sc_lower_body_path)
+            if 'date' in df.columns:
+                df['date'] = pd.to_datetime(df['date'])
+            return df
+        return pd.DataFrame()
+
     # Load existing data
     if st.session_state.training_distances.empty:
         st.session_state.training_distances = load_training_distances()
@@ -2017,8 +2031,11 @@ with tabs[5]:  # Data Entry
     if st.session_state.sc_upper_body.empty:
         st.session_state.sc_upper_body = load_sc_upper_body()
 
+    if st.session_state.sc_lower_body.empty:
+        st.session_state.sc_lower_body = load_sc_lower_body()
+
     # Create sub-tabs for different entry types
-    entry_tabs = st.tabs(["🥏 Throws Distance", "💪 S&C Upper Body", "📊 View Data", "📈 Charts"])
+    entry_tabs = st.tabs(["🥏 Throws Distance", "💪 S&C Upper Body", "🦵 S&C Lower Body", "📊 View Data", "📈 Charts"])
 
     # -------------------------------------------------------------------------
     # SUB-TAB: Throws Distance Entry Form
@@ -2496,647 +2513,1071 @@ with tabs[5]:  # Data Entry
             st.info("📭 No S&C data recorded yet. Use the form above to add entries.")
 
     # -------------------------------------------------------------------------
-    # SUB-TAB: View Data (with Edit/Delete)
+    # SUB-TAB: S&C Lower Body (Squats, Deadlifts, etc.)
     # -------------------------------------------------------------------------
     with entry_tabs[2]:
-        st.markdown("### 📊 Recorded Training Data")
+        st.markdown("### 🦵 S&C Lower Body Strength & Power")
 
-        training_df = st.session_state.training_distances
+        st.markdown("""
+        <div style="
+            background: linear-gradient(135deg, #007167 0%, #005a51 100%);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            color: white;
+        ">
+            <p style="margin: 0; font-size: 0.95rem;">
+                📝 Record lower body strength metrics: Squats, Deadlifts, Hip Thrusts, and more.
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
 
-        if not training_df.empty:
-            # Ensure index is set for editing
-            if 'row_id' not in training_df.columns:
-                training_df = training_df.reset_index(drop=True)
-                training_df['row_id'] = training_df.index
-                st.session_state.training_distances = training_df
+        with st.form("sc_lower_body_form", clear_on_submit=True):
+            lb_col1, lb_col2 = st.columns(2)
 
-            # Filters
-            filter_col1, filter_col2, filter_col3 = st.columns(3)
+            with lb_col1:
+                # Get athlete list from existing data
+                lb_athletes_list = []
+                if 'Name' in filtered_df.columns:
+                    lb_athletes_list = sorted([a for a in filtered_df['Name'].unique() if pd.notna(a)])
 
-            with filter_col1:
-                filter_athletes = ['All'] + sorted(training_df['athlete'].unique().tolist())
-                selected_filter_athlete = st.selectbox("Filter by Athlete:", filter_athletes, key="view_filter_athlete")
+                lb_selected_athlete = st.selectbox(
+                    "Athlete *",
+                    options=lb_athletes_list if lb_athletes_list else ["No athletes loaded"],
+                    key="lb_entry_athlete"
+                )
 
-            with filter_col2:
-                filter_events = ['All'] + sorted(training_df['event'].unique().tolist())
-                selected_filter_event = st.selectbox("Filter by Event:", filter_events, key="view_filter_event")
+                lb_entry_date = st.date_input(
+                    "Date *",
+                    value=datetime.now().date(),
+                    key="lb_entry_date"
+                )
 
-            with filter_col3:
-                sort_options = ['Date (Newest)', 'Date (Oldest)', 'Distance (Best)', 'Distance (Worst)']
-                sort_by = st.selectbox("Sort by:", sort_options, key="view_sort")
+                lb_exercise = st.selectbox(
+                    "Exercise *",
+                    options=[
+                        "Back Squat",
+                        "Front Squat",
+                        "Deadlift",
+                        "Romanian Deadlift (RDL)",
+                        "Hip Thrust",
+                        "Bulgarian Split Squat",
+                        "Leg Press",
+                        "Trap Bar Deadlift",
+                        "Goblet Squat",
+                        "Lunges",
+                        "Step Ups",
+                        "Nordic Hamstring Curl",
+                        "Glute Ham Raise",
+                        "Calf Raise",
+                        "Other"
+                    ],
+                    key="lb_entry_exercise"
+                )
 
-            # Apply filters
-            display_training_df = training_df.copy()
+                if lb_exercise == "Other":
+                    lb_custom_exercise = st.text_input(
+                        "Custom Exercise Name",
+                        key="lb_custom_exercise"
+                    )
 
-            if selected_filter_athlete != 'All':
-                display_training_df = display_training_df[display_training_df['athlete'] == selected_filter_athlete]
+            with lb_col2:
+                lb_weight = st.number_input(
+                    "Weight (kg) *",
+                    min_value=0.0,
+                    max_value=500.0,
+                    value=0.0,
+                    step=2.5,
+                    format="%.1f",
+                    key="lb_entry_weight"
+                )
 
-            if selected_filter_event != 'All':
-                display_training_df = display_training_df[display_training_df['event'] == selected_filter_event]
+                lb_reps = st.number_input(
+                    "Reps *",
+                    min_value=1,
+                    max_value=100,
+                    value=1,
+                    key="lb_entry_reps"
+                )
 
-            # Apply sorting
-            if 'date' in display_training_df.columns:
-                display_training_df['date'] = pd.to_datetime(display_training_df['date'])
-                if sort_by == 'Date (Newest)':
-                    display_training_df = display_training_df.sort_values('date', ascending=False)
-                elif sort_by == 'Date (Oldest)':
-                    display_training_df = display_training_df.sort_values('date', ascending=True)
-                elif sort_by == 'Distance (Best)':
-                    display_training_df = display_training_df.sort_values('distance_m', ascending=False)
-                elif sort_by == 'Distance (Worst)':
-                    display_training_df = display_training_df.sort_values('distance_m', ascending=True)
+                lb_sets = st.number_input(
+                    "Sets",
+                    min_value=1,
+                    max_value=20,
+                    value=1,
+                    key="lb_entry_sets"
+                )
 
-            # Display stats
-            stat_col1, stat_col2, stat_col3, stat_col4 = st.columns(4)
+                lb_rpe = st.slider(
+                    "RPE (Rate of Perceived Exertion)",
+                    min_value=1,
+                    max_value=10,
+                    value=7,
+                    key="lb_entry_rpe"
+                )
 
-            with stat_col1:
-                st.metric("Total Entries", len(display_training_df))
-            with stat_col2:
-                st.metric("Athletes", display_training_df['athlete'].nunique())
-            with stat_col3:
-                if 'distance_m' in display_training_df.columns:
-                    st.metric("Best Distance", f"{display_training_df['distance_m'].max():.2f}m")
-            with stat_col4:
-                if 'distance_m' in display_training_df.columns:
-                    st.metric("Avg Distance", f"{display_training_df['distance_m'].mean():.2f}m")
+            # Additional fields
+            lb_col3, lb_col4 = st.columns(2)
 
-            # Display table with color coding by session type
-            st.markdown("#### Data Table")
-            st.markdown("*🟢 Training | 🟡 Competition | 🔵 Testing | ⚪ Other*")
+            with lb_col3:
+                lb_test_type = st.selectbox(
+                    "Test Type",
+                    options=["Working Set", "1RM Test", "3RM Test", "5RM Test", "AMRAP", "Warm-up"],
+                    key="lb_entry_test_type"
+                )
 
-            # Add color column for display
-            def get_session_color(session_type):
-                colors = {
-                    'Training': '🟢',
-                    'Competition': '🟡',
-                    'Testing': '🔵',
-                    'Warm-up': '⚪'
-                }
-                return colors.get(session_type, '⚪')
+                lb_equipment = st.selectbox(
+                    "Equipment",
+                    options=["Barbell", "Dumbbell", "Machine", "Cable", "Bodyweight", "Kettlebell", "Trap Bar", "Other"],
+                    key="lb_entry_equipment"
+                )
 
-            display_df_styled = display_training_df.copy()
-            if 'session_type' in display_df_styled.columns:
-                display_df_styled['Type'] = display_df_styled['session_type'].apply(get_session_color)
-                # Reorder columns to put Type first
-                cols = ['Type'] + [c for c in display_df_styled.columns if c != 'Type' and c != 'row_id' and c != 'created_at']
-                display_df_styled = display_df_styled[cols]
+            with lb_col4:
+                lb_location = st.text_input(
+                    "Location",
+                    placeholder="e.g., King Fahd Stadium, SAOC Gym, Riyadh...",
+                    key="lb_entry_location"
+                )
+
+                lb_notes = st.text_area(
+                    "Notes (optional)",
+                    placeholder="Technique cues, how it felt...",
+                    max_chars=500,
+                    key="lb_entry_notes"
+                )
+
+            lb_submitted = st.form_submit_button("💾 Save S&C Entry", use_container_width=True)
+
+            if lb_submitted:
+                if lb_weight > 0 and lb_selected_athlete != "No athletes loaded":
+                    # Determine exercise name
+                    exercise_name = lb_exercise
+                    if lb_exercise == "Other" and lb_custom_exercise:
+                        exercise_name = lb_custom_exercise
+
+                    # Calculate estimated 1RM using Brzycki formula
+                    if lb_reps > 0 and lb_reps <= 12:
+                        estimated_1rm = lb_weight * (36 / (37 - lb_reps))
+                    else:
+                        estimated_1rm = lb_weight  # For higher reps, just use weight
+
+                    # Create new entry
+                    lb_new_entry = pd.DataFrame([{
+                        'date': lb_entry_date,
+                        'athlete': lb_selected_athlete,
+                        'exercise': exercise_name,
+                        'weight_kg': lb_weight,
+                        'reps': lb_reps,
+                        'sets': lb_sets,
+                        'rpe': lb_rpe,
+                        'test_type': lb_test_type,
+                        'equipment': lb_equipment,
+                        'estimated_1rm': round(estimated_1rm, 1),
+                        'location': lb_location,
+                        'notes': lb_notes,
+                        'created_at': datetime.now().isoformat()
+                    }])
+
+                    # Append to existing data
+                    if st.session_state.sc_lower_body.empty:
+                        st.session_state.sc_lower_body = lb_new_entry
+                    else:
+                        st.session_state.sc_lower_body = pd.concat(
+                            [st.session_state.sc_lower_body, lb_new_entry],
+                            ignore_index=True
+                        )
+
+                    # Add row_id
+                    st.session_state.sc_lower_body = st.session_state.sc_lower_body.reset_index(drop=True)
+                    st.session_state.sc_lower_body['row_id'] = st.session_state.sc_lower_body.index
+
+                    # Save to CSV
+                    os.makedirs(os.path.dirname(sc_lower_body_path), exist_ok=True)
+                    st.session_state.sc_lower_body.to_csv(sc_lower_body_path, index=False)
+
+                    # Clear cache to reload data
+                    load_sc_lower_body.clear()
+
+                    st.success(f"✅ Saved: {lb_selected_athlete} - {exercise_name} - {lb_weight}kg x {lb_reps} (Est. 1RM: {estimated_1rm:.1f}kg)")
+                else:
+                    st.error("Please enter a valid weight and select an athlete")
+
+        # Quick reference for 1RM estimation
+        st.markdown("---")
+        with st.expander("📊 1RM Estimation Reference"):
+            st.markdown("""
+            **Estimated 1RM** is calculated using the Brzycki formula:
+
+            `1RM = Weight × (36 / (37 - Reps))`
+
+            | Reps | % of 1RM |
+            |------|----------|
+            | 1    | 100%     |
+            | 2    | 95%      |
+            | 3    | 93%      |
+            | 4    | 90%      |
+            | 5    | 87%      |
+            | 6    | 85%      |
+            | 8    | 80%      |
+            | 10   | 75%      |
+            | 12   | 70%      |
+
+            *Note: Estimates become less accurate above 10 reps*
+            """)
+
+        # Display recent S&C Lower Body entries
+        st.markdown("---")
+        st.markdown("### 📋 Recent S&C Lower Body Entries")
+
+        lb_df = st.session_state.sc_lower_body
+
+        if not lb_df.empty:
+            # Show last 10 entries
+            recent_lb = lb_df.sort_values('date', ascending=False).head(10)
+
+            # Display columns
+            display_cols = ['date', 'athlete', 'exercise', 'weight_kg', 'reps', 'sets', 'estimated_1rm', 'rpe', 'test_type']
+            available_cols = [c for c in display_cols if c in recent_lb.columns]
 
             st.dataframe(
-                display_df_styled,
+                recent_lb[available_cols],
                 use_container_width=True,
-                hide_index=True,
-                height=350
+                hide_index=True
             )
 
-            # -----------------------------------------------------------------
-            # EDIT / DELETE Section
-            # -----------------------------------------------------------------
-            st.markdown("---")
-            st.markdown("### ✏️ Edit or Delete Entry")
+            # Summary stats
+            st.markdown("#### 🦵 Personal Bests (Estimated 1RM)")
 
-            # Create selection options
-            row_options = []
-            for idx, row in display_training_df.iterrows():
-                date_str = pd.to_datetime(row['date']).strftime('%Y-%m-%d') if pd.notna(row.get('date')) else 'N/A'
-                session_icon = get_session_color(row.get('session_type', ''))
-                label = f"{session_icon} {row['athlete']} | {row['event']} | {row['distance_m']:.2f}m | {date_str}"
-                row_options.append({'label': label, 'row_id': row.get('row_id', idx), 'idx': idx})
+            if 'estimated_1rm' in lb_df.columns:
+                pb_lb_df = lb_df.groupby(['athlete', 'exercise'])['estimated_1rm'].max().reset_index()
+                pb_lb_df.columns = ['Athlete', 'Exercise', 'Best Est. 1RM (kg)']
 
-            if row_options:
-                selected_row_idx = st.selectbox(
-                    "Select entry to edit/delete:",
-                    range(len(row_options)),
-                    format_func=lambda i: row_options[i]['label'],
-                    key="edit_row_select"
+                st.dataframe(
+                    pb_lb_df.sort_values('Best Est. 1RM (kg)', ascending=False),
+                    use_container_width=True,
+                    hide_index=True
                 )
-
-                selected_row_id = row_options[selected_row_idx]['row_id']
-                selected_row = training_df[training_df['row_id'] == selected_row_id].iloc[0]
-
-                edit_col1, edit_col2 = st.columns(2)
-
-                with edit_col1:
-                    st.markdown("#### Edit Entry")
-
-                    with st.form("edit_entry_form"):
-                        edit_date = st.date_input(
-                            "Date",
-                            value=pd.to_datetime(selected_row['date']).date() if pd.notna(selected_row.get('date')) else datetime.now().date(),
-                            key="edit_date"
-                        )
-
-                        edit_event = st.selectbox(
-                            "Event",
-                            options=["Shot Put", "Discus", "Javelin", "Hammer"],
-                            index=["Shot Put", "Discus", "Javelin", "Hammer"].index(selected_row['event']) if selected_row['event'] in ["Shot Put", "Discus", "Javelin", "Hammer"] else 0,
-                            key="edit_event"
-                        )
-
-                        edit_distance = st.number_input(
-                            "Distance (m)",
-                            min_value=0.0,
-                            max_value=100.0,
-                            value=float(selected_row['distance_m']),
-                            step=0.01,
-                            format="%.2f",
-                            key="edit_distance"
-                        )
-
-                        edit_session = st.selectbox(
-                            "Session Type",
-                            options=["Training", "Competition", "Testing", "Warm-up"],
-                            index=["Training", "Competition", "Testing", "Warm-up"].index(selected_row.get('session_type', 'Training')) if selected_row.get('session_type') in ["Training", "Competition", "Testing", "Warm-up"] else 0,
-                            key="edit_session"
-                        )
-
-                        edit_location_label = "Competition Name" if edit_session == "Competition" else "Training Location"
-                        edit_location = st.text_input(
-                            edit_location_label,
-                            value=str(selected_row.get('location', '')),
-                            key="edit_location"
-                        )
-
-                        edit_implement = st.text_input(
-                            "Implement (kg)",
-                            value=str(selected_row.get('implement_kg', '')),
-                            key="edit_implement"
-                        )
-
-                        edit_notes = st.text_area(
-                            "Notes",
-                            value=str(selected_row.get('notes', '')),
-                            key="edit_notes"
-                        )
-
-                        save_edit = st.form_submit_button("💾 Save Changes", use_container_width=True)
-
-                        if save_edit:
-                            # Update the row
-                            mask = st.session_state.training_distances['row_id'] == selected_row_id
-                            st.session_state.training_distances.loc[mask, 'date'] = edit_date
-                            st.session_state.training_distances.loc[mask, 'event'] = edit_event
-                            st.session_state.training_distances.loc[mask, 'distance_m'] = edit_distance
-                            st.session_state.training_distances.loc[mask, 'session_type'] = edit_session
-                            st.session_state.training_distances.loc[mask, 'location'] = edit_location
-                            st.session_state.training_distances.loc[mask, 'implement_kg'] = edit_implement
-                            st.session_state.training_distances.loc[mask, 'notes'] = edit_notes
-
-                            # Save to CSV
-                            st.session_state.training_distances.to_csv(training_data_path, index=False)
-                            load_training_distances.clear()
-                            st.success("✅ Entry updated!")
-                            st.rerun()
-
-                with edit_col2:
-                    st.markdown("#### Delete Entry")
-
-                    st.warning(f"""
-                    **Selected Entry:**
-                    - Athlete: {selected_row['athlete']}
-                    - Event: {selected_row['event']}
-                    - Distance: {selected_row['distance_m']:.2f}m
-                    - Date: {pd.to_datetime(selected_row['date']).strftime('%Y-%m-%d') if pd.notna(selected_row.get('date')) else 'N/A'}
-                    """)
-
-                    delete_confirm = st.checkbox("⚠️ I confirm I want to delete this entry", key="delete_confirm")
-
-                    if st.button("🗑️ Delete Entry", type="secondary", disabled=not delete_confirm, use_container_width=True):
-                        # Remove the row
-                        st.session_state.training_distances = st.session_state.training_distances[
-                            st.session_state.training_distances['row_id'] != selected_row_id
-                        ].reset_index(drop=True)
-
-                        # Re-assign row IDs
-                        st.session_state.training_distances['row_id'] = st.session_state.training_distances.index
-
-                        # Save to CSV
-                        if not st.session_state.training_distances.empty:
-                            st.session_state.training_distances.to_csv(training_data_path, index=False)
-                        else:
-                            if os.path.exists(training_data_path):
-                                os.remove(training_data_path)
-
-                        load_training_distances.clear()
-                        st.success("✅ Entry deleted!")
-                        st.rerun()
-
-            # Export options
-            st.markdown("---")
-            st.markdown("### 📥 Export Data")
-            exp_col1, exp_col2 = st.columns(2)
-
-            with exp_col1:
-                csv_export = display_training_df.drop(columns=['row_id'], errors='ignore').to_csv(index=False)
-                st.download_button(
-                    "📥 Download as CSV",
-                    data=csv_export,
-                    file_name=f"training_distances_{datetime.now().strftime('%Y%m%d')}.csv",
-                    mime="text/csv"
-                )
-
-            with exp_col2:
-                if st.button("🗑️ Clear ALL Data", type="secondary"):
-                    clear_confirm = st.checkbox("⚠️ Confirm delete ALL data", key="clear_all_confirm")
-                    if clear_confirm:
-                        st.session_state.training_distances = pd.DataFrame()
-                        if os.path.exists(training_data_path):
-                            os.remove(training_data_path)
-                        load_training_distances.clear()
-                        st.success("All data cleared")
-                        st.rerun()
         else:
-            st.info("📭 No training data recorded yet. Use the 'Throws Distance' tab to add entries.")
+            st.info("📭 No S&C Lower Body data recorded yet. Use the form above to add entries.")
 
     # -------------------------------------------------------------------------
-    # SUB-TAB: Charts
+    # SUB-TAB: View Data (with Edit/Delete) - Now with sub-tabs
     # -------------------------------------------------------------------------
     with entry_tabs[3]:
-        st.markdown("### 📈 Training Distance Charts")
+        st.markdown("### 📊 Recorded Training Data")
 
-        training_df = st.session_state.training_distances
+        # Create sub-tabs for different data types
+        view_data_tabs = st.tabs(["🥏 Throws", "💪 S&C Upper Body", "🦵 S&C Lower Body"])
 
-        if not training_df.empty and 'date' in training_df.columns:
-            training_df['date'] = pd.to_datetime(training_df['date'])
+        # -----------------------------------------------------------------
+        # VIEW DATA SUB-TAB: Throws
+        # -----------------------------------------------------------------
+        with view_data_tabs[0]:
+            training_df = st.session_state.training_distances
 
-            # Chart filters - Row 1: Athlete and Event
-            chart_col1, chart_col2 = st.columns(2)
+            if not training_df.empty:
+                # Ensure index is set for editing
+                if 'row_id' not in training_df.columns:
+                    training_df = training_df.reset_index(drop=True)
+                    training_df['row_id'] = training_df.index
+                    st.session_state.training_distances = training_df
 
-            with chart_col1:
-                chart_athletes = sorted(training_df['athlete'].unique().tolist())
-                selected_chart_athlete = st.selectbox(
-                    "Select Athlete:",
-                    options=chart_athletes,
-                    key="chart_athlete"
+                # Filters
+                filter_col1, filter_col2, filter_col3 = st.columns(3)
+
+                with filter_col1:
+                    filter_athletes = ['All'] + sorted(training_df['athlete'].unique().tolist())
+                    selected_filter_athlete = st.selectbox("Filter by Athlete:", filter_athletes, key="view_filter_athlete")
+
+                with filter_col2:
+                    filter_events = ['All'] + sorted(training_df['event'].unique().tolist())
+                    selected_filter_event = st.selectbox("Filter by Event:", filter_events, key="view_filter_event")
+
+                with filter_col3:
+                    sort_options = ['Date (Newest)', 'Date (Oldest)', 'Distance (Best)', 'Distance (Worst)']
+                    sort_by = st.selectbox("Sort by:", sort_options, key="view_sort")
+
+                # Apply filters
+                display_training_df = training_df.copy()
+
+                if selected_filter_athlete != 'All':
+                    display_training_df = display_training_df[display_training_df['athlete'] == selected_filter_athlete]
+
+                if selected_filter_event != 'All':
+                    display_training_df = display_training_df[display_training_df['event'] == selected_filter_event]
+
+                # Apply sorting
+                if 'date' in display_training_df.columns:
+                    display_training_df['date'] = pd.to_datetime(display_training_df['date'])
+                    if sort_by == 'Date (Newest)':
+                        display_training_df = display_training_df.sort_values('date', ascending=False)
+                    elif sort_by == 'Date (Oldest)':
+                        display_training_df = display_training_df.sort_values('date', ascending=True)
+                    elif sort_by == 'Distance (Best)':
+                        display_training_df = display_training_df.sort_values('distance_m', ascending=False)
+                    elif sort_by == 'Distance (Worst)':
+                        display_training_df = display_training_df.sort_values('distance_m', ascending=True)
+
+                # Display stats
+                stat_col1, stat_col2, stat_col3, stat_col4 = st.columns(4)
+
+                with stat_col1:
+                    st.metric("Total Entries", len(display_training_df))
+                with stat_col2:
+                    st.metric("Athletes", display_training_df['athlete'].nunique())
+                with stat_col3:
+                    if 'distance_m' in display_training_df.columns and len(display_training_df) > 0:
+                        st.metric("Best Distance", f"{display_training_df['distance_m'].max():.2f}m")
+                with stat_col4:
+                    if 'distance_m' in display_training_df.columns and len(display_training_df) > 0:
+                        st.metric("Avg Distance", f"{display_training_df['distance_m'].mean():.2f}m")
+
+                # Display table with color coding by session type
+                st.markdown("#### Data Table")
+                st.markdown("*🟢 Training | 🟡 Competition | 🔵 Testing | ⚪ Other*")
+
+                # Add color column for display
+                def get_session_color(session_type):
+                    colors = {
+                        'Training': '🟢',
+                        'Competition': '🟡',
+                        'Testing': '🔵',
+                        'Warm-up': '⚪'
+                    }
+                    return colors.get(session_type, '⚪')
+
+                display_df_styled = display_training_df.copy()
+                if 'session_type' in display_df_styled.columns:
+                    display_df_styled['Type'] = display_df_styled['session_type'].apply(get_session_color)
+                    # Reorder columns to put Type first
+                    cols = ['Type'] + [c for c in display_df_styled.columns if c != 'Type' and c != 'row_id' and c != 'created_at']
+                    display_df_styled = display_df_styled[cols]
+
+                st.dataframe(
+                    display_df_styled,
+                    use_container_width=True,
+                    hide_index=True,
+                    height=350
                 )
 
-            with chart_col2:
-                chart_events = sorted(training_df[training_df['athlete'] == selected_chart_athlete]['event'].unique().tolist())
-                selected_chart_event = st.selectbox(
-                    "Select Event:",
-                    options=chart_events if chart_events else ['No events'],
-                    key="chart_event"
-                )
+                # EDIT / DELETE Section
+                st.markdown("---")
+                st.markdown("### ✏️ Edit or Delete Entry")
 
-            # Chart filters - Row 2: Implement Weight and Session Type
-            chart_col3, chart_col4 = st.columns(2)
+                # Create selection options
+                row_options = []
+                for idx, row in display_training_df.iterrows():
+                    date_str = pd.to_datetime(row['date']).strftime('%Y-%m-%d') if pd.notna(row.get('date')) else 'N/A'
+                    session_icon = get_session_color(row.get('session_type', ''))
+                    label = f"{session_icon} {row['athlete']} | {row['event']} | {row['distance_m']:.2f}m | {date_str}"
+                    row_options.append({'label': label, 'row_id': row.get('row_id', idx), 'idx': idx})
 
-            # Get available implement weights for this athlete/event
-            athlete_event_df = training_df[
-                (training_df['athlete'] == selected_chart_athlete) &
-                (training_df['event'] == selected_chart_event)
-            ]
-
-            with chart_col3:
-                if 'implement_kg' in athlete_event_df.columns:
-                    implement_weights = ['All'] + sorted([str(w) for w in athlete_event_df['implement_kg'].unique() if pd.notna(w)])
-                    selected_implement = st.selectbox(
-                        "Implement Weight:",
-                        options=implement_weights,
-                        key="chart_implement"
+                if row_options:
+                    selected_row_idx = st.selectbox(
+                        "Select entry to edit/delete:",
+                        range(len(row_options)),
+                        format_func=lambda i: row_options[i]['label'],
+                        key="edit_row_select"
                     )
-                else:
-                    selected_implement = 'All'
 
-            with chart_col4:
-                session_filter_options = ['All', 'Training', 'Competition', 'Testing', 'Warm-up']
-                selected_session_filter = st.selectbox(
-                    "Session Type:",
-                    options=session_filter_options,
-                    key="chart_session_filter"
-                )
+                    selected_row_id = row_options[selected_row_idx]['row_id']
+                    selected_row = training_df[training_df['row_id'] == selected_row_id].iloc[0]
 
-            # Filter data for charts
-            chart_df = training_df[
-                (training_df['athlete'] == selected_chart_athlete) &
-                (training_df['event'] == selected_chart_event)
-            ]
+                    edit_col1, edit_col2 = st.columns(2)
 
-            # Apply implement weight filter
-            if selected_implement != 'All' and 'implement_kg' in chart_df.columns:
-                chart_df = chart_df[chart_df['implement_kg'].astype(str) == selected_implement]
+                    with edit_col1:
+                        st.markdown("#### Edit Entry")
 
-            # Apply session type filter
-            if selected_session_filter != 'All' and 'session_type' in chart_df.columns:
-                chart_df = chart_df[chart_df['session_type'] == selected_session_filter]
-
-            chart_df = chart_df.sort_values('date')
-
-            if not chart_df.empty:
-                # Distance over time chart with color by session type
-                st.markdown("#### 📈 Distance Progression")
-                st.markdown("*🟢 Training | 🟡 Competition | 🔵 Testing | ⚪ Warm-up*")
-
-                fig = go.Figure()
-
-                # Color mapping for session types
-                session_colors = {
-                    'Training': '#007167',      # Teal (green)
-                    'Competition': '#FFB800',   # Gold/Yellow
-                    'Testing': '#0077B6',       # Blue
-                    'Warm-up': '#6c757d'        # Gray
-                }
-
-                # Add scatter points colored by session type
-                if 'session_type' in chart_df.columns:
-                    for session_type in chart_df['session_type'].unique():
-                        session_data = chart_df[chart_df['session_type'] == session_type]
-                        color = session_colors.get(session_type, '#007167')
-
-                        fig.add_trace(go.Scatter(
-                            x=session_data['date'],
-                            y=session_data['distance_m'],
-                            mode='markers',
-                            name=session_type,
-                            marker=dict(
-                                size=12 if session_type == 'Competition' else 10,
-                                color=color,
-                                symbol='star' if session_type == 'Competition' else 'circle',
-                                line=dict(width=1, color='white')
-                            ),
-                            hovertemplate=f'<b>%{{x|%d %b %Y}}</b><br>{session_type}<br>Distance: %{{y:.2f}}m<extra></extra>'
-                        ))
-
-                    # Add connecting line for all points
-                    fig.add_trace(go.Scatter(
-                        x=chart_df['date'],
-                        y=chart_df['distance_m'],
-                        mode='lines',
-                        name='Trend',
-                        line=dict(color='rgba(0,113,103,0.3)', width=1),
-                        hoverinfo='skip',
-                        showlegend=False
-                    ))
-                else:
-                    # Fallback if no session_type column
-                    fig.add_trace(go.Scatter(
-                        x=chart_df['date'],
-                        y=chart_df['distance_m'],
-                        mode='markers+lines',
-                        name='Throws',
-                        marker=dict(size=10, color='#007167'),
-                        line=dict(color='#007167', width=2),
-                        hovertemplate='<b>%{x|%d %b %Y}</b><br>Distance: %{y:.2f}m<extra></extra>'
-                    ))
-
-                # Add best distance line
-                best_distance = chart_df['distance_m'].max()
-                fig.add_hline(
-                    y=best_distance,
-                    line_dash="dash",
-                    line_color="#a08e66",
-                    annotation_text=f"PB: {best_distance:.2f}m",
-                    annotation_position="top right"
-                )
-
-                # Highlight competition PB if different from overall PB
-                if 'session_type' in chart_df.columns:
-                    comp_df = chart_df[chart_df['session_type'] == 'Competition']
-                    if not comp_df.empty:
-                        comp_best = comp_df['distance_m'].max()
-                        if comp_best < best_distance:
-                            fig.add_hline(
-                                y=comp_best,
-                                line_dash="dot",
-                                line_color="#FFB800",
-                                annotation_text=f"Comp PB: {comp_best:.2f}m",
-                                annotation_position="bottom right"
+                        with st.form("edit_entry_form"):
+                            edit_date = st.date_input(
+                                "Date",
+                                value=pd.to_datetime(selected_row['date']).date() if pd.notna(selected_row.get('date')) else datetime.now().date(),
+                                key="edit_date"
                             )
 
-                # Add rolling average
-                if len(chart_df) >= 3:
-                    chart_df_copy = chart_df.copy()
-                    chart_df_copy['rolling_avg'] = chart_df_copy['distance_m'].rolling(window=3, min_periods=1).mean()
-                    fig.add_trace(go.Scatter(
-                        x=chart_df_copy['date'],
-                        y=chart_df_copy['rolling_avg'],
-                        mode='lines',
-                        name='3-Throw Avg',
-                        line=dict(color='#005a51', width=2, dash='dot'),
-                        hovertemplate='<b>%{x|%d %b %Y}</b><br>3-Throw Avg: %{y:.2f}m<extra></extra>'
-                    ))
+                            edit_event = st.selectbox(
+                                "Event",
+                                options=["Shot Put", "Discus", "Javelin", "Hammer"],
+                                index=["Shot Put", "Discus", "Javelin", "Hammer"].index(selected_row['event']) if selected_row['event'] in ["Shot Put", "Discus", "Javelin", "Hammer"] else 0,
+                                key="edit_event"
+                            )
 
-                fig.update_layout(
-                    title=f"{selected_chart_athlete} - {selected_chart_event} Progression",
-                    xaxis_title="Date",
-                    yaxis_title="Distance (m)",
-                    height=450,
-                    showlegend=True,
-                    legend=dict(orientation='h', yanchor='bottom', y=1.02),
-                    plot_bgcolor='white',
-                    font=dict(family='Inter, sans-serif')
-                )
+                            edit_distance = st.number_input(
+                                "Distance (m)",
+                                min_value=0.0,
+                                max_value=100.0,
+                                value=float(selected_row['distance_m']),
+                                step=0.01,
+                                format="%.2f",
+                                key="edit_distance"
+                            )
 
-                fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
-                fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
+                            edit_session = st.selectbox(
+                                "Session Type",
+                                options=["Training", "Competition", "Testing", "Warm-up"],
+                                index=["Training", "Competition", "Testing", "Warm-up"].index(selected_row.get('session_type', 'Training')) if selected_row.get('session_type') in ["Training", "Competition", "Testing", "Warm-up"] else 0,
+                                key="edit_session"
+                            )
 
-                st.plotly_chart(fig, use_container_width=True)
+                            edit_location_label = "Competition Name" if edit_session == "Competition" else "Training Location"
+                            edit_location = st.text_input(
+                                edit_location_label,
+                                value=str(selected_row.get('location', '')),
+                                key="edit_location"
+                            )
 
-                # Session distribution chart
-                st.markdown("#### 📊 Performance by Session Type")
+                            edit_implement = st.text_input(
+                                "Implement (kg)",
+                                value=str(selected_row.get('implement_kg', '')),
+                                key="edit_implement"
+                            )
 
-                if 'session_type' in chart_df.columns:
-                    session_stats = chart_df.groupby('session_type')['distance_m'].agg(['mean', 'max', 'count']).reset_index()
-                    session_stats.columns = ['Session Type', 'Average', 'Best', 'Count']
+                            edit_notes = st.text_area(
+                                "Notes",
+                                value=str(selected_row.get('notes', '')),
+                                key="edit_notes"
+                            )
 
-                    fig2 = go.Figure()
+                            save_edit = st.form_submit_button("💾 Save Changes", use_container_width=True)
 
-                    fig2.add_trace(go.Bar(
-                        x=session_stats['Session Type'],
-                        y=session_stats['Average'],
-                        name='Average',
-                        marker_color='#007167',
-                        text=session_stats['Average'].round(2),
-                        textposition='outside'
-                    ))
+                            if save_edit:
+                                # Update the row
+                                mask = st.session_state.training_distances['row_id'] == selected_row_id
+                                st.session_state.training_distances.loc[mask, 'date'] = edit_date
+                                st.session_state.training_distances.loc[mask, 'event'] = edit_event
+                                st.session_state.training_distances.loc[mask, 'distance_m'] = edit_distance
+                                st.session_state.training_distances.loc[mask, 'session_type'] = edit_session
+                                st.session_state.training_distances.loc[mask, 'location'] = edit_location
+                                st.session_state.training_distances.loc[mask, 'implement_kg'] = edit_implement
+                                st.session_state.training_distances.loc[mask, 'notes'] = edit_notes
 
-                    fig2.add_trace(go.Bar(
-                        x=session_stats['Session Type'],
-                        y=session_stats['Best'],
-                        name='Best',
-                        marker_color='#a08e66',
-                        text=session_stats['Best'].round(2),
-                        textposition='outside'
-                    ))
+                                # Save to CSV
+                                st.session_state.training_distances.to_csv(training_data_path, index=False)
+                                load_training_distances.clear()
+                                st.success("✅ Entry updated!")
+                                st.rerun()
 
-                    fig2.update_layout(
-                        title="Distance by Session Type",
-                        xaxis_title="Session Type",
-                        yaxis_title="Distance (m)",
-                        height=350,
-                        barmode='group',
-                        showlegend=True,
-                        plot_bgcolor='white',
-                        font=dict(family='Inter, sans-serif')
+                    with edit_col2:
+                        st.markdown("#### Delete Entry")
+
+                        st.warning(f"""
+                        **Selected Entry:**
+                        - Athlete: {selected_row['athlete']}
+                        - Event: {selected_row['event']}
+                        - Distance: {selected_row['distance_m']:.2f}m
+                        - Date: {pd.to_datetime(selected_row['date']).strftime('%Y-%m-%d') if pd.notna(selected_row.get('date')) else 'N/A'}
+                        """)
+
+                        delete_confirm = st.checkbox("⚠️ I confirm I want to delete this entry", key="delete_confirm")
+
+                        if st.button("🗑️ Delete Entry", type="secondary", disabled=not delete_confirm, use_container_width=True):
+                            # Remove the row
+                            st.session_state.training_distances = st.session_state.training_distances[
+                                st.session_state.training_distances['row_id'] != selected_row_id
+                            ].reset_index(drop=True)
+
+                            # Re-assign row IDs
+                            st.session_state.training_distances['row_id'] = st.session_state.training_distances.index
+
+                            # Save to CSV
+                            if not st.session_state.training_distances.empty:
+                                st.session_state.training_distances.to_csv(training_data_path, index=False)
+                            else:
+                                if os.path.exists(training_data_path):
+                                    os.remove(training_data_path)
+
+                            load_training_distances.clear()
+                            st.success("✅ Entry deleted!")
+                            st.rerun()
+
+                # Export options
+                st.markdown("---")
+                st.markdown("### 📥 Export Data")
+                exp_col1, exp_col2 = st.columns(2)
+
+                with exp_col1:
+                    csv_export = display_training_df.drop(columns=['row_id'], errors='ignore').to_csv(index=False)
+                    st.download_button(
+                        "📥 Download as CSV",
+                        data=csv_export,
+                        file_name=f"training_distances_{datetime.now().strftime('%Y%m%d')}.csv",
+                        mime="text/csv",
+                        key="export_throws_csv"
                     )
 
-                    st.plotly_chart(fig2, use_container_width=True)
-
-                # Summary stats
-                st.markdown("#### 📋 Summary Statistics")
-
-                summary_col1, summary_col2, summary_col3, summary_col4 = st.columns(4)
-
-                with summary_col1:
-                    st.metric("Total Throws", len(chart_df))
-                with summary_col2:
-                    st.metric("Best Distance", f"{chart_df['distance_m'].max():.2f}m")
-                with summary_col3:
-                    st.metric("Average", f"{chart_df['distance_m'].mean():.2f}m")
-                with summary_col4:
-                    std_dev = chart_df['distance_m'].std()
-                    st.metric("Std Dev", f"{std_dev:.2f}m" if pd.notna(std_dev) else "N/A")
+                with exp_col2:
+                    if st.button("🗑️ Clear ALL Throws Data", type="secondary", key="clear_throws_data"):
+                        clear_confirm = st.checkbox("⚠️ Confirm delete ALL throws data", key="clear_all_throws_confirm")
+                        if clear_confirm:
+                            st.session_state.training_distances = pd.DataFrame()
+                            if os.path.exists(training_data_path):
+                                os.remove(training_data_path)
+                            load_training_distances.clear()
+                            st.success("All throws data cleared")
+                            st.rerun()
             else:
-                st.info("No data available for the selected athlete and event")
-        else:
-            st.info("📭 No training data available. Add entries in the 'Throws Distance' tab to see charts.")
+                st.info("📭 No throws data recorded yet. Use the 'Throws Distance' tab to add entries.")
 
-        # ---------------------------------------------------------------------
-        # S&C UPPER BODY CHARTS
-        # ---------------------------------------------------------------------
-        st.markdown("---")
-        st.markdown("### 💪 S&C Upper Body Charts")
+        # -----------------------------------------------------------------
+        # VIEW DATA SUB-TAB: S&C Upper Body
+        # -----------------------------------------------------------------
+        with view_data_tabs[1]:
+            upper_df = st.session_state.sc_upper_body
 
-        sc_df = st.session_state.sc_upper_body
+            if not upper_df.empty:
+                # Ensure index is set for editing
+                if 'row_id' not in upper_df.columns:
+                    upper_df = upper_df.reset_index(drop=True)
+                    upper_df['row_id'] = upper_df.index
+                    st.session_state.sc_upper_body = upper_df
 
-        if not sc_df.empty and 'date' in sc_df.columns:
-            sc_df['date'] = pd.to_datetime(sc_df['date'])
+                # Filters
+                uf_col1, uf_col2, uf_col3 = st.columns(3)
 
-            # Chart filters
-            sc_chart_col1, sc_chart_col2 = st.columns(2)
+                with uf_col1:
+                    upper_filter_athletes = ['All'] + sorted(upper_df['athlete'].unique().tolist())
+                    upper_selected_athlete = st.selectbox("Filter by Athlete:", upper_filter_athletes, key="upper_view_filter_athlete")
 
-            with sc_chart_col1:
-                sc_chart_athletes = sorted(sc_df['athlete'].unique().tolist())
-                selected_sc_athlete = st.selectbox(
-                    "Select Athlete:",
-                    options=sc_chart_athletes,
-                    key="sc_chart_athlete"
+                with uf_col2:
+                    upper_filter_exercises = ['All'] + sorted(upper_df['exercise'].unique().tolist())
+                    upper_selected_exercise = st.selectbox("Filter by Exercise:", upper_filter_exercises, key="upper_view_filter_exercise")
+
+                with uf_col3:
+                    upper_sort_options = ['Date (Newest)', 'Date (Oldest)', 'Weight (Heaviest)', 'Est. 1RM (Best)']
+                    upper_sort_by = st.selectbox("Sort by:", upper_sort_options, key="upper_view_sort")
+
+                # Apply filters
+                display_upper_df = upper_df.copy()
+
+                if upper_selected_athlete != 'All':
+                    display_upper_df = display_upper_df[display_upper_df['athlete'] == upper_selected_athlete]
+
+                if upper_selected_exercise != 'All':
+                    display_upper_df = display_upper_df[display_upper_df['exercise'] == upper_selected_exercise]
+
+                # Apply sorting
+                if 'date' in display_upper_df.columns:
+                    display_upper_df['date'] = pd.to_datetime(display_upper_df['date'])
+                    if upper_sort_by == 'Date (Newest)':
+                        display_upper_df = display_upper_df.sort_values('date', ascending=False)
+                    elif upper_sort_by == 'Date (Oldest)':
+                        display_upper_df = display_upper_df.sort_values('date', ascending=True)
+                    elif upper_sort_by == 'Weight (Heaviest)':
+                        display_upper_df = display_upper_df.sort_values('weight_kg', ascending=False)
+                    elif upper_sort_by == 'Est. 1RM (Best)':
+                        display_upper_df = display_upper_df.sort_values('estimated_1rm', ascending=False)
+
+                # Display stats
+                ustat_col1, ustat_col2, ustat_col3, ustat_col4 = st.columns(4)
+
+                with ustat_col1:
+                    st.metric("Total Entries", len(display_upper_df))
+                with ustat_col2:
+                    st.metric("Athletes", display_upper_df['athlete'].nunique())
+                with ustat_col3:
+                    if 'estimated_1rm' in display_upper_df.columns and len(display_upper_df) > 0:
+                        st.metric("Best Est. 1RM", f"{display_upper_df['estimated_1rm'].max():.1f}kg")
+                with ustat_col4:
+                    if 'weight_kg' in display_upper_df.columns and len(display_upper_df) > 0:
+                        st.metric("Max Weight", f"{display_upper_df['weight_kg'].max():.1f}kg")
+
+                # Display table
+                st.markdown("#### Data Table")
+                display_cols = ['date', 'athlete', 'exercise', 'weight_kg', 'reps', 'sets', 'estimated_1rm', 'rpe', 'test_type', 'equipment']
+                available_cols = [c for c in display_cols if c in display_upper_df.columns]
+
+                st.dataframe(
+                    display_upper_df[available_cols],
+                    use_container_width=True,
+                    hide_index=True,
+                    height=350
                 )
 
-            with sc_chart_col2:
-                sc_exercises = sorted(sc_df[sc_df['athlete'] == selected_sc_athlete]['exercise'].unique().tolist())
-                selected_sc_exercise = st.selectbox(
-                    "Select Exercise:",
-                    options=sc_exercises if sc_exercises else ['No exercises'],
-                    key="sc_chart_exercise"
+                # Export options
+                st.markdown("---")
+                st.markdown("### 📥 Export Data")
+
+                csv_export_upper = display_upper_df.drop(columns=['row_id'], errors='ignore').to_csv(index=False)
+                st.download_button(
+                    "📥 Download as CSV",
+                    data=csv_export_upper,
+                    file_name=f"sc_upper_body_{datetime.now().strftime('%Y%m%d')}.csv",
+                    mime="text/csv",
+                    key="export_upper_csv"
+                )
+            else:
+                st.info("📭 No S&C Upper Body data recorded yet. Use the 'S&C Upper Body' tab to add entries.")
+
+        # -----------------------------------------------------------------
+        # VIEW DATA SUB-TAB: S&C Lower Body
+        # -----------------------------------------------------------------
+        with view_data_tabs[2]:
+            lower_df = st.session_state.sc_lower_body
+
+            if not lower_df.empty:
+                # Ensure index is set for editing
+                if 'row_id' not in lower_df.columns:
+                    lower_df = lower_df.reset_index(drop=True)
+                    lower_df['row_id'] = lower_df.index
+                    st.session_state.sc_lower_body = lower_df
+
+                # Filters
+                lf_col1, lf_col2, lf_col3 = st.columns(3)
+
+                with lf_col1:
+                    lower_filter_athletes = ['All'] + sorted(lower_df['athlete'].unique().tolist())
+                    lower_selected_athlete = st.selectbox("Filter by Athlete:", lower_filter_athletes, key="lower_view_filter_athlete")
+
+                with lf_col2:
+                    lower_filter_exercises = ['All'] + sorted(lower_df['exercise'].unique().tolist())
+                    lower_selected_exercise = st.selectbox("Filter by Exercise:", lower_filter_exercises, key="lower_view_filter_exercise")
+
+                with lf_col3:
+                    lower_sort_options = ['Date (Newest)', 'Date (Oldest)', 'Weight (Heaviest)', 'Est. 1RM (Best)']
+                    lower_sort_by = st.selectbox("Sort by:", lower_sort_options, key="lower_view_sort")
+
+                # Apply filters
+                display_lower_df = lower_df.copy()
+
+                if lower_selected_athlete != 'All':
+                    display_lower_df = display_lower_df[display_lower_df['athlete'] == lower_selected_athlete]
+
+                if lower_selected_exercise != 'All':
+                    display_lower_df = display_lower_df[display_lower_df['exercise'] == lower_selected_exercise]
+
+                # Apply sorting
+                if 'date' in display_lower_df.columns:
+                    display_lower_df['date'] = pd.to_datetime(display_lower_df['date'])
+                    if lower_sort_by == 'Date (Newest)':
+                        display_lower_df = display_lower_df.sort_values('date', ascending=False)
+                    elif lower_sort_by == 'Date (Oldest)':
+                        display_lower_df = display_lower_df.sort_values('date', ascending=True)
+                    elif lower_sort_by == 'Weight (Heaviest)':
+                        display_lower_df = display_lower_df.sort_values('weight_kg', ascending=False)
+                    elif lower_sort_by == 'Est. 1RM (Best)':
+                        display_lower_df = display_lower_df.sort_values('estimated_1rm', ascending=False)
+
+                # Display stats
+                lstat_col1, lstat_col2, lstat_col3, lstat_col4 = st.columns(4)
+
+                with lstat_col1:
+                    st.metric("Total Entries", len(display_lower_df))
+                with lstat_col2:
+                    st.metric("Athletes", display_lower_df['athlete'].nunique())
+                with lstat_col3:
+                    if 'estimated_1rm' in display_lower_df.columns and len(display_lower_df) > 0:
+                        st.metric("Best Est. 1RM", f"{display_lower_df['estimated_1rm'].max():.1f}kg")
+                with lstat_col4:
+                    if 'weight_kg' in display_lower_df.columns and len(display_lower_df) > 0:
+                        st.metric("Max Weight", f"{display_lower_df['weight_kg'].max():.1f}kg")
+
+                # Display table
+                st.markdown("#### Data Table")
+                display_cols = ['date', 'athlete', 'exercise', 'weight_kg', 'reps', 'sets', 'estimated_1rm', 'rpe', 'test_type', 'equipment']
+                available_cols = [c for c in display_cols if c in display_lower_df.columns]
+
+                st.dataframe(
+                    display_lower_df[available_cols],
+                    use_container_width=True,
+                    hide_index=True,
+                    height=350
                 )
 
-            # Filter data
-            sc_chart_df = sc_df[
-                (sc_df['athlete'] == selected_sc_athlete) &
-                (sc_df['exercise'] == selected_sc_exercise)
-            ].sort_values('date')
+                # Export options
+                st.markdown("---")
+                st.markdown("### 📥 Export Data")
 
-            if not sc_chart_df.empty:
-                # 1RM Progression Chart
-                st.markdown("#### 📈 Estimated 1RM Progression")
-
-                fig_1rm = go.Figure()
-
-                # Add scatter points
-                fig_1rm.add_trace(go.Scatter(
-                    x=sc_chart_df['date'],
-                    y=sc_chart_df['estimated_1rm'],
-                    mode='markers+lines',
-                    name='Estimated 1RM',
-                    marker=dict(size=10, color='#007167'),
-                    line=dict(color='#007167', width=2),
-                    hovertemplate='<b>%{x|%d %b %Y}</b><br>Est. 1RM: %{y:.1f}kg<extra></extra>'
-                ))
-
-                # Add best 1RM line
-                best_1rm = sc_chart_df['estimated_1rm'].max()
-                fig_1rm.add_hline(
-                    y=best_1rm,
-                    line_dash="dash",
-                    line_color="#a08e66",
-                    annotation_text=f"Best: {best_1rm:.1f}kg",
-                    annotation_position="top right"
+                csv_export_lower = display_lower_df.drop(columns=['row_id'], errors='ignore').to_csv(index=False)
+                st.download_button(
+                    "📥 Download as CSV",
+                    data=csv_export_lower,
+                    file_name=f"sc_lower_body_{datetime.now().strftime('%Y%m%d')}.csv",
+                    mime="text/csv",
+                    key="export_lower_csv"
                 )
+            else:
+                st.info("📭 No S&C Lower Body data recorded yet. Use the 'S&C Lower Body' tab to add entries.")
 
-                fig_1rm.update_layout(
-                    title=f"{selected_sc_athlete} - {selected_sc_exercise} 1RM Progression",
-                    xaxis_title="Date",
-                    yaxis_title="Estimated 1RM (kg)",
-                    height=400,
-                    showlegend=True,
-                    plot_bgcolor='white',
-                    font=dict(family='Inter, sans-serif')
-                )
+    # -------------------------------------------------------------------------
+    # SUB-TAB: Charts - Now with sub-tabs
+    # -------------------------------------------------------------------------
+    with entry_tabs[4]:
+        st.markdown("### 📈 Training Charts")
 
-                fig_1rm.update_xaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
-                fig_1rm.update_yaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
+        # Create sub-tabs for different chart types
+        chart_sub_tabs = st.tabs(["🥏 Throws", "💪 S&C Upper Body", "🦵 S&C Lower Body"])
 
-                st.plotly_chart(fig_1rm, use_container_width=True)
+        # -----------------------------------------------------------------
+        # CHARTS SUB-TAB: Throws
+        # -----------------------------------------------------------------
+        with chart_sub_tabs[0]:
+            throws_chart_df = st.session_state.training_distances
 
-                # Weight x Reps Chart
-                st.markdown("#### 🏋️ Training Volume (Weight × Reps)")
+            if not throws_chart_df.empty and 'date' in throws_chart_df.columns:
+                throws_chart_df['date'] = pd.to_datetime(throws_chart_df['date'])
 
-                if 'weight_kg' in sc_chart_df.columns and 'reps' in sc_chart_df.columns:
-                    fig_volume = go.Figure()
+                # Chart filters - Row 1: Athlete and Event
+                tc_col1, tc_col2 = st.columns(2)
 
-                    # Bubble chart - size represents reps
-                    fig_volume.add_trace(go.Scatter(
-                        x=sc_chart_df['date'],
-                        y=sc_chart_df['weight_kg'],
-                        mode='markers',
-                        name='Weight',
-                        marker=dict(
-                            size=sc_chart_df['reps'] * 4,  # Scale reps for visibility
-                            color='#007167',
-                            opacity=0.7,
-                            line=dict(width=1, color='white')
-                        ),
-                        text=[f"{r} reps" for r in sc_chart_df['reps']],
-                        hovertemplate='<b>%{x|%d %b %Y}</b><br>Weight: %{y:.1f}kg<br>%{text}<extra></extra>'
-                    ))
+                with tc_col1:
+                    throws_chart_athletes = sorted(throws_chart_df['athlete'].unique().tolist())
+                    selected_throws_athlete = st.selectbox(
+                        "Select Athlete:",
+                        options=throws_chart_athletes,
+                        key="throws_chart_athlete"
+                    )
 
-                    fig_volume.update_layout(
-                        title=f"{selected_sc_athlete} - {selected_sc_exercise} Training Load",
+                with tc_col2:
+                    throws_chart_events = sorted(throws_chart_df[throws_chart_df['athlete'] == selected_throws_athlete]['event'].unique().tolist())
+                    selected_throws_event = st.selectbox(
+                        "Select Event:",
+                        options=throws_chart_events if throws_chart_events else ['No events'],
+                        key="throws_chart_event"
+                    )
+
+                # Chart filters - Row 2: Implement Weight and Session Type
+                tc_col3, tc_col4 = st.columns(2)
+
+                # Get available implement weights for this athlete/event
+                throws_athlete_event_df = throws_chart_df[
+                    (throws_chart_df['athlete'] == selected_throws_athlete) &
+                    (throws_chart_df['event'] == selected_throws_event)
+                ]
+
+                with tc_col3:
+                    if 'implement_kg' in throws_athlete_event_df.columns:
+                        throws_implement_weights = ['All'] + sorted([str(w) for w in throws_athlete_event_df['implement_kg'].unique() if pd.notna(w)])
+                        selected_throws_implement = st.selectbox(
+                            "Implement Weight:",
+                            options=throws_implement_weights,
+                            key="throws_chart_implement"
+                        )
+                    else:
+                        selected_throws_implement = 'All'
+
+                with tc_col4:
+                    throws_session_options = ['All', 'Training', 'Competition', 'Testing', 'Warm-up']
+                    selected_throws_session = st.selectbox(
+                        "Session Type:",
+                        options=throws_session_options,
+                        key="throws_chart_session"
+                    )
+
+                # Filter data for charts
+                filtered_throws_df = throws_chart_df[
+                    (throws_chart_df['athlete'] == selected_throws_athlete) &
+                    (throws_chart_df['event'] == selected_throws_event)
+                ]
+
+                # Apply implement weight filter
+                if selected_throws_implement != 'All' and 'implement_kg' in filtered_throws_df.columns:
+                    filtered_throws_df = filtered_throws_df[filtered_throws_df['implement_kg'].astype(str) == selected_throws_implement]
+
+                # Apply session type filter
+                if selected_throws_session != 'All' and 'session_type' in filtered_throws_df.columns:
+                    filtered_throws_df = filtered_throws_df[filtered_throws_df['session_type'] == selected_throws_session]
+
+                filtered_throws_df = filtered_throws_df.sort_values('date')
+
+                if not filtered_throws_df.empty:
+                    # Distance over time chart with color by session type
+                    st.markdown("#### 📈 Distance Progression")
+                    st.markdown("*🟢 Training | 🟡 Competition | 🔵 Testing | ⚪ Warm-up*")
+
+                    fig_throws = go.Figure()
+
+                    # Color mapping for session types
+                    session_colors = {
+                        'Training': '#007167',
+                        'Competition': '#FFB800',
+                        'Testing': '#0077B6',
+                        'Warm-up': '#6c757d'
+                    }
+
+                    # Add scatter points colored by session type
+                    if 'session_type' in filtered_throws_df.columns:
+                        for session_type in filtered_throws_df['session_type'].unique():
+                            session_data = filtered_throws_df[filtered_throws_df['session_type'] == session_type]
+                            color = session_colors.get(session_type, '#007167')
+
+                            fig_throws.add_trace(go.Scatter(
+                                x=session_data['date'],
+                                y=session_data['distance_m'],
+                                mode='markers',
+                                name=session_type,
+                                marker=dict(
+                                    size=12 if session_type == 'Competition' else 10,
+                                    color=color,
+                                    symbol='star' if session_type == 'Competition' else 'circle',
+                                    line=dict(width=1, color='white')
+                                ),
+                                hovertemplate=f'<b>%{{x|%d %b %Y}}</b><br>{session_type}<br>Distance: %{{y:.2f}}m<extra></extra>'
+                            ))
+
+                        # Add connecting line
+                        fig_throws.add_trace(go.Scatter(
+                            x=filtered_throws_df['date'],
+                            y=filtered_throws_df['distance_m'],
+                            mode='lines',
+                            name='Trend',
+                            line=dict(color='rgba(0,113,103,0.3)', width=1),
+                            hoverinfo='skip',
+                            showlegend=False
+                        ))
+                    else:
+                        fig_throws.add_trace(go.Scatter(
+                            x=filtered_throws_df['date'],
+                            y=filtered_throws_df['distance_m'],
+                            mode='markers+lines',
+                            name='Throws',
+                            marker=dict(size=10, color='#007167'),
+                            line=dict(color='#007167', width=2),
+                            hovertemplate='<b>%{x|%d %b %Y}</b><br>Distance: %{y:.2f}m<extra></extra>'
+                        ))
+
+                    # Add best distance line
+                    best_dist = filtered_throws_df['distance_m'].max()
+                    fig_throws.add_hline(
+                        y=best_dist,
+                        line_dash="dash",
+                        line_color="#a08e66",
+                        annotation_text=f"PB: {best_dist:.2f}m",
+                        annotation_position="top right"
+                    )
+
+                    fig_throws.update_layout(
+                        title=f"{selected_throws_athlete} - {selected_throws_event} Progression",
                         xaxis_title="Date",
-                        yaxis_title="Weight (kg)",
-                        height=350,
-                        showlegend=False,
+                        yaxis_title="Distance (m)",
+                        height=450,
+                        showlegend=True,
+                        legend=dict(orientation='h', yanchor='bottom', y=1.02),
                         plot_bgcolor='white',
                         font=dict(family='Inter, sans-serif')
                     )
+                    fig_throws.update_xaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
+                    fig_throws.update_yaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
 
-                    fig_volume.update_xaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
-                    fig_volume.update_yaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
+                    st.plotly_chart(fig_throws, use_container_width=True)
 
-                    st.plotly_chart(fig_volume, use_container_width=True)
-
-                # Summary stats
-                st.markdown("#### 📋 S&C Summary Statistics")
-
-                sc_summary_col1, sc_summary_col2, sc_summary_col3, sc_summary_col4 = st.columns(4)
-
-                with sc_summary_col1:
-                    st.metric("Total Sessions", len(sc_chart_df))
-                with sc_summary_col2:
-                    st.metric("Best Est. 1RM", f"{sc_chart_df['estimated_1rm'].max():.1f}kg")
-                with sc_summary_col3:
-                    st.metric("Max Weight Used", f"{sc_chart_df['weight_kg'].max():.1f}kg")
-                with sc_summary_col4:
-                    avg_rpe = sc_chart_df['rpe'].mean() if 'rpe' in sc_chart_df.columns else None
-                    st.metric("Avg RPE", f"{avg_rpe:.1f}" if pd.notna(avg_rpe) else "N/A")
-
-                # Personal Bests across all exercises for this athlete
-                st.markdown("#### 🏆 All Personal Bests")
-                athlete_all_sc = sc_df[sc_df['athlete'] == selected_sc_athlete]
-                if not athlete_all_sc.empty:
-                    pb_table = athlete_all_sc.groupby('exercise').agg({
-                        'estimated_1rm': 'max',
-                        'weight_kg': 'max',
-                        'date': 'max'
-                    }).reset_index()
-                    pb_table.columns = ['Exercise', 'Best Est. 1RM (kg)', 'Max Weight (kg)', 'Last Session']
-                    pb_table = pb_table.sort_values('Best Est. 1RM (kg)', ascending=False)
-
-                    st.dataframe(pb_table, use_container_width=True, hide_index=True)
+                    # Summary stats
+                    st.markdown("#### 📋 Summary Statistics")
+                    ts_col1, ts_col2, ts_col3, ts_col4 = st.columns(4)
+                    with ts_col1:
+                        st.metric("Total Throws", len(filtered_throws_df))
+                    with ts_col2:
+                        st.metric("Best Distance", f"{filtered_throws_df['distance_m'].max():.2f}m")
+                    with ts_col3:
+                        st.metric("Average", f"{filtered_throws_df['distance_m'].mean():.2f}m")
+                    with ts_col4:
+                        std_dev = filtered_throws_df['distance_m'].std()
+                        st.metric("Std Dev", f"{std_dev:.2f}m" if pd.notna(std_dev) else "N/A")
+                else:
+                    st.info("No data available for the selected athlete and event")
             else:
-                st.info("No data for selected athlete and exercise")
-        else:
-            st.info("📭 No S&C data available. Add entries in the 'S&C Upper Body' tab to see charts.")
+                st.info("📭 No throws data available. Add entries in the 'Throws Distance' tab to see charts.")
+
+        # -----------------------------------------------------------------
+        # CHARTS SUB-TAB: S&C Upper Body
+        # -----------------------------------------------------------------
+        with chart_sub_tabs[1]:
+            upper_chart_df = st.session_state.sc_upper_body
+
+            if not upper_chart_df.empty and 'date' in upper_chart_df.columns:
+                upper_chart_df['date'] = pd.to_datetime(upper_chart_df['date'])
+
+                # Chart filters
+                uc_col1, uc_col2 = st.columns(2)
+
+                with uc_col1:
+                    upper_chart_athletes = sorted(upper_chart_df['athlete'].unique().tolist())
+                    selected_upper_athlete = st.selectbox(
+                        "Select Athlete:",
+                        options=upper_chart_athletes,
+                        key="upper_chart_athlete"
+                    )
+
+                with uc_col2:
+                    upper_exercises = sorted(upper_chart_df[upper_chart_df['athlete'] == selected_upper_athlete]['exercise'].unique().tolist())
+                    selected_upper_exercise = st.selectbox(
+                        "Select Exercise:",
+                        options=upper_exercises if upper_exercises else ['No exercises'],
+                        key="upper_chart_exercise"
+                    )
+
+                # Filter data
+                filtered_upper_df = upper_chart_df[
+                    (upper_chart_df['athlete'] == selected_upper_athlete) &
+                    (upper_chart_df['exercise'] == selected_upper_exercise)
+                ].sort_values('date')
+
+                if not filtered_upper_df.empty:
+                    # 1RM Progression Chart
+                    st.markdown("#### 📈 Estimated 1RM Progression")
+
+                    fig_upper_1rm = go.Figure()
+                    fig_upper_1rm.add_trace(go.Scatter(
+                        x=filtered_upper_df['date'],
+                        y=filtered_upper_df['estimated_1rm'],
+                        mode='markers+lines',
+                        name='Estimated 1RM',
+                        marker=dict(size=10, color='#007167'),
+                        line=dict(color='#007167', width=2),
+                        hovertemplate='<b>%{x|%d %b %Y}</b><br>Est. 1RM: %{y:.1f}kg<extra></extra>'
+                    ))
+
+                    best_upper_1rm = filtered_upper_df['estimated_1rm'].max()
+                    fig_upper_1rm.add_hline(
+                        y=best_upper_1rm,
+                        line_dash="dash",
+                        line_color="#a08e66",
+                        annotation_text=f"Best: {best_upper_1rm:.1f}kg",
+                        annotation_position="top right"
+                    )
+
+                    fig_upper_1rm.update_layout(
+                        title=f"{selected_upper_athlete} - {selected_upper_exercise} 1RM Progression",
+                        xaxis_title="Date",
+                        yaxis_title="Estimated 1RM (kg)",
+                        height=400,
+                        plot_bgcolor='white',
+                        font=dict(family='Inter, sans-serif')
+                    )
+                    fig_upper_1rm.update_xaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
+                    fig_upper_1rm.update_yaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
+
+                    st.plotly_chart(fig_upper_1rm, use_container_width=True)
+
+                    # Summary stats
+                    st.markdown("#### 📋 Summary Statistics")
+                    us_col1, us_col2, us_col3, us_col4 = st.columns(4)
+                    with us_col1:
+                        st.metric("Total Sessions", len(filtered_upper_df))
+                    with us_col2:
+                        st.metric("Best Est. 1RM", f"{filtered_upper_df['estimated_1rm'].max():.1f}kg")
+                    with us_col3:
+                        st.metric("Max Weight Used", f"{filtered_upper_df['weight_kg'].max():.1f}kg")
+                    with us_col4:
+                        avg_rpe_upper = filtered_upper_df['rpe'].mean() if 'rpe' in filtered_upper_df.columns else None
+                        st.metric("Avg RPE", f"{avg_rpe_upper:.1f}" if pd.notna(avg_rpe_upper) else "N/A")
+
+                    # Personal Bests
+                    st.markdown("#### 🏆 All Personal Bests")
+                    athlete_upper_all = upper_chart_df[upper_chart_df['athlete'] == selected_upper_athlete]
+                    if not athlete_upper_all.empty:
+                        pb_upper_table = athlete_upper_all.groupby('exercise').agg({
+                            'estimated_1rm': 'max',
+                            'weight_kg': 'max',
+                            'date': 'max'
+                        }).reset_index()
+                        pb_upper_table.columns = ['Exercise', 'Best Est. 1RM (kg)', 'Max Weight (kg)', 'Last Session']
+                        pb_upper_table = pb_upper_table.sort_values('Best Est. 1RM (kg)', ascending=False)
+                        st.dataframe(pb_upper_table, use_container_width=True, hide_index=True)
+                else:
+                    st.info("No data for selected athlete and exercise")
+            else:
+                st.info("📭 No S&C Upper Body data available. Add entries in the 'S&C Upper Body' tab to see charts.")
+
+        # -----------------------------------------------------------------
+        # CHARTS SUB-TAB: S&C Lower Body
+        # -----------------------------------------------------------------
+        with chart_sub_tabs[2]:
+            lower_chart_df = st.session_state.sc_lower_body
+
+            if not lower_chart_df.empty and 'date' in lower_chart_df.columns:
+                lower_chart_df['date'] = pd.to_datetime(lower_chart_df['date'])
+
+                # Chart filters
+                lc_col1, lc_col2 = st.columns(2)
+
+                with lc_col1:
+                    lower_chart_athletes = sorted(lower_chart_df['athlete'].unique().tolist())
+                    selected_lower_athlete = st.selectbox(
+                        "Select Athlete:",
+                        options=lower_chart_athletes,
+                        key="lower_chart_athlete"
+                    )
+
+                with lc_col2:
+                    lower_exercises = sorted(lower_chart_df[lower_chart_df['athlete'] == selected_lower_athlete]['exercise'].unique().tolist())
+                    selected_lower_exercise = st.selectbox(
+                        "Select Exercise:",
+                        options=lower_exercises if lower_exercises else ['No exercises'],
+                        key="lower_chart_exercise"
+                    )
+
+                # Filter data
+                filtered_lower_df = lower_chart_df[
+                    (lower_chart_df['athlete'] == selected_lower_athlete) &
+                    (lower_chart_df['exercise'] == selected_lower_exercise)
+                ].sort_values('date')
+
+                if not filtered_lower_df.empty:
+                    # 1RM Progression Chart
+                    st.markdown("#### 📈 Estimated 1RM Progression")
+
+                    fig_lower_1rm = go.Figure()
+                    fig_lower_1rm.add_trace(go.Scatter(
+                        x=filtered_lower_df['date'],
+                        y=filtered_lower_df['estimated_1rm'],
+                        mode='markers+lines',
+                        name='Estimated 1RM',
+                        marker=dict(size=10, color='#007167'),
+                        line=dict(color='#007167', width=2),
+                        hovertemplate='<b>%{x|%d %b %Y}</b><br>Est. 1RM: %{y:.1f}kg<extra></extra>'
+                    ))
+
+                    best_lower_1rm = filtered_lower_df['estimated_1rm'].max()
+                    fig_lower_1rm.add_hline(
+                        y=best_lower_1rm,
+                        line_dash="dash",
+                        line_color="#a08e66",
+                        annotation_text=f"Best: {best_lower_1rm:.1f}kg",
+                        annotation_position="top right"
+                    )
+
+                    fig_lower_1rm.update_layout(
+                        title=f"{selected_lower_athlete} - {selected_lower_exercise} 1RM Progression",
+                        xaxis_title="Date",
+                        yaxis_title="Estimated 1RM (kg)",
+                        height=400,
+                        plot_bgcolor='white',
+                        font=dict(family='Inter, sans-serif')
+                    )
+                    fig_lower_1rm.update_xaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
+                    fig_lower_1rm.update_yaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
+
+                    st.plotly_chart(fig_lower_1rm, use_container_width=True)
+
+                    # Summary stats
+                    st.markdown("#### 📋 Summary Statistics")
+                    ls_col1, ls_col2, ls_col3, ls_col4 = st.columns(4)
+                    with ls_col1:
+                        st.metric("Total Sessions", len(filtered_lower_df))
+                    with ls_col2:
+                        st.metric("Best Est. 1RM", f"{filtered_lower_df['estimated_1rm'].max():.1f}kg")
+                    with ls_col3:
+                        st.metric("Max Weight Used", f"{filtered_lower_df['weight_kg'].max():.1f}kg")
+                    with ls_col4:
+                        avg_rpe_lower = filtered_lower_df['rpe'].mean() if 'rpe' in filtered_lower_df.columns else None
+                        st.metric("Avg RPE", f"{avg_rpe_lower:.1f}" if pd.notna(avg_rpe_lower) else "N/A")
+
+                    # Personal Bests
+                    st.markdown("#### 🏆 All Personal Bests")
+                    athlete_lower_all = lower_chart_df[lower_chart_df['athlete'] == selected_lower_athlete]
+                    if not athlete_lower_all.empty:
+                        pb_lower_table = athlete_lower_all.groupby('exercise').agg({
+                            'estimated_1rm': 'max',
+                            'weight_kg': 'max',
+                            'date': 'max'
+                        }).reset_index()
+                        pb_lower_table.columns = ['Exercise', 'Best Est. 1RM (kg)', 'Max Weight (kg)', 'Last Session']
+                        pb_lower_table = pb_lower_table.sort_values('Best Est. 1RM (kg)', ascending=False)
+                        st.dataframe(pb_lower_table, use_container_width=True, hide_index=True)
+                else:
+                    st.info("No data for selected athlete and exercise")
+            else:
+                st.info("📭 No S&C Lower Body data available. Add entries in the 'S&C Lower Body' tab to see charts.")
 
 # ============================================================================
 # TAB 11: FORCE TRACE ANALYSIS
