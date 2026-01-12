@@ -2087,7 +2087,7 @@ with tabs[5]:  # Data Entry
             with col2:
                 implement_weight = st.selectbox(
                     "Implement Weight (kg)",
-                    options=["Competition", "1.5", "2.0", "3.0", "4.0", "5.0", "6.0", "7.26", "Other"],
+                    options=["Competition", "3.0", "4.0", "5.0", "6.0", "7.0", "7.26", "Other"],
                     key="entry_implement"
                 )
 
