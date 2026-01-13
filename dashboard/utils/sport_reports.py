@@ -2252,3 +2252,453 @@ def render_benchmark_legend():
         </div>
     </div>
     """, unsafe_allow_html=True)
+
+
+# =============================================================================
+# SHOOTING / 10M PISTOL BALANCE REPORTS
+# =============================================================================
+
+# Shooting balance benchmarks (lower is better for stability metrics)
+# Based on quiet standing bilateral tests - 30 seconds, eyes open
+SHOOTING_BALANCE_BENCHMARKS = {
+    'total_excursion': {
+        'excellent': 100,   # mm - less movement is better
+        'good': 150,
+        'average': 200
+    },
+    'mean_velocity': {
+        'excellent': 5,     # mm/s - slower is more stable
+        'good': 10,
+        'average': 15
+    },
+    'cop_ellipse_area': {
+        'excellent': 50,    # mm² - smaller area is more stable
+        'good': 100,
+        'average': 200
+    }
+}
+
+
+def create_shooting_group_report(df: pd.DataFrame, sport: str = "Shooting"):
+    """
+    Create a group report for Shooting/10m Pistol athletes.
+    Focuses on Quiet Standing Balance (QSB) metrics:
+    - Total Excursion (mm)
+    - Mean Velocity (mm/s)
+    - Area of CoP Ellipse (mm²)
+
+    Lower values indicate better stability for shooters.
+    """
+    st.markdown("### 🎯 10m Pistol - Quiet Standing Balance")
+    st.markdown("""
+    <div style="background: linear-gradient(135deg, #007167 0%, #005a51 100%); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+        <p style="color: white; margin: 0; font-size: 0.95rem;">
+            <strong>Balance Assessment</strong> • 30-second quiet standing • Eyes open • Lower values = better stability
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Filter for QSB (Quiet Standing Balance) tests
+    qsb_df = df[df['testType'] == 'QSB'].copy() if 'testType' in df.columns else pd.DataFrame()
+
+    if qsb_df.empty:
+        st.warning("No Quiet Standing Balance (QSB) test data available. Ensure athletes have completed QSB tests on ForceDecks.")
+        return
+
+    # Get Name column
+    if 'Name' not in qsb_df.columns:
+        if 'full_name' in qsb_df.columns:
+            qsb_df['Name'] = qsb_df['full_name']
+        elif 'profileId' in qsb_df.columns:
+            qsb_df['Name'] = qsb_df['profileId'].apply(lambda x: f"Athlete_{str(x)[:8]}")
+        else:
+            st.error("No athlete name column found")
+            return
+
+    # Convert units from meters to millimeters
+    # VALD stores: Total Excursion in m, Mean Velocity in m/s, Area in m²
+    metric_conversions = {
+        'Total Excursion_Trial': ('total_excursion_mm', 1000),      # m to mm
+        'Mean Velocity_Trial': ('mean_velocity_mm_s', 1000),        # m/s to mm/s
+        'Area of CoP Ellipse_Trial': ('cop_ellipse_area_mm2', 1000000)  # m² to mm²
+    }
+
+    for orig_col, (new_col, factor) in metric_conversions.items():
+        if orig_col in qsb_df.columns:
+            qsb_df[new_col] = qsb_df[orig_col] * factor
+
+    # Get latest test per athlete
+    if 'recordedDateUtc' in qsb_df.columns:
+        qsb_df['recordedDateUtc'] = pd.to_datetime(qsb_df['recordedDateUtc'])
+        latest_idx = qsb_df.groupby('Name')['recordedDateUtc'].idxmax()
+        latest_df = qsb_df.loc[latest_idx].copy()
+    else:
+        latest_df = qsb_df.drop_duplicates(subset='Name', keep='last')
+
+    # Summary metrics
+    st.markdown("#### 📊 Group Summary")
+
+    col1, col2, col3, col4 = st.columns(4)
+
+    with col1:
+        st.metric("Athletes Tested", len(latest_df))
+
+    with col2:
+        if 'total_excursion_mm' in latest_df.columns:
+            avg_excursion = latest_df['total_excursion_mm'].mean()
+            st.metric("Avg Total Excursion", f"{avg_excursion:.1f} mm")
+
+    with col3:
+        if 'mean_velocity_mm_s' in latest_df.columns:
+            avg_velocity = latest_df['mean_velocity_mm_s'].mean()
+            st.metric("Avg Mean Velocity", f"{avg_velocity:.1f} mm/s")
+
+    with col4:
+        if 'cop_ellipse_area_mm2' in latest_df.columns:
+            avg_area = latest_df['cop_ellipse_area_mm2'].mean()
+            st.metric("Avg CoP Ellipse Area", f"{avg_area:.1f} mm²")
+
+    st.markdown("---")
+
+    # Create visualizations in columns
+    col1, col2 = st.columns(2)
+
+    with col1:
+        # Total Excursion bar chart (lower is better)
+        if 'total_excursion_mm' in latest_df.columns:
+            st.markdown("#### Total Excursion (mm)")
+            st.caption("Lower values indicate better stability")
+
+            sorted_df = latest_df.sort_values('total_excursion_mm', ascending=True)
+            benchmarks = SHOOTING_BALANCE_BENCHMARKS['total_excursion']
+
+            fig = go.Figure()
+
+            # Add benchmark zones (horizontal for bar chart)
+            fig.add_vrect(x0=0, x1=benchmarks['excellent'],
+                          fillcolor=ZONE_COLORS['excellent'], layer="below", line_width=0)
+            fig.add_vrect(x0=benchmarks['excellent'], x1=benchmarks['good'],
+                          fillcolor=ZONE_COLORS['good'], layer="below", line_width=0)
+            fig.add_vrect(x0=benchmarks['good'], x1=benchmarks['average'],
+                          fillcolor=ZONE_COLORS['average'], layer="below", line_width=0)
+
+            # Color bars based on benchmark
+            colors = []
+            for val in sorted_df['total_excursion_mm']:
+                if val <= benchmarks['excellent']:
+                    colors.append(TEAL_PRIMARY)
+                elif val <= benchmarks['good']:
+                    colors.append('#009688')
+                else:
+                    colors.append('#78909C')
+
+            fig.add_trace(go.Bar(
+                y=sorted_df['Name'],
+                x=sorted_df['total_excursion_mm'],
+                orientation='h',
+                marker_color=colors,
+                text=[f"{v:.1f}" for v in sorted_df['total_excursion_mm']],
+                textposition='auto'
+            ))
+
+            fig.update_layout(
+                xaxis_title="Total Excursion (mm)",
+                yaxis_title="",
+                height=max(300, len(sorted_df) * 40),
+                showlegend=False,
+                margin=dict(l=10, r=10, t=10, b=30)
+            )
+
+            st.plotly_chart(fig, use_container_width=True, key="shooting_excursion")
+
+    with col2:
+        # Mean Velocity bar chart (lower is better)
+        if 'mean_velocity_mm_s' in latest_df.columns:
+            st.markdown("#### Mean Velocity (mm/s)")
+            st.caption("Lower values indicate better stability")
+
+            sorted_df = latest_df.sort_values('mean_velocity_mm_s', ascending=True)
+            benchmarks = SHOOTING_BALANCE_BENCHMARKS['mean_velocity']
+
+            fig = go.Figure()
+
+            # Add benchmark zones
+            fig.add_vrect(x0=0, x1=benchmarks['excellent'],
+                          fillcolor=ZONE_COLORS['excellent'], layer="below", line_width=0)
+            fig.add_vrect(x0=benchmarks['excellent'], x1=benchmarks['good'],
+                          fillcolor=ZONE_COLORS['good'], layer="below", line_width=0)
+            fig.add_vrect(x0=benchmarks['good'], x1=benchmarks['average'],
+                          fillcolor=ZONE_COLORS['average'], layer="below", line_width=0)
+
+            # Color bars based on benchmark
+            colors = []
+            for val in sorted_df['mean_velocity_mm_s']:
+                if val <= benchmarks['excellent']:
+                    colors.append(TEAL_PRIMARY)
+                elif val <= benchmarks['good']:
+                    colors.append('#009688')
+                else:
+                    colors.append('#78909C')
+
+            fig.add_trace(go.Bar(
+                y=sorted_df['Name'],
+                x=sorted_df['mean_velocity_mm_s'],
+                orientation='h',
+                marker_color=colors,
+                text=[f"{v:.1f}" for v in sorted_df['mean_velocity_mm_s']],
+                textposition='auto'
+            ))
+
+            fig.update_layout(
+                xaxis_title="Mean Velocity (mm/s)",
+                yaxis_title="",
+                height=max(300, len(sorted_df) * 40),
+                showlegend=False,
+                margin=dict(l=10, r=10, t=10, b=30)
+            )
+
+            st.plotly_chart(fig, use_container_width=True, key="shooting_velocity")
+
+    # Area of CoP Ellipse
+    if 'cop_ellipse_area_mm2' in latest_df.columns:
+        st.markdown("#### Area of CoP Ellipse (mm²)")
+        st.caption("Smaller area indicates more stable platform - critical for precision shooting")
+
+        sorted_df = latest_df.sort_values('cop_ellipse_area_mm2', ascending=True)
+        benchmarks = SHOOTING_BALANCE_BENCHMARKS['cop_ellipse_area']
+
+        fig = go.Figure()
+
+        # Add benchmark zones
+        fig.add_vrect(x0=0, x1=benchmarks['excellent'],
+                      fillcolor=ZONE_COLORS['excellent'], layer="below", line_width=0)
+        fig.add_vrect(x0=benchmarks['excellent'], x1=benchmarks['good'],
+                      fillcolor=ZONE_COLORS['good'], layer="below", line_width=0)
+        fig.add_vrect(x0=benchmarks['good'], x1=benchmarks['average'],
+                      fillcolor=ZONE_COLORS['average'], layer="below", line_width=0)
+
+        # Color bars based on benchmark
+        colors = []
+        for val in sorted_df['cop_ellipse_area_mm2']:
+            if val <= benchmarks['excellent']:
+                colors.append(TEAL_PRIMARY)
+            elif val <= benchmarks['good']:
+                colors.append('#009688')
+            else:
+                colors.append('#78909C')
+
+        fig.add_trace(go.Bar(
+            y=sorted_df['Name'],
+            x=sorted_df['cop_ellipse_area_mm2'],
+            orientation='h',
+            marker_color=colors,
+            text=[f"{v:.1f}" for v in sorted_df['cop_ellipse_area_mm2']],
+            textposition='auto'
+        ))
+
+        fig.update_layout(
+            xaxis_title="CoP Ellipse Area (mm²)",
+            yaxis_title="",
+            height=max(300, len(sorted_df) * 40),
+            showlegend=False,
+            margin=dict(l=10, r=10, t=10, b=30)
+        )
+
+        st.plotly_chart(fig, use_container_width=True, key="shooting_ellipse")
+
+    # Summary table
+    st.markdown("---")
+    st.markdown("#### 📋 Detailed Results")
+
+    display_cols = ['Name']
+    rename_map = {'Name': 'Athlete'}
+
+    if 'total_excursion_mm' in latest_df.columns:
+        display_cols.append('total_excursion_mm')
+        rename_map['total_excursion_mm'] = 'Total Excursion (mm)'
+
+    if 'mean_velocity_mm_s' in latest_df.columns:
+        display_cols.append('mean_velocity_mm_s')
+        rename_map['mean_velocity_mm_s'] = 'Mean Velocity (mm/s)'
+
+    if 'cop_ellipse_area_mm2' in latest_df.columns:
+        display_cols.append('cop_ellipse_area_mm2')
+        rename_map['cop_ellipse_area_mm2'] = 'CoP Ellipse Area (mm²)'
+
+    if 'recordedDateUtc' in latest_df.columns:
+        display_cols.append('recordedDateUtc')
+        rename_map['recordedDateUtc'] = 'Test Date'
+
+    result_df = latest_df[display_cols].rename(columns=rename_map)
+
+    # Format numeric columns
+    for col in result_df.columns:
+        if col not in ['Athlete', 'Test Date']:
+            result_df[col] = result_df[col].apply(lambda x: f"{x:.1f}" if pd.notna(x) else "")
+
+    st.dataframe(result_df, use_container_width=True, hide_index=True)
+
+
+def create_shooting_individual_report(df: pd.DataFrame, athlete_name: str, sport: str = "Shooting"):
+    """
+    Create an individual report for a Shooting/10m Pistol athlete.
+    Shows balance metrics over time with trend analysis.
+    """
+    st.markdown(f"### 🎯 {athlete_name} - Balance Analysis")
+
+    # Filter for athlete and QSB tests
+    if 'Name' not in df.columns:
+        if 'full_name' in df.columns:
+            df['Name'] = df['full_name']
+        else:
+            st.error("No athlete name column found")
+            return
+
+    athlete_df = df[(df['Name'] == athlete_name) & (df['testType'] == 'QSB')].copy()
+
+    if athlete_df.empty:
+        st.warning(f"No Quiet Standing Balance data found for {athlete_name}")
+        return
+
+    # Convert units
+    if 'Total Excursion_Trial' in athlete_df.columns:
+        athlete_df['total_excursion_mm'] = athlete_df['Total Excursion_Trial'] * 1000
+    if 'Mean Velocity_Trial' in athlete_df.columns:
+        athlete_df['mean_velocity_mm_s'] = athlete_df['Mean Velocity_Trial'] * 1000
+    if 'Area of CoP Ellipse_Trial' in athlete_df.columns:
+        athlete_df['cop_ellipse_area_mm2'] = athlete_df['Area of CoP Ellipse_Trial'] * 1000000
+
+    # Sort by date
+    if 'recordedDateUtc' in athlete_df.columns:
+        athlete_df['recordedDateUtc'] = pd.to_datetime(athlete_df['recordedDateUtc'])
+        athlete_df = athlete_df.sort_values('recordedDateUtc')
+
+    # Latest metrics
+    latest = athlete_df.iloc[-1]
+
+    col1, col2, col3, col4 = st.columns(4)
+
+    with col1:
+        st.metric("Tests Completed", len(athlete_df))
+
+    with col2:
+        if 'total_excursion_mm' in latest:
+            val = latest['total_excursion_mm']
+            bench = SHOOTING_BALANCE_BENCHMARKS['total_excursion']
+            status = "🟢" if val <= bench['excellent'] else "🟡" if val <= bench['good'] else "��"
+            st.metric(f"{status} Total Excursion", f"{val:.1f} mm")
+
+    with col3:
+        if 'mean_velocity_mm_s' in latest:
+            val = latest['mean_velocity_mm_s']
+            bench = SHOOTING_BALANCE_BENCHMARKS['mean_velocity']
+            status = "🟢" if val <= bench['excellent'] else "🟡" if val <= bench['good'] else "🔴"
+            st.metric(f"{status} Mean Velocity", f"{val:.1f} mm/s")
+
+    with col4:
+        if 'cop_ellipse_area_mm2' in latest:
+            val = latest['cop_ellipse_area_mm2']
+            bench = SHOOTING_BALANCE_BENCHMARKS['cop_ellipse_area']
+            status = "🟢" if val <= bench['excellent'] else "🟡" if val <= bench['good'] else "🔴"
+            st.metric(f"{status} CoP Ellipse Area", f"{val:.1f} mm²")
+
+    st.markdown("---")
+
+    # Trend charts if multiple tests
+    if len(athlete_df) > 1 and 'recordedDateUtc' in athlete_df.columns:
+        st.markdown("#### 📈 Progress Over Time")
+        st.caption("Decreasing values indicate improving stability")
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+            if 'total_excursion_mm' in athlete_df.columns:
+                fig = go.Figure()
+
+                # Add benchmark zones
+                bench = SHOOTING_BALANCE_BENCHMARKS['total_excursion']
+                fig.add_hrect(y0=0, y1=bench['excellent'],
+                              fillcolor=ZONE_COLORS['excellent'], layer="below", line_width=0)
+                fig.add_hrect(y0=bench['excellent'], y1=bench['good'],
+                              fillcolor=ZONE_COLORS['good'], layer="below", line_width=0)
+
+                fig.add_trace(go.Scatter(
+                    x=athlete_df['recordedDateUtc'],
+                    y=athlete_df['total_excursion_mm'],
+                    mode='markers+lines',
+                    marker=dict(size=10, color=TEAL_PRIMARY),
+                    line=dict(color=TEAL_PRIMARY, width=2),
+                    name='Total Excursion'
+                ))
+
+                fig.update_layout(
+                    title="Total Excursion Trend",
+                    xaxis_title="Date",
+                    yaxis_title="Total Excursion (mm)",
+                    height=300,
+                    showlegend=False
+                )
+
+                st.plotly_chart(fig, use_container_width=True, key="ind_excursion_trend")
+
+        with col2:
+            if 'cop_ellipse_area_mm2' in athlete_df.columns:
+                fig = go.Figure()
+
+                # Add benchmark zones
+                bench = SHOOTING_BALANCE_BENCHMARKS['cop_ellipse_area']
+                fig.add_hrect(y0=0, y1=bench['excellent'],
+                              fillcolor=ZONE_COLORS['excellent'], layer="below", line_width=0)
+                fig.add_hrect(y0=bench['excellent'], y1=bench['good'],
+                              fillcolor=ZONE_COLORS['good'], layer="below", line_width=0)
+
+                fig.add_trace(go.Scatter(
+                    x=athlete_df['recordedDateUtc'],
+                    y=athlete_df['cop_ellipse_area_mm2'],
+                    mode='markers+lines',
+                    marker=dict(size=10, color=GOLD_ACCENT),
+                    line=dict(color=GOLD_ACCENT, width=2),
+                    name='CoP Ellipse Area'
+                ))
+
+                fig.update_layout(
+                    title="CoP Ellipse Area Trend",
+                    xaxis_title="Date",
+                    yaxis_title="Area (mm²)",
+                    height=300,
+                    showlegend=False
+                )
+
+                st.plotly_chart(fig, use_container_width=True, key="ind_ellipse_trend")
+
+    # Test history table
+    st.markdown("#### 📋 Test History")
+
+    display_cols = []
+    rename_map = {}
+
+    if 'recordedDateUtc' in athlete_df.columns:
+        display_cols.append('recordedDateUtc')
+        rename_map['recordedDateUtc'] = 'Date'
+
+    if 'total_excursion_mm' in athlete_df.columns:
+        display_cols.append('total_excursion_mm')
+        rename_map['total_excursion_mm'] = 'Total Excursion (mm)'
+
+    if 'mean_velocity_mm_s' in athlete_df.columns:
+        display_cols.append('mean_velocity_mm_s')
+        rename_map['mean_velocity_mm_s'] = 'Mean Velocity (mm/s)'
+
+    if 'cop_ellipse_area_mm2' in athlete_df.columns:
+        display_cols.append('cop_ellipse_area_mm2')
+        rename_map['cop_ellipse_area_mm2'] = 'CoP Ellipse Area (mm²)'
+
+    if display_cols:
+        history_df = athlete_df[display_cols].rename(columns=rename_map)
+
+        # Format numeric columns
+        for col in history_df.columns:
+            if col != 'Date':
+                history_df[col] = history_df[col].apply(lambda x: f"{x:.1f}" if pd.notna(x) else "")
+
+        st.dataframe(history_df.sort_values('Date', ascending=False), use_container_width=True, hide_index=True)

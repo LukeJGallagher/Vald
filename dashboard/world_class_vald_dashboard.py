@@ -4771,14 +4771,16 @@ with tabs[1]:
     try:
         from dashboard.utils.sport_reports import (
             create_group_report, create_group_report_v2, create_group_report_v3,
-            create_individual_report, render_benchmark_legend, get_sport_benchmarks
+            create_individual_report, render_benchmark_legend, get_sport_benchmarks,
+            create_shooting_group_report, create_shooting_individual_report
         )
         sport_reports_available = True
     except ImportError:
         try:
             from utils.sport_reports import (
                 create_group_report, create_group_report_v2, create_group_report_v3,
-                create_individual_report, render_benchmark_legend, get_sport_benchmarks
+                create_individual_report, render_benchmark_legend, get_sport_benchmarks,
+                create_shooting_group_report, create_shooting_individual_report
             )
             sport_reports_available = True
         except ImportError:
@@ -4796,8 +4798,8 @@ with tabs[1]:
                 key="report_sport_selector"
             )
 
-            # Report type tabs - Group v1, v2, v3 and Individual
-            report_tabs = st.tabs(["👥 Group v1", "📊 Group v2", "📈 Group v3", "🏃 Individual Report"])
+            # Report type tabs - Group v1, v2, v3, Individual, and Shooting
+            report_tabs = st.tabs(["👥 Group v1", "📊 Group v2", "📈 Group v3", "🏃 Individual Report", "🎯 Shooting Balance"])
 
             # Render benchmark legend
             render_benchmark_legend()
@@ -4894,6 +4896,44 @@ with tabs[1]:
                     )
                 else:
                     st.info("No athletes found for the selected sport")
+
+            with report_tabs[4]:
+                # Shooting Balance Report - 10m Pistol
+                st.markdown("### 🎯 10m Pistol - Balance Analysis")
+                st.caption("Quiet Standing Balance tests for shooting athletes")
+
+                # Create sub-tabs for Group and Individual
+                shooting_tabs = st.tabs(["👥 Group Report", "🏃 Individual Report"])
+
+                with shooting_tabs[0]:
+                    # Group Shooting Report
+                    create_shooting_group_report(filtered_df, "Shooting")
+
+                with shooting_tabs[1]:
+                    # Individual Shooting Report
+                    # Get athletes who have QSB data
+                    qsb_athletes = []
+                    if 'testType' in filtered_df.columns:
+                        qsb_df = filtered_df[filtered_df['testType'] == 'QSB']
+                        if 'Name' in qsb_df.columns:
+                            qsb_athletes = sorted(qsb_df['Name'].dropna().unique())
+                        elif 'full_name' in qsb_df.columns:
+                            qsb_athletes = sorted(qsb_df['full_name'].dropna().unique())
+
+                    if qsb_athletes:
+                        selected_shooting_athlete = st.selectbox(
+                            "Select Athlete:",
+                            options=qsb_athletes,
+                            key="shooting_athlete_selector"
+                        )
+
+                        create_shooting_individual_report(
+                            filtered_df,
+                            selected_shooting_athlete,
+                            "Shooting"
+                        )
+                    else:
+                        st.info("No athletes with Quiet Standing Balance (QSB) tests found. Ensure athletes have completed QSB tests on ForceDecks.")
         else:
             st.warning("No sports found in the data. Check athlete_sport column.")
 
