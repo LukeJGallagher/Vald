@@ -91,6 +91,64 @@ def get_metric_column(df: pd.DataFrame, metric_key: str) -> Optional[str]:
     return None
 
 
+def enrich_athlete_names(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Enrich DataFrame with athlete names from VALD Profiles API if missing.
+
+    This ensures athlete names appear when data comes from API
+    without pre-enriched names.
+    """
+    # Check if we already have names
+    if 'Name' in df.columns and df['Name'].notna().any():
+        # Check if names are not just placeholders
+        sample_names = df['Name'].dropna().head(5).tolist()
+        if sample_names and not all(str(n).startswith('Athlete_') or str(n) == 'Unknown' for n in sample_names):
+            return df
+
+    # No valid names - try to enrich from profiles
+    if 'profileId' not in df.columns:
+        return df
+
+    try:
+        # Import data_loader function to get profiles
+        from dashboard.utils.data_loader import _get_vald_credentials, _fetch_athlete_profiles, _get_oauth_token
+    except ImportError:
+        try:
+            from utils.data_loader import _get_vald_credentials, _fetch_athlete_profiles, _get_oauth_token
+        except ImportError:
+            return df
+
+    try:
+        credentials = _get_vald_credentials()
+        if not credentials:
+            return df
+
+        token = credentials.get('manual_token')
+        if not token and credentials.get('client_id') and credentials.get('client_secret'):
+            token = _get_oauth_token(credentials['client_id'], credentials['client_secret'])
+
+        if not token:
+            return df
+
+        region = credentials.get('region', 'euw')
+        tenant_id = credentials.get('tenant_id')
+
+        if not tenant_id:
+            return df
+
+        # Fetch profiles
+        profile_map = _fetch_athlete_profiles(token, region, tenant_id)
+
+        if profile_map:
+            df = df.copy()
+            df['Name'] = df['profileId'].map(lambda pid: profile_map.get(pid, {}).get('Name', f"Athlete_{str(pid)[:8]}"))
+            df['full_name'] = df['Name']  # Sync both columns
+    except Exception as e:
+        st.warning(f"Could not enrich athlete names: {e}")
+
+    return df
+
+
 def get_sport_benchmarks(sport: str, config: Dict = None) -> Dict:
     """
     Get benchmarks for a specific sport from config.
@@ -2305,6 +2363,9 @@ def create_shooting_group_report(df: pd.DataFrame, sport: str = "Shooting"):
         st.warning("No Quiet Standing Balance (QSB) test data available. Ensure athletes have completed QSB tests on ForceDecks.")
         return
 
+    # Enrich athlete names from API if needed (handles API data without pre-enriched names)
+    qsb_df = enrich_athlete_names(qsb_df)
+
     # Get Name column
     if 'Name' not in qsb_df.columns:
         if 'full_name' in qsb_df.columns:
@@ -2545,6 +2606,9 @@ def create_shooting_individual_report(df: pd.DataFrame, athlete_name: str, sport
     Shows balance metrics over time with trend analysis.
     """
     st.markdown(f"### 🎯 {athlete_name} - Balance Analysis")
+
+    # Enrich athlete names from API if needed
+    df = enrich_athlete_names(df)
 
     # Filter for athlete and QSB tests
     if 'Name' not in df.columns:
