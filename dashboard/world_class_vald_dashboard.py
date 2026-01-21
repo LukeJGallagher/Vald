@@ -4798,8 +4798,9 @@ with tabs[1]:
                 key="report_sport_selector"
             )
 
-            # Report type tabs - Group v1, v2, v3, Individual, Shooting, S&C Diagnostics, and Benchmark Settings
-            report_tabs = st.tabs(["👥 Group v1", "📊 Group v2", "📈 Group v3", "🏃 Individual Report", "🎯 Shooting Balance", "🏋️ S&C Diagnostics", "⚙️ Benchmark Settings"])
+            # Report type tabs - Group v1 (S&C Diagnostics), v2, v3, Individual, Shooting, and Benchmark Settings
+            # Note: S&C Diagnostics is now integrated into Group v1
+            report_tabs = st.tabs(["👥 Group v1", "📊 Group v2", "📈 Group v3", "🏃 Individual Report", "🎯 Shooting Balance", "⚙️ Benchmark Settings"])
 
             # Render benchmark legend
             render_benchmark_legend()
@@ -4836,10 +4837,8 @@ with tabs[1]:
                     sport_nb = filtered_nb
 
             with report_tabs[0]:
-                # Group Report v1 - Bar charts with benchmark zones
-                st.markdown("### Team Performance Overview")
-                st.caption("Bar charts with shaded benchmark zones")
-
+                # Group Report v1 - Updated with S&C Diagnostics chart styles
+                # Keeps existing layout (Lower Body, Upper Body sections) but with new charts
                 create_group_report(
                     sport_data,
                     selected_report_sport,
@@ -4936,25 +4935,6 @@ with tabs[1]:
                         st.info("No athletes with Quiet Standing Balance (QSB) tests found. Ensure athletes have completed QSB tests on ForceDecks.")
 
             with report_tabs[5]:
-                # S&C Diagnostics Canvas
-                try:
-                    from dashboard.utils.snc_diagnostics import render_snc_diagnostics_tab
-                except ImportError:
-                    try:
-                        from utils.snc_diagnostics import render_snc_diagnostics_tab
-                    except ImportError:
-                        render_snc_diagnostics_tab = None
-
-                if render_snc_diagnostics_tab:
-                    render_snc_diagnostics_tab(
-                        filtered_df,
-                        nordbord_df=filtered_nordbord if not filtered_nordbord.empty else None,
-                        forceframe_df=filtered_forceframe if not filtered_forceframe.empty else None
-                    )
-                else:
-                    st.error("S&C Diagnostics module not found. Please check utils/snc_diagnostics.py")
-
-            with report_tabs[6]:
                 # Benchmark Settings - S&C staff can edit VALD norms
                 try:
                     from dashboard.utils.benchmark_database import render_benchmark_editor
