@@ -378,9 +378,13 @@ def load_vald_data(device: str = 'forcedecks') -> pd.DataFrame:
     """
     # Path to vald-data repo (absolute path for reliability)
     vald_data_dir = r"c:\Users\l.gallagher\OneDrive - Team Saudi\Documents\Performance Analysis\vald-data\data"
+    # Dashboard data directory (for local enriched files)
+    dashboard_data_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data')
 
     file_mapping = {
         'forcedecks': [
+            # Dashboard data directory (local enriched files)
+            os.path.join(dashboard_data_dir, 'forcedecks_allsports_with_athletes.csv'),
             # vald-data repo (primary source)
             os.path.join(vald_data_dir, 'forcedecks_allsports_with_athletes.csv'),
             # Fallback paths
@@ -390,6 +394,8 @@ def load_vald_data(device: str = 'forcedecks') -> pd.DataFrame:
             '../data/master_files/forcedecks_allsports_with_athletes.csv',
         ],
         'forceframe': [
+            # Dashboard data directory (local enriched files) - enriched file first
+            os.path.join(dashboard_data_dir, 'forceframe_allsports_with_athletes.csv'),
             # vald-data repo (primary source) - enriched file first
             os.path.join(vald_data_dir, 'forceframe_allsports_with_athletes.csv'),
             os.path.join(vald_data_dir, 'forceframe_allsports.csv'),
@@ -402,6 +408,8 @@ def load_vald_data(device: str = 'forcedecks') -> pd.DataFrame:
             'data/forceframe_allsports.csv',
         ],
         'nordbord': [
+            # Dashboard data directory (local enriched files) - enriched file first
+            os.path.join(dashboard_data_dir, 'nordbord_allsports_with_athletes.csv'),
             # vald-data repo (primary source) - enriched file first
             os.path.join(vald_data_dir, 'nordbord_allsports_with_athletes.csv'),
             os.path.join(vald_data_dir, 'nordbord_allsports.csv'),
