@@ -4812,27 +4812,37 @@ with tabs[1]:
 
             sport_data = filtered_df[sport_mask].copy()
 
+            # Create athlete-sport mapping from ForceDecks data
+            # This allows filtering ForceFrame/NordBord by sport even without athlete_sport column
+            athlete_sport_map = {}
+            if 'Name' in filtered_df.columns and 'athlete_sport' in filtered_df.columns:
+                for _, row in filtered_df[['Name', 'athlete_sport']].dropna().drop_duplicates().iterrows():
+                    athlete_sport_map[row['Name']] = row['athlete_sport']
+
             # Filter ForceFrame and NordBord for sport
-            # Note: ForceFrame/NordBord may have limited sport info from Profiles API
-            # If sport filter returns empty, show all data instead
             sport_ff = filtered_forceframe.copy() if not filtered_forceframe.empty else pd.DataFrame()
             sport_nb = filtered_nordbord.copy() if not filtered_nordbord.empty else pd.DataFrame()
 
-            if 'athlete_sport' in sport_ff.columns and not sport_ff.empty:
+            # Enrich ForceFrame with sport info from athlete mapping if missing
+            if not sport_ff.empty and 'Name' in sport_ff.columns:
+                if 'athlete_sport' not in sport_ff.columns:
+                    sport_ff['athlete_sport'] = sport_ff['Name'].map(athlete_sport_map)
+                # Filter by selected sport
                 sport_keyword = selected_report_sport.split()[0]
                 filtered_ff = sport_ff[sport_ff['athlete_sport'].str.contains(
                     sport_keyword, case=False, na=False
                 )]
-                # Only apply filter if it returns results, otherwise show all
                 if not filtered_ff.empty:
                     sport_ff = filtered_ff
 
-            if 'athlete_sport' in sport_nb.columns and not sport_nb.empty:
+            # Enrich NordBord with sport info from athlete mapping if missing
+            if not sport_nb.empty and 'Name' in sport_nb.columns:
+                if 'athlete_sport' not in sport_nb.columns:
+                    sport_nb['athlete_sport'] = sport_nb['Name'].map(athlete_sport_map)
                 sport_keyword = selected_report_sport.split()[0]
                 filtered_nb = sport_nb[sport_nb['athlete_sport'].str.contains(
                     sport_keyword, case=False, na=False
                 )]
-                # Only apply filter if it returns results, otherwise show all
                 if not filtered_nb.empty:
                     sport_nb = filtered_nb
 

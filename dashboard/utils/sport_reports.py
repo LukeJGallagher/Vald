@@ -514,7 +514,7 @@ def create_group_report(df: pd.DataFrame,
     st.markdown(f"## {sport} Group Report")
 
     # =========================================================================
-    # FILTERS - Gender and Benchmark Source selection for dynamic benchmarks
+    # FILTERS - Gender, Benchmark Source, and Athlete selection
     # =========================================================================
     filter_col1, filter_col2, filter_col3 = st.columns([1, 1, 2])
 
@@ -556,15 +556,18 @@ def create_group_report(df: pd.DataFrame,
     else:
         st.caption("Using default benchmarks")
 
-    st.markdown("---")
-
-    # Filter data for the sport
+    # Filter data for the sport - use EXACT match for full sport name
     sport_df = df.copy()
     if 'athlete_sport' in sport_df.columns:
-        # Fuzzy match for sport name
-        sport_mask = sport_df['athlete_sport'].str.contains(sport.split()[0], case=False, na=False)
-        if sport_mask.any():
-            sport_df = sport_df[sport_mask]
+        # Try exact match first
+        exact_mask = sport_df['athlete_sport'] == sport
+        if exact_mask.any():
+            sport_df = sport_df[exact_mask]
+        else:
+            # Fall back to fuzzy match for parent sport category (e.g., "Athletics")
+            sport_mask = sport_df['athlete_sport'].str.contains(sport.split()[0], case=False, na=False)
+            if sport_mask.any():
+                sport_df = sport_df[sport_mask]
 
     # Optionally filter by gender if not "All"
     if selected_gender != 'All' and 'athlete_sex' in sport_df.columns:
@@ -573,6 +576,31 @@ def create_group_report(df: pd.DataFrame,
     if sport_df.empty:
         st.warning(f"No data available for {sport} with current filters")
         return
+
+    # =========================================================================
+    # ATHLETE FILTER - Allow selecting specific athletes
+    # =========================================================================
+    if 'Name' in sport_df.columns:
+        available_athletes = sorted(sport_df['Name'].dropna().unique().tolist())
+        if available_athletes:
+            with filter_col3:
+                selected_athletes = st.multiselect(
+                    "Filter Athletes:",
+                    options=available_athletes,
+                    default=[],  # Empty = show all
+                    key="group_v1_athlete_filter",
+                    help="Leave empty to show all athletes, or select specific athletes"
+                )
+            # Apply athlete filter if selections made
+            if selected_athletes:
+                sport_df = sport_df[sport_df['Name'].isin(selected_athletes)]
+                # Also filter ForceFrame and NordBord if passed
+                if forceframe_df is not None and not forceframe_df.empty and 'Name' in forceframe_df.columns:
+                    forceframe_df = forceframe_df[forceframe_df['Name'].isin(selected_athletes)]
+                if nordbord_df is not None and not nordbord_df.empty and 'Name' in nordbord_df.columns:
+                    nordbord_df = nordbord_df[nordbord_df['Name'].isin(selected_athletes)]
+
+    st.markdown("---")
 
     # =========================================================================
     # SECTION 1: Lower Body Strength & Power (S&C Diagnostics Style)
