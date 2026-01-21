@@ -13,7 +13,7 @@ import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 from typing import Dict, List, Optional, Tuple
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 
 # Team Saudi colors
@@ -261,15 +261,26 @@ def add_benchmark_zones(fig: go.Figure, benchmarks: Dict,
     return fig
 
 
+# Squad average and benchmark line colors (S&C Diagnostics style)
+SQUAD_AVG_COLOR = '#FF9800'  # Orange dashed
+BENCHMARK_COLOR = '#0077B6'  # Blue dashed
+
+
 def create_benchmark_bar_chart(df: pd.DataFrame,
                                 metric_col: str,
                                 name_col: str,
                                 benchmarks: Dict,
                                 title: str,
                                 metric_type: str = 'cmj_height',
-                                unit: str = '') -> go.Figure:
+                                unit: str = '',
+                                benchmark_override: float = None) -> go.Figure:
     """
-    Create a horizontal bar chart with benchmark zones.
+    Create a VERTICAL ranked bar chart with squad average and benchmark lines.
+
+    Updated to match S&C Diagnostics style:
+    - Vertical bars sorted by value (highest to lowest)
+    - Orange dashed line for squad average
+    - Blue dashed line for benchmark
 
     Args:
         df: DataFrame with athlete data
@@ -279,6 +290,7 @@ def create_benchmark_bar_chart(df: pd.DataFrame,
         title: Chart title
         metric_type: Key for benchmark lookup
         unit: Unit label for values
+        benchmark_override: Optional specific benchmark value
     """
     if metric_col not in df.columns:
         return None
@@ -286,44 +298,223 @@ def create_benchmark_bar_chart(df: pd.DataFrame,
     # Get latest value per athlete
     plot_data = df.groupby(name_col)[metric_col].last().reset_index()
     plot_data = plot_data.dropna(subset=[metric_col])
-    plot_data = plot_data.sort_values(metric_col, ascending=True)
+
+    # Sort descending (highest first) for vertical bars
+    plot_data = plot_data.sort_values(metric_col, ascending=False)
 
     if plot_data.empty:
         return None
 
-    # Create horizontal bar chart
+    # Calculate squad average
+    squad_avg = plot_data[metric_col].mean()
+
+    # Get benchmark value
+    if benchmark_override is not None:
+        benchmark = benchmark_override
+    else:
+        benchmark = benchmarks.get(metric_type, {}).get('good',
+                   benchmarks.get(metric_type, {}).get('excellent', 0))
+
+    # Create VERTICAL bar chart
     fig = go.Figure()
 
     fig.add_trace(go.Bar(
-        x=plot_data[metric_col],
-        y=plot_data[name_col],
-        orientation='h',
+        x=plot_data[name_col],
+        y=plot_data[metric_col],
         marker_color=TEAL_PRIMARY,
-        text=[f"{v:.1f}{unit}" for v in plot_data[metric_col]],
+        text=[f"{v:.1f}" for v in plot_data[metric_col]],
         textposition='outside',
-        hovertemplate="%{y}: %{x:.1f}" + unit + "<extra></extra>"
+        textfont=dict(size=10),
+        hovertemplate="%{x}: %{y:.1f}" + unit + "<extra></extra>",
+        name='Athletes'
     ))
 
-    # Add benchmark zones
-    max_val = plot_data[metric_col].max() * 1.2
-    fig = add_benchmark_zones(fig, benchmarks, 'h', metric_type, max_val)
-
-    # Styling
-    fig.update_layout(
-        title=dict(text=title, font=dict(size=14)),
-        xaxis_title=f"{title} ({unit})" if unit else title,
-        yaxis_title="",
-        height=max(300, len(plot_data) * 30 + 100),
-        margin=dict(l=150, r=50, t=50, b=50),
-        plot_bgcolor='rgba(0,0,0,0)',
-        paper_bgcolor='rgba(0,0,0,0)',
-        showlegend=False,
+    # Add squad average line (orange dashed)
+    fig.add_hline(
+        y=squad_avg,
+        line_dash="dash",
+        line_color=SQUAD_AVG_COLOR,
+        line_width=2,
+        annotation_text=f"Squad Avg: {squad_avg:.1f}",
+        annotation_position="right",
+        annotation_font_color=SQUAD_AVG_COLOR
     )
 
-    fig.update_xaxes(range=[0, max_val], gridcolor='rgba(128,128,128,0.2)')
-    fig.update_yaxes(gridcolor='rgba(128,128,128,0.2)')
+    # Add benchmark line (blue dashed) if available
+    if benchmark and benchmark > 0:
+        fig.add_hline(
+            y=benchmark,
+            line_dash="dash",
+            line_color=BENCHMARK_COLOR,
+            line_width=2,
+            annotation_text=f"Benchmark: {benchmark:.1f}",
+            annotation_position="right",
+            annotation_font_color=BENCHMARK_COLOR
+        )
+
+    # Styling - clean white background
+    fig.update_layout(
+        title=dict(text=title, font=dict(size=14)),
+        xaxis_title="",
+        yaxis_title=f"{unit}" if unit else "",
+        height=400,
+        margin=dict(l=10, r=100, t=50, b=100),
+        plot_bgcolor='white',
+        paper_bgcolor='white',
+        font=dict(family='Inter, sans-serif', color='#333'),
+        showlegend=False,
+        xaxis=dict(tickangle=-45)
+    )
+
+    fig.update_xaxes(showgrid=False)
+    fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
 
     return fig
+
+
+def create_unilateral_bar_chart(df: pd.DataFrame,
+                                 left_col: str,
+                                 right_col: str,
+                                 name_col: str,
+                                 title: str,
+                                 unit: str = '',
+                                 benchmark: float = None) -> go.Figure:
+    """
+    Create a horizontal side-by-side bar chart for unilateral tests (Left vs Right).
+
+    Shows left and right values with benchmark line for comparison.
+    Like the NordBord L/R chart style.
+
+    Args:
+        df: DataFrame with athlete data
+        left_col: Column name for left side values
+        right_col: Column name for right side values
+        name_col: Column name for athlete names
+        title: Chart title
+        unit: Unit label
+        benchmark: Benchmark value (e.g., injury threshold)
+    """
+    if name_col not in df.columns:
+        return None
+
+    if left_col not in df.columns or right_col not in df.columns:
+        return None
+
+    # Get data
+    plot_df = df[[name_col, left_col, right_col]].dropna()
+    if plot_df.empty:
+        return None
+
+    # Calculate average for sorting
+    plot_df = plot_df.copy()
+    plot_df['avg'] = (plot_df[left_col] + plot_df[right_col]) / 2
+    plot_df = plot_df.sort_values('avg', ascending=True)
+
+    # Create figure
+    fig = go.Figure()
+
+    # Add left bars (teal)
+    fig.add_trace(go.Bar(
+        y=plot_df[name_col],
+        x=plot_df[left_col],
+        orientation='h',
+        marker_color=TEAL_PRIMARY,
+        text=[f"{v:.0f}" for v in plot_df[left_col]],
+        textposition='auto',
+        name='Left'
+    ))
+
+    # Add right bars (coral)
+    fig.add_trace(go.Bar(
+        y=plot_df[name_col],
+        x=plot_df[right_col],
+        orientation='h',
+        marker_color=CORAL_ACCENT,
+        text=[f"{v:.0f}" for v in plot_df[right_col]],
+        textposition='auto',
+        name='Right'
+    ))
+
+    # Add benchmark line if provided
+    if benchmark and benchmark > 0:
+        fig.add_vline(
+            x=benchmark,
+            line_dash="dash",
+            line_color=BENCHMARK_COLOR,
+            line_width=2,
+            annotation_text=f"Threshold: {benchmark:.0f} {unit}",
+            annotation_position="top"
+        )
+
+    # Update layout
+    fig.update_layout(
+        title=dict(text=title, font=dict(size=14)),
+        xaxis_title=f"{unit}" if unit else "",
+        yaxis_title="",
+        plot_bgcolor='white',
+        paper_bgcolor='white',
+        font=dict(family='Inter, sans-serif', color='#333'),
+        height=max(300, len(plot_df) * 50),
+        margin=dict(l=10, r=10, t=50, b=30),
+        barmode='group',
+        legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1)
+    )
+
+    fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
+    fig.update_yaxes(showgrid=False)
+
+    return fig
+
+
+def create_asymmetry_status_table(df: pd.DataFrame,
+                                   left_col: str,
+                                   right_col: str,
+                                   name_col: str,
+                                   unit: str = '') -> pd.DataFrame:
+    """
+    Create asymmetry status table with RAG indicators.
+
+    Returns DataFrame with:
+    - Athlete name
+    - Left and Right values
+    - Asymmetry percentage
+    - Status indicator (🟢 Good ≤5%, 🟡 Monitor ≤10%, 🔴 Flag >10%)
+    """
+    if name_col not in df.columns:
+        return pd.DataFrame()
+
+    if left_col not in df.columns or right_col not in df.columns:
+        return pd.DataFrame()
+
+    table_df = df[[name_col, left_col, right_col]].dropna().copy()
+    if table_df.empty:
+        return pd.DataFrame()
+
+    # Calculate asymmetry
+    table_df['Asymmetry'] = abs(table_df[left_col] - table_df[right_col]) / \
+                            ((table_df[left_col] + table_df[right_col]) / 2) * 100
+
+    # Determine status
+    def get_status(asym):
+        if asym <= 5:
+            return '🟢 Good'
+        elif asym <= 10:
+            return '🟡 Monitor'
+        else:
+            return '🔴 Flag'
+
+    table_df['Status'] = table_df['Asymmetry'].apply(get_status)
+
+    # Format columns
+    table_df = table_df.rename(columns={
+        name_col: 'Athlete',
+        left_col: f'Left ({unit})',
+        right_col: f'Right ({unit})'
+    })
+
+    table_df['Asymmetry'] = table_df['Asymmetry'].apply(lambda x: f"{x:.1f}%")
+
+    return table_df[['Athlete', f'Left ({unit})', f'Right ({unit})', 'Asymmetry', 'Status']]
 
 
 def create_trend_chart(df: pd.DataFrame,
@@ -401,8 +592,13 @@ def create_group_report(df: pd.DataFrame,
     """
     Create a group report for a sport showing team performance.
 
+    Updated with S&C Diagnostics chart styles:
+    - Vertical ranked bar charts with squad avg (orange) and benchmark (blue) lines
+    - Unilateral side-by-side L/R charts for NordBord
+    - Gender and date filters
+
     Layout:
-    - Lower Body Strength & Power (IMTP, CMJ, Repeat Hop)
+    - Lower Body Strength & Power (IMTP, CMJ, Repeat Hop, NordBord)
     - Upper Body Strength & Power (if data available)
     - Shoulder Health (ForceFrame)
     - Hip Health (ForceFrame)
@@ -410,6 +606,24 @@ def create_group_report(df: pd.DataFrame,
     benchmarks = get_sport_benchmarks(sport, config)
 
     st.markdown(f"## {sport} Group Report")
+
+    # =========================================================================
+    # FILTERS - Gender and Date Range
+    # =========================================================================
+    filter_col1, filter_col2, filter_col3 = st.columns([1, 1, 2])
+
+    with filter_col1:
+        # Gender filter
+        genders = ['All']
+        if 'athlete_sex' in df.columns:
+            genders += sorted([g for g in df['athlete_sex'].dropna().unique() if g])
+        selected_gender = st.selectbox("Gender:", genders, key="group_v1_gender")
+
+    with filter_col2:
+        # Date filter
+        date_options = ['Most Recent', 'Last 7 Days', 'Last 30 Days', 'Last 90 Days', 'All Time']
+        selected_date = st.selectbox("Date Range:", date_options, key="group_v1_date")
+
     st.markdown("---")
 
     # Filter data for the sport
@@ -420,9 +634,42 @@ def create_group_report(df: pd.DataFrame,
         if sport_mask.any():
             sport_df = sport_df[sport_mask]
 
+    # Apply gender filter
+    if selected_gender != 'All' and 'athlete_sex' in sport_df.columns:
+        sport_df = sport_df[sport_df['athlete_sex'] == selected_gender]
+
+    # Apply date filter
+    if 'recordedDateUtc' in sport_df.columns:
+        sport_df['recordedDateUtc'] = pd.to_datetime(sport_df['recordedDateUtc'], errors='coerce')
+
+        if selected_date == 'Most Recent':
+            # Get most recent test per athlete
+            if 'Name' in sport_df.columns:
+                idx = sport_df.groupby('Name')['recordedDateUtc'].idxmax()
+                sport_df = sport_df.loc[idx]
+        elif selected_date == 'Last 7 Days':
+            cutoff = datetime.now() - timedelta(days=7)
+            sport_df = sport_df[sport_df['recordedDateUtc'] >= cutoff]
+        elif selected_date == 'Last 30 Days':
+            cutoff = datetime.now() - timedelta(days=30)
+            sport_df = sport_df[sport_df['recordedDateUtc'] >= cutoff]
+        elif selected_date == 'Last 90 Days':
+            cutoff = datetime.now() - timedelta(days=90)
+            sport_df = sport_df[sport_df['recordedDateUtc'] >= cutoff]
+
     if sport_df.empty:
-        st.warning(f"No data available for {sport}")
+        st.warning(f"No data available for {sport} with current filters")
         return
+
+    # Also filter NordBord data with same filters
+    nb_filtered = nordbord_df.copy() if nordbord_df is not None and not nordbord_df.empty else pd.DataFrame()
+    if not nb_filtered.empty:
+        if 'athlete_sport' in nb_filtered.columns:
+            sport_mask = nb_filtered['athlete_sport'].str.contains(sport.split()[0], case=False, na=False)
+            if sport_mask.any():
+                nb_filtered = nb_filtered[sport_mask]
+        if selected_gender != 'All' and 'athlete_sex' in nb_filtered.columns:
+            nb_filtered = nb_filtered[nb_filtered['athlete_sex'] == selected_gender]
 
     # =========================================================================
     # SECTION 1: Lower Body Strength & Power
@@ -484,7 +731,7 @@ def create_group_report(df: pd.DataFrame,
             st.info("Power metric not found")
 
     # Second row - Repeat Hop and NordBord
-    col1, col2, col3 = st.columns(3)
+    col1, col2 = st.columns(2)
     with col1:
         metric_col = get_metric_column(sport_df, 'rsi')
         if metric_col:
@@ -499,26 +746,18 @@ def create_group_report(df: pd.DataFrame,
             else:
                 st.info("No Repeat Hop data available")
 
-    # NordBord - Hamstring Strength (in Lower Body section)
+    # NordBord - Hamstring Strength L/R (Unilateral Chart)
     with col2:
-        if nordbord_df is not None and not nordbord_df.empty:
-            # Filter NordBord data for sport if possible
-            nb_df = nordbord_df.copy()
-            if 'athlete_sport' in nb_df.columns:
-                sport_mask = nb_df['athlete_sport'].str.contains(sport.split()[0], case=False, na=False)
-                if sport_mask.any():
-                    nb_df = nb_df[sport_mask]
-
+        if not nb_filtered.empty:
             # Get the force columns using helper function
-            left_col, right_col = get_nordbord_force_columns(nb_df)
+            left_col, right_col = get_nordbord_force_columns(nb_filtered)
 
-            if left_col and right_col and 'Name' in nb_df.columns:
-                # Calculate average of left/right
-                nb_df['avg_hamstring_force'] = (nb_df[left_col] + nb_df[right_col]) / 2
-
-                fig = create_benchmark_bar_chart(
-                    nb_df, 'avg_hamstring_force', 'Name', benchmarks,
-                    "NordBord - Hamstring Strength", 'nordbord_force', 'N'
+            if left_col and right_col and 'Name' in nb_filtered.columns:
+                # Use new unilateral chart with L/R side-by-side bars
+                fig = create_unilateral_bar_chart(
+                    nb_filtered, left_col, right_col, 'Name',
+                    "NordBord - Hamstring L/R", 'N',
+                    benchmark=337  # Injury risk threshold
                 )
                 if fig:
                     st.plotly_chart(fig, use_container_width=True)
@@ -527,35 +766,14 @@ def create_group_report(df: pd.DataFrame,
         else:
             st.info("NordBord data not available")
 
-    # NordBord Asymmetry
-    with col3:
-        if nordbord_df is not None and not nordbord_df.empty:
-            nb_df = nordbord_df.copy()
-            if 'athlete_sport' in nb_df.columns:
-                sport_mask = nb_df['athlete_sport'].str.contains(sport.split()[0], case=False, na=False)
-                if sport_mask.any():
-                    nb_df = nb_df[sport_mask]
-
-            # Calculate asymmetry if both sides available
-            left_col, right_col = get_nordbord_force_columns(nb_df)
-            if left_col and right_col:
-                nb_df['hamstring_asymmetry'] = abs(
-                    (nb_df[left_col] - nb_df[right_col]) /
-                    ((nb_df[left_col] + nb_df[right_col]) / 2) * 100
-                )
-                if 'Name' in nb_df.columns:
-                    fig = create_benchmark_bar_chart(
-                        nb_df, 'hamstring_asymmetry', 'Name', benchmarks,
-                        "NordBord - Asymmetry", 'asymmetry', '%'
-                    )
-                    if fig:
-                        st.plotly_chart(fig, use_container_width=True)
-                else:
-                    st.info("NordBord asymmetry data not available")
-            else:
-                st.info("NordBord asymmetry data not available")
-        else:
-            st.info("NordBord asymmetry data not available")
+    # NordBord Asymmetry Status Table (below the charts)
+    if not nb_filtered.empty:
+        left_col, right_col = get_nordbord_force_columns(nb_filtered)
+        if left_col and right_col and 'Name' in nb_filtered.columns:
+            st.markdown("**NordBord Asymmetry Status**")
+            asym_table = create_asymmetry_status_table(nb_filtered, left_col, right_col, 'Name', 'N')
+            if not asym_table.empty:
+                st.dataframe(asym_table, use_container_width=True, hide_index=True)
 
     st.markdown("---")
 
