@@ -660,7 +660,7 @@ def _render_benchmark_edit_form(benchmarks: Dict, user_name: str, source: str = 
 
                 if save_benchmarks(updated_benchmarks, user_name, change_reason):
                     st.success("✅ Benchmarks saved successfully!")
-                    st.rerun()
+                    # Note: Removed st.rerun() to prevent tab reset
 
 
 def _render_audit_log():
@@ -724,7 +724,7 @@ def _render_reset_options(user_name: str):
             if reset_reason:
                 if reset_to_vald_norms(user_name, reset_reason):
                     st.success("✅ Benchmarks reset to VALD defaults")
-                    st.rerun()
+                    # Note: Removed st.rerun() to prevent tab reset
             else:
                 st.error("Please provide a reason for the reset")
 
@@ -977,7 +977,7 @@ def _render_saudi_norms_form(user_name: str):
 
                 if save_saudi_norms(saudi_norms, user_name, f"{selected_test}: {change_reason}"):
                     st.success(f"✅ Saudi benchmarks for {test_types[selected_test]} saved successfully!")
-                    st.rerun()
+                    # Note: Removed st.rerun() to prevent tab reset
 
     # Show current Saudi norms summary
     st.markdown("---")
