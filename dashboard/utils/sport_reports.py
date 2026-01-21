@@ -399,8 +399,8 @@ def create_benchmark_bar_chart(df: pd.DataFrame,
         title=dict(text=title, font=dict(size=14)),
         xaxis_title=f"{title} ({unit})" if unit else title,
         yaxis_title="",
-        height=max(300, len(plot_data) * 30 + 100),
-        margin=dict(l=150, r=50, t=50, b=50),
+        height=max(250, min(400, len(plot_data) * 25 + 80)),  # Compact height, max 400px
+        margin=dict(l=120, r=40, t=40, b=40),
         plot_bgcolor='rgba(0,0,0,0)',
         paper_bgcolor='rgba(0,0,0,0)',
         showlegend=False,
@@ -616,21 +616,22 @@ def create_group_report(df: pd.DataFrame,
         else:
             st.info("Power metric not found")
 
-    # Second row - Repeat Hop and NordBord
+    # Second row - Reactive Strength (DJ/RSHIP) and NordBord
     col1, col2, col3 = st.columns(3)
     with col1:
         metric_col = get_metric_column(sport_df, 'rsi')
         if metric_col:
-            hop_df = sport_df[sport_df['testType'].str.contains('Hop|Repeat|DJ|Drop', case=False, na=False)]
+            # RSHIP = Repeat Single Hop In Place (10-5), DJ = Drop Jump, SLDJ = Single Leg Drop Jump
+            hop_df = sport_df[sport_df['testType'].str.contains('RSHIP|DJ|SLDJ|Hop|Drop', case=False, na=False)]
             if not hop_df.empty:
                 fig = create_benchmark_bar_chart(
                     hop_df, metric_col, 'Name', benchmarks,
-                    "Repeat Hop - RSI", 'rsi', ''
+                    "Reactive Strength - RSI", 'rsi', ''
                 )
                 if fig:
                     st.plotly_chart(fig, use_container_width=True)
             else:
-                st.info("No Repeat Hop data available")
+                st.info("No reactive strength data (DJ/RSHIP) available")
 
     # NordBord - Hamstring Strength (in Lower Body section)
     with col2:
@@ -1855,19 +1856,20 @@ def create_group_report_v3(df: pd.DataFrame,
             st.info("Power metric not found")
 
     with col2:
-        # Repeat Hop RSI - Lollipop Chart
+        # Reactive Strength RSI (DJ/RSHIP) - Lollipop Chart
         rsi_col = get_metric_column(sport_df, 'rsi')
         if rsi_col:
-            hop_df = sport_df[sport_df['testType'].str.contains('Hop|Repeat|DJ|Drop', case=False, na=False)]
+            # RSHIP = Repeat Single Hop In Place (10-5), DJ = Drop Jump
+            hop_df = sport_df[sport_df['testType'].str.contains('RSHIP|DJ|SLDJ|Hop|Drop', case=False, na=False)]
             if not hop_df.empty:
                 fig = _create_lollipop_chart(
                     hop_df, rsi_col, 'Name', benchmarks,
-                    "Repeat Hop - RSI", 'rsi'
+                    "Reactive Strength - RSI", 'rsi'
                 )
                 if fig:
                     st.plotly_chart(fig, use_container_width=True, key="v3_rsi_lollipop")
             else:
-                st.info("No Repeat Hop data available")
+                st.info("No reactive strength data (DJ/RSHIP) available")
         else:
             st.info("RSI metric not found")
 
