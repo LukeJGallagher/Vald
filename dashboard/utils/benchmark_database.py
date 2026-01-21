@@ -5,10 +5,11 @@ Provides editable VALD-based benchmarks with audit logging for S&C staff.
 Benchmarks are stored in JSON and can be edited through the dashboard.
 
 Features:
-- Default VALD normative data benchmarks
+- Default VALD normative data benchmarks (international standards)
+- Saudi Population benchmarks (customizable by S&C staff)
 - Per-sport/group customizable benchmarks
 - Full audit trail (who changed, when, why)
-- Gender-specific benchmarks
+- Gender-specific benchmarks (male/female)
 """
 
 import json
@@ -27,6 +28,7 @@ TEAL_DARK = '#005a51'
 # Default data directory
 DATA_DIR = Path(__file__).parent.parent / "data"
 BENCHMARK_FILE = DATA_DIR / "benchmarks.json"
+SAUDI_NORMS_FILE = DATA_DIR / "saudi_norms.json"
 AUDIT_LOG_FILE = DATA_DIR / "benchmark_audit_log.json"
 
 # VALD Normative Data - Default benchmarks based on VALD research
@@ -462,16 +464,33 @@ def get_asymmetry_threshold(test_type: str) -> float:
 def render_benchmark_editor():
     """
     Render the benchmark editor interface for S&C staff.
+
+    Allows editing of:
+    - VALD international norms
+    - Saudi Population specific benchmarks
+    - Sport-specific adjustments
     """
     st.markdown("""
     <div style="background: linear-gradient(135deg, #007167 0%, #005a51 100%);
                 padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
         <h3 style="color: white; margin: 0;">⚙️ Benchmark Settings</h3>
         <p style="color: rgba(255,255,255,0.9); margin: 0.5rem 0 0 0;">
-            Edit VALD normative benchmarks - changes are logged with audit trail
+            Edit benchmarks for Saudi athletes - VALD norms & Saudi population data
         </p>
     </div>
     """, unsafe_allow_html=True)
+
+    # Benchmark source selection
+    st.markdown("### Benchmark Source")
+    benchmark_source = st.radio(
+        "Select benchmark source to edit:",
+        ["VALD International Norms", "Saudi Population Norms"],
+        horizontal=True,
+        key="benchmark_source_select",
+        help="VALD norms are international standards. Saudi norms can be customized for your population."
+    )
+
+    st.markdown("---")
 
     # User identification
     col1, col2 = st.columns([1, 2])
@@ -490,20 +509,28 @@ def render_benchmark_editor():
     benchmarks = load_benchmarks()
 
     # Tabs for different sections
-    editor_tabs = st.tabs(["📊 Edit Benchmarks", "📋 Audit Log", "🔄 Reset Options"])
+    editor_tabs = st.tabs(["📊 Edit Benchmarks", "🇸🇦 Saudi Norms", "📋 Audit Log", "🔄 Reset Options"])
 
     with editor_tabs[0]:
-        _render_benchmark_edit_form(benchmarks, user_name)
+        _render_benchmark_edit_form(benchmarks, user_name, benchmark_source)
 
     with editor_tabs[1]:
-        _render_audit_log()
+        _render_saudi_norms_form(user_name)
 
     with editor_tabs[2]:
+        _render_audit_log()
+
+    with editor_tabs[3]:
         _render_reset_options(user_name)
 
 
-def _render_benchmark_edit_form(benchmarks: Dict, user_name: str):
-    """Render the benchmark editing form."""
+def _render_benchmark_edit_form(benchmarks: Dict, user_name: str, source: str = "VALD International Norms"):
+    """Render the benchmark editing form for VALD or Saudi norms."""
+
+    # Show which source is being edited
+    if source == "Saudi Population Norms":
+        st.info("🇸🇦 Editing **Saudi Population Norms** - Go to the Saudi Norms tab for dedicated Saudi benchmark entry")
+        return
 
     # Select test type to edit
     test_types = list(benchmarks.keys())
@@ -700,6 +727,284 @@ def _render_reset_options(user_name: str):
                     st.rerun()
             else:
                 st.error("Please provide a reason for the reset")
+
+
+# ============================================================================
+# SAUDI POPULATION NORMS
+# ============================================================================
+
+def load_saudi_norms() -> Dict:
+    """Load Saudi population norms from file."""
+    ensure_data_dir()
+
+    if SAUDI_NORMS_FILE.exists():
+        try:
+            with open(SAUDI_NORMS_FILE, 'r') as f:
+                return json.load(f)
+        except (json.JSONDecodeError, IOError):
+            return {}
+
+    return {}
+
+
+def save_saudi_norms(norms: Dict, user: str, reason: str) -> bool:
+    """
+    Save Saudi population norms to file with audit logging.
+
+    Args:
+        norms: The Saudi norms data to save
+        user: Username of person making the change
+        reason: Reason for the change
+
+    Returns:
+        True if successful
+    """
+    ensure_data_dir()
+
+    try:
+        with open(SAUDI_NORMS_FILE, 'w') as f:
+            json.dump(norms, f, indent=2)
+
+        log_change(user, "SAUDI_NORMS_UPDATE", norms, reason)
+        return True
+    except IOError as e:
+        st.error(f"Failed to save Saudi norms: {e}")
+        return False
+
+
+def _render_saudi_norms_form(user_name: str):
+    """Render the Saudi Population Norms entry form for S&C staff."""
+
+    st.markdown("""
+    <div style="background: linear-gradient(135deg, #007167 0%, #005a51 100%);
+                padding: 0.75rem 1rem; border-radius: 8px; margin-bottom: 1rem;">
+        <h4 style="color: white; margin: 0;">🇸🇦 Saudi Population Benchmarks</h4>
+        <p style="color: rgba(255,255,255,0.85); margin: 0.25rem 0 0 0; font-size: 0.9rem;">
+            Define custom benchmarks based on Saudi athlete population data
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.caption("These benchmarks are separate from VALD international norms and allow S&C staff to set population-specific standards for Saudi athletes.")
+
+    # Load existing Saudi norms
+    saudi_norms = load_saudi_norms()
+
+    # Test type selection
+    test_types = {
+        "CMJ": "Counter Movement Jump",
+        "IMTP": "Isometric Mid-Thigh Pull",
+        "NordBord": "Nordic Hamstring",
+        "DJ": "Drop Jump",
+        "SLISOSQT": "Single Leg Isometric Squat",
+        "SLIMTP": "Single Leg Isometric Mid-Thigh Pull"
+    }
+
+    selected_test = st.selectbox(
+        "Select Test Type:",
+        list(test_types.keys()),
+        format_func=lambda x: test_types.get(x, x),
+        key="saudi_norms_test_select"
+    )
+
+    # Define metrics for each test type
+    test_metrics = {
+        "CMJ": [
+            {"key": "jump_height", "name": "Jump Height", "unit": "cm", "help": "Impulse-momentum derived jump height"},
+            {"key": "peak_power", "name": "Relative Peak Power", "unit": "W/kg", "help": "Peak power normalized to body mass"},
+            {"key": "rsi_mod", "name": "RSI-modified", "unit": "", "help": "Reactive Strength Index (modified)"}
+        ],
+        "IMTP": [
+            {"key": "peak_force", "name": "Relative Peak Force", "unit": "N/kg", "help": "Peak force normalized to body mass"},
+            {"key": "rfd_200", "name": "RFD 0-200ms", "unit": "N/s", "help": "Rate of force development in first 200ms"}
+        ],
+        "NordBord": [
+            {"key": "max_force", "name": "Max Force (per leg)", "unit": "N", "help": "Peak hamstring force"},
+            {"key": "injury_threshold", "name": "Injury Risk Threshold", "unit": "N", "help": "Below this = increased injury risk (research suggests ~337N)"}
+        ],
+        "DJ": [
+            {"key": "rsi", "name": "Reactive Strength Index", "unit": "", "help": "Jump height / contact time"},
+            {"key": "contact_time", "name": "Ground Contact Time", "unit": "ms", "help": "Time in contact with ground (lower is better)"}
+        ],
+        "SLISOSQT": [
+            {"key": "peak_force", "name": "Peak Force (per leg)", "unit": "N", "help": "Single leg isometric squat force"}
+        ],
+        "SLIMTP": [
+            {"key": "peak_force", "name": "Peak Force (per leg)", "unit": "N", "help": "Single leg mid-thigh pull force"}
+        ]
+    }
+
+    metrics = test_metrics.get(selected_test, [])
+
+    if not metrics:
+        st.info("No metrics defined for this test type")
+        return
+
+    # Get existing values for this test
+    existing_test_data = saudi_norms.get(selected_test, {})
+
+    st.markdown(f"### {test_types[selected_test]} - Saudi Benchmarks")
+    st.markdown("Enter benchmark values for **Elite**, **Good**, **Average**, and **Below Average** levels.")
+
+    # Store updated values
+    updated_norms = {}
+
+    for metric in metrics:
+        metric_key = metric["key"]
+        metric_name = metric["name"]
+        unit = metric["unit"]
+        help_text = metric.get("help", "")
+
+        existing_metric = existing_test_data.get(metric_key, {})
+
+        st.markdown(f"**{metric_name}** {f'({unit})' if unit else ''}")
+        if help_text:
+            st.caption(help_text)
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+            st.markdown("**Male**")
+            male_existing = existing_metric.get("male", {})
+
+            male_elite = st.number_input(
+                "Elite:",
+                value=float(male_existing.get("elite", 0.0)),
+                key=f"saudi_{selected_test}_{metric_key}_male_elite",
+                step=1.0 if unit in ["N", "N/s", "ms"] else 0.1
+            )
+            male_good = st.number_input(
+                "Good:",
+                value=float(male_existing.get("good", 0.0)),
+                key=f"saudi_{selected_test}_{metric_key}_male_good",
+                step=1.0 if unit in ["N", "N/s", "ms"] else 0.1
+            )
+            male_avg = st.number_input(
+                "Average:",
+                value=float(male_existing.get("average", 0.0)),
+                key=f"saudi_{selected_test}_{metric_key}_male_average",
+                step=1.0 if unit in ["N", "N/s", "ms"] else 0.1
+            )
+            male_below = st.number_input(
+                "Below Average:",
+                value=float(male_existing.get("below_average", 0.0)),
+                key=f"saudi_{selected_test}_{metric_key}_male_below",
+                step=1.0 if unit in ["N", "N/s", "ms"] else 0.1
+            )
+
+        with col2:
+            st.markdown("**Female**")
+            female_existing = existing_metric.get("female", {})
+
+            female_elite = st.number_input(
+                "Elite:",
+                value=float(female_existing.get("elite", 0.0)),
+                key=f"saudi_{selected_test}_{metric_key}_female_elite",
+                step=1.0 if unit in ["N", "N/s", "ms"] else 0.1
+            )
+            female_good = st.number_input(
+                "Good:",
+                value=float(female_existing.get("good", 0.0)),
+                key=f"saudi_{selected_test}_{metric_key}_female_good",
+                step=1.0 if unit in ["N", "N/s", "ms"] else 0.1
+            )
+            female_avg = st.number_input(
+                "Average:",
+                value=float(female_existing.get("average", 0.0)),
+                key=f"saudi_{selected_test}_{metric_key}_female_average",
+                step=1.0 if unit in ["N", "N/s", "ms"] else 0.1
+            )
+            female_below = st.number_input(
+                "Below Average:",
+                value=float(female_existing.get("below_average", 0.0)),
+                key=f"saudi_{selected_test}_{metric_key}_female_below",
+                step=1.0 if unit in ["N", "N/s", "ms"] else 0.1
+            )
+
+        updated_norms[metric_key] = {
+            "name": metric_name,
+            "unit": unit,
+            "male": {
+                "elite": male_elite,
+                "good": male_good,
+                "average": male_avg,
+                "below_average": male_below
+            },
+            "female": {
+                "elite": female_elite,
+                "good": female_good,
+                "average": female_avg,
+                "below_average": female_below
+            }
+        }
+
+        st.divider()
+
+    # Asymmetry threshold for applicable tests
+    if selected_test in ["NordBord", "SLISOSQT", "SLIMTP"]:
+        existing_asym = existing_test_data.get("asymmetry_threshold", 10.0 if selected_test != "NordBord" else 15.0)
+        asym_threshold = st.number_input(
+            "Asymmetry Threshold (%):",
+            value=float(existing_asym),
+            min_value=0.0,
+            max_value=50.0,
+            step=1.0,
+            key=f"saudi_{selected_test}_asymmetry",
+            help="Flag athletes with left/right asymmetry above this percentage"
+        )
+        updated_norms["asymmetry_threshold"] = asym_threshold
+
+    # Save button
+    st.markdown("---")
+    col1, col2 = st.columns([2, 1])
+
+    with col1:
+        change_reason = st.text_input(
+            "Reason for change:",
+            placeholder="e.g., Based on Saudi national team testing data / Updated from recent assessments",
+            key="saudi_norms_change_reason"
+        )
+
+    with col2:
+        st.write("")
+        st.write("")
+        if st.button("💾 Save Saudi Norms", type="primary", key="save_saudi_norms"):
+            if not change_reason:
+                st.error("Please provide a reason for the change (required for audit trail)")
+            else:
+                # Update the saudi norms with the new test data
+                saudi_norms[selected_test] = updated_norms
+
+                if save_saudi_norms(saudi_norms, user_name, f"{selected_test}: {change_reason}"):
+                    st.success(f"✅ Saudi benchmarks for {test_types[selected_test]} saved successfully!")
+                    st.rerun()
+
+    # Show current Saudi norms summary
+    st.markdown("---")
+    st.markdown("### Current Saudi Population Norms")
+
+    if saudi_norms:
+        for test_key, test_data in saudi_norms.items():
+            if test_key in test_types:
+                with st.expander(f"📊 {test_types[test_key]}", expanded=False):
+                    for metric_key, metric_data in test_data.items():
+                        if isinstance(metric_data, dict) and "male" in metric_data:
+                            st.markdown(f"**{metric_data.get('name', metric_key)}** ({metric_data.get('unit', '')})")
+                            col1, col2 = st.columns(2)
+                            with col1:
+                                st.caption("Male")
+                                male = metric_data.get("male", {})
+                                st.text(f"Elite: {male.get('elite', '-')}")
+                                st.text(f"Good: {male.get('good', '-')}")
+                                st.text(f"Average: {male.get('average', '-')}")
+                            with col2:
+                                st.caption("Female")
+                                female = metric_data.get("female", {})
+                                st.text(f"Elite: {female.get('elite', '-')}")
+                                st.text(f"Good: {female.get('good', '-')}")
+                                st.text(f"Average: {female.get('average', '-')}")
+    else:
+        st.info("No Saudi population norms defined yet. Use the form above to add benchmarks.")
 
 
 def get_benchmark_status(
