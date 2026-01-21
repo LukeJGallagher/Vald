@@ -1,0 +1,1483 @@
+"""
+S&C Diagnostics Canvas Module
+
+Provides comprehensive S&C testing visualizations:
+- Group Ranked Bar Charts with squad average and benchmark lines
+- Individual Line Charts with squad average and multi-athlete selection
+- Unilateral Side-by-Side Charts with asymmetry flagging
+- Multi-Line Strength RM Charts
+
+Test Types:
+- Tier 1: IMTP, CMJ, 6 Minute Aerobic
+- Tier 2: SL ISO Squat, Strength RM, SL CMJ, Broad Jump, 10:5 Hop, Peak Power, Repeat Power, Glycolytic Power
+"""
+
+import streamlit as st
+import pandas as pd
+import numpy as np
+import plotly.graph_objects as go
+import plotly.express as px
+from plotly.subplots import make_subplots
+from typing import Dict, List, Optional, Tuple
+from datetime import datetime, timedelta
+
+# Team Saudi Brand Colors
+TEAL_PRIMARY = '#007167'
+GOLD_ACCENT = '#a08e66'
+TEAL_DARK = '#005a51'
+TEAL_LIGHT = '#009688'
+GRAY_BLUE = '#78909C'
+CORAL_ACCENT = '#FF6B6B'
+
+# Chart colors for multiple athletes/lines
+MULTI_LINE_COLORS = [
+    '#007167',  # Teal
+    '#FF6B6B',  # Coral
+    '#0077B6',  # Blue
+    '#a08e66',  # Gold
+    '#9C27B0',  # Purple
+    '#FF9800',  # Orange
+]
+
+# Squad average styling
+SQUAD_AVG_COLOR = '#FF9800'  # Orange dashed
+BENCHMARK_COLOR = '#0077B6'  # Blue dashed
+
+# Test configurations
+TEST_CONFIG = {
+    'IMTP': {
+        'tier': 1,
+        'group_chart': 'ranked_bar',
+        'individual_chart': 'line_squad_avg',
+        'metric1': 'Peak Force / BM_Trial',
+        'metric1_name': 'Relative Peak Force',
+        'unit1': 'N/Kg',
+        'metric2': None,
+        'source': 'VALD',
+        'test_type': 'IMTP'
+    },
+    'CMJ': {
+        'tier': 1,
+        'group_chart': 'ranked_bar',
+        'individual_chart': 'line_squad_avg',
+        'metric1': 'Peak Power / BM_Trial',
+        'metric1_name': 'Relative Peak Power',
+        'unit1': 'W/Kg',
+        'metric2': 'Jump Height (Imp-Mom)_Trial',
+        'metric2_name': 'Height (Impulse-Mom)',
+        'unit2': 'cm',
+        'metric2_multiplier': 100,  # m to cm
+        'source': 'VALD',
+        'test_type': 'CMJ'
+    },
+    'SL_ISO_Squat': {
+        'tier': 2,
+        'group_chart': 'ranked_side_by_side',
+        'individual_chart': 'dual_line_diff',
+        'metric1_left': 'Peak Force / BM_Left',
+        'metric1_right': 'Peak Force / BM_Right',
+        'metric1_name': 'Relative Peak Force',
+        'unit1': 'N/Kg',
+        'metric2': 'asymmetry',
+        'metric2_name': '% Difference',
+        'unit2': '%',
+        'source': 'VALD',
+        'test_type': 'SL ISO Squat'
+    },
+    'SL_IMTP': {
+        'tier': 2,
+        'group_chart': 'ranked_side_by_side',
+        'individual_chart': 'dual_line_diff',
+        'metric1_left': 'Peak Force / BM_Left',
+        'metric1_right': 'Peak Force / BM_Right',
+        'metric1_name': 'Relative Peak Force',
+        'unit1': 'N/Kg',
+        'metric2': 'asymmetry',
+        'metric2_name': '% Difference',
+        'unit2': '%',
+        'source': 'VALD',
+        'test_type': 'SL IMTP'
+    },
+    'SL_CMJ': {
+        'tier': 2,
+        'group_chart': 'ranked_side_by_side',
+        'individual_chart': 'dual_line_diff',
+        'metric1_left': 'Peak Power / BM_Left',
+        'metric1_right': 'Peak Power / BM_Right',
+        'metric1_name': 'Relative Peak Power',
+        'unit1': 'W/Kg',
+        'metric2': 'Jump Height (Imp-Mom)_Trial',
+        'metric2_name': 'Height (Impulse-Mom)',
+        'unit2': 'cm',
+        'metric2_multiplier': 100,
+        'source': 'VALD',
+        'test_type': 'SL CMJ'
+    },
+    '10_5_Hop': {
+        'tier': 2,
+        'group_chart': 'ranked_bar',
+        'individual_chart': 'line_squad_avg',
+        'metric1': 'RSI-modified_Trial',
+        'metric1_name': 'RSI',
+        'unit1': '',
+        'metric2': None,
+        'source': 'VALD',
+        'test_type': 'Hop Test'
+    },
+    'NordBord': {
+        'tier': 2,
+        'group_chart': 'ranked_side_by_side',
+        'individual_chart': 'dual_line_diff',
+        'metric1_left': 'leftMaxForce',
+        'metric1_right': 'rightMaxForce',
+        'metric1_name': 'Max Force',
+        'unit1': 'N',
+        'metric2': 'asymmetry',
+        'metric2_name': '% Difference',
+        'unit2': '%',
+        'source': 'VALD',
+        'data_source': 'nordbord'
+    }
+}
+
+# Default benchmarks (can be customized per group)
+DEFAULT_BENCHMARKS = {
+    'IMTP': {'benchmark': 35.0, 'unit': 'N/Kg'},
+    'CMJ': {'benchmark': 50.0, 'unit': 'W/Kg'},
+    'SL_ISO_Squat': {'benchmark': 20.0, 'unit': 'N/Kg'},
+    'SL_IMTP': {'benchmark': 20.0, 'unit': 'N/Kg'},
+    'SL_CMJ': {'benchmark': 25.0, 'unit': 'W/Kg'},
+    '10_5_Hop': {'benchmark': 2.0, 'unit': 'RSI'},
+    'NordBord': {'benchmark': 337.0, 'unit': 'N'},  # Injury risk threshold
+    'Broad_Jump': {'benchmark': 250.0, 'unit': 'cm'},
+    'Strength_RM': {'benchmark': 1.5, 'unit': 'kg/BM'},
+}
+
+
+def render_filters(df: pd.DataFrame, key_prefix: str = "snc") -> Tuple[pd.DataFrame, str, str]:
+    """
+    Render gender and date filters for S&C diagnostics.
+    Returns filtered dataframe, selected gender, and date range.
+    """
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        # Sport/Group filter
+        sports = ['All']
+        if 'athlete_sport' in df.columns:
+            sports += sorted([s for s in df['athlete_sport'].dropna().unique()])
+        selected_sport = st.selectbox("Sport/Group:", sports, key=f"{key_prefix}_sport")
+
+    with col2:
+        # Gender filter
+        genders = ['All']
+        if 'athlete_sex' in df.columns:
+            genders += sorted([g for g in df['athlete_sex'].dropna().unique() if g])
+        selected_gender = st.selectbox("Gender:", genders, key=f"{key_prefix}_gender")
+
+    with col3:
+        # Date filter
+        date_options = ['Most Recent', 'Last 7 Days', 'Last 30 Days', 'Last 90 Days', 'All Time', 'Custom Range']
+        selected_date = st.selectbox("Date Range:", date_options, key=f"{key_prefix}_date")
+
+    # Apply filters
+    filtered_df = df.copy()
+
+    if selected_sport != 'All' and 'athlete_sport' in filtered_df.columns:
+        filtered_df = filtered_df[filtered_df['athlete_sport'] == selected_sport]
+
+    if selected_gender != 'All' and 'athlete_sex' in filtered_df.columns:
+        filtered_df = filtered_df[filtered_df['athlete_sex'] == selected_gender]
+
+    # Date filtering
+    if 'recordedDateUtc' in filtered_df.columns:
+        filtered_df['recordedDateUtc'] = pd.to_datetime(filtered_df['recordedDateUtc'], errors='coerce')
+
+        if selected_date == 'Most Recent':
+            # Get most recent test per athlete
+            if 'Name' in filtered_df.columns:
+                idx = filtered_df.groupby('Name')['recordedDateUtc'].idxmax()
+                filtered_df = filtered_df.loc[idx]
+        elif selected_date == 'Last 7 Days':
+            cutoff = datetime.now() - timedelta(days=7)
+            filtered_df = filtered_df[filtered_df['recordedDateUtc'] >= cutoff]
+        elif selected_date == 'Last 30 Days':
+            cutoff = datetime.now() - timedelta(days=30)
+            filtered_df = filtered_df[filtered_df['recordedDateUtc'] >= cutoff]
+        elif selected_date == 'Last 90 Days':
+            cutoff = datetime.now() - timedelta(days=90)
+            filtered_df = filtered_df[filtered_df['recordedDateUtc'] >= cutoff]
+
+    return filtered_df, selected_sport, selected_gender
+
+
+def render_benchmark_input(test_key: str, key_prefix: str = "snc") -> float:
+    """Render inline benchmark input field."""
+    default = DEFAULT_BENCHMARKS.get(test_key, {}).get('benchmark', 0)
+    unit = DEFAULT_BENCHMARKS.get(test_key, {}).get('unit', '')
+
+    benchmark = st.number_input(
+        f"Benchmark ({unit}):",
+        value=float(default),
+        step=0.5,
+        key=f"{key_prefix}_{test_key}_benchmark"
+    )
+    return benchmark
+
+
+def create_ranked_bar_chart(
+    df: pd.DataFrame,
+    metric_col: str,
+    metric_name: str,
+    unit: str,
+    benchmark: float = None,
+    title: str = None
+) -> go.Figure:
+    """
+    Create a vertical ranked bar chart with squad average and benchmark lines.
+
+    Like the PowerBI example: bars sorted by value, with horizontal reference lines.
+    """
+    if 'Name' not in df.columns or metric_col not in df.columns:
+        return None
+
+    # Get data and sort
+    plot_df = df[['Name', metric_col]].dropna()
+    if plot_df.empty:
+        return None
+
+    plot_df = plot_df.sort_values(metric_col, ascending=False)
+
+    # Calculate squad average
+    squad_avg = plot_df[metric_col].mean()
+
+    # Create figure
+    fig = go.Figure()
+
+    # Add bars
+    fig.add_trace(go.Bar(
+        x=plot_df['Name'],
+        y=plot_df[metric_col],
+        marker_color=TEAL_PRIMARY,
+        text=[f"{v:.1f}" for v in plot_df[metric_col]],
+        textposition='outside',
+        textfont=dict(size=10),
+        name='Athletes'
+    ))
+
+    # Add squad average line (green dashed)
+    fig.add_hline(
+        y=squad_avg,
+        line_dash="dash",
+        line_color=SQUAD_AVG_COLOR,
+        line_width=2,
+        annotation_text=f"Squad Avg: {squad_avg:.2f}",
+        annotation_position="right",
+        annotation_font_color=SQUAD_AVG_COLOR
+    )
+
+    # Add benchmark line (blue dashed) if provided
+    if benchmark and benchmark > 0:
+        fig.add_hline(
+            y=benchmark,
+            line_dash="dash",
+            line_color=BENCHMARK_COLOR,
+            line_width=2,
+            annotation_text=f"Benchmark: {benchmark:.2f}",
+            annotation_position="right",
+            annotation_font_color=BENCHMARK_COLOR
+        )
+
+    # Update layout
+    fig.update_layout(
+        title=title or f"{metric_name}",
+        xaxis_title="",
+        yaxis_title=f"{metric_name} ({unit})" if unit else metric_name,
+        plot_bgcolor='white',
+        paper_bgcolor='white',
+        font=dict(family='Inter, sans-serif', color='#333'),
+        height=400,
+        margin=dict(l=10, r=100, t=50, b=100),
+        showlegend=False,
+        xaxis=dict(tickangle=-45)
+    )
+
+    fig.update_xaxes(showgrid=False)
+    fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
+
+    return fig
+
+
+def create_ranked_side_by_side_chart(
+    df: pd.DataFrame,
+    left_col: str,
+    right_col: str,
+    metric_name: str,
+    unit: str,
+    benchmark: float = None,
+    title: str = None
+) -> go.Figure:
+    """
+    Create a horizontal side-by-side bar chart for unilateral tests (L vs R).
+    Like the NordBord example with left/right bars and injury risk line.
+    """
+    if 'Name' not in df.columns:
+        return None
+
+    # Check columns exist
+    if left_col not in df.columns or right_col not in df.columns:
+        return None
+
+    # Get data
+    plot_df = df[['Name', left_col, right_col]].dropna()
+    if plot_df.empty:
+        return None
+
+    # Calculate average for sorting
+    plot_df['avg'] = (plot_df[left_col] + plot_df[right_col]) / 2
+    plot_df = plot_df.sort_values('avg', ascending=True)
+
+    # Create figure
+    fig = go.Figure()
+
+    # Add left bars
+    fig.add_trace(go.Bar(
+        y=plot_df['Name'],
+        x=plot_df[left_col],
+        orientation='h',
+        marker_color=TEAL_PRIMARY,
+        text=[f"{v:.0f}" for v in plot_df[left_col]],
+        textposition='auto',
+        name='Left'
+    ))
+
+    # Add right bars
+    fig.add_trace(go.Bar(
+        y=plot_df['Name'],
+        x=plot_df[right_col],
+        orientation='h',
+        marker_color=CORAL_ACCENT,
+        text=[f"{v:.0f}" for v in plot_df[right_col]],
+        textposition='auto',
+        name='Right'
+    ))
+
+    # Add benchmark line if provided
+    if benchmark and benchmark > 0:
+        fig.add_vline(
+            x=benchmark,
+            line_dash="dash",
+            line_color=BENCHMARK_COLOR,
+            line_width=2,
+            annotation_text=f"{benchmark:.0f} {unit}",
+            annotation_position="top"
+        )
+
+    # Update layout
+    fig.update_layout(
+        title=title or f"{metric_name} - Left & Right",
+        xaxis_title=f"{metric_name} ({unit})" if unit else metric_name,
+        yaxis_title="",
+        plot_bgcolor='white',
+        paper_bgcolor='white',
+        font=dict(family='Inter, sans-serif', color='#333'),
+        height=max(300, len(plot_df) * 50),
+        margin=dict(l=10, r=10, t=50, b=30),
+        barmode='group',
+        legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1)
+    )
+
+    fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
+    fig.update_yaxes(showgrid=False)
+
+    return fig
+
+
+def create_asymmetry_table(
+    df: pd.DataFrame,
+    left_col: str,
+    right_col: str,
+    unit: str = ''
+) -> pd.DataFrame:
+    """Create asymmetry status table for unilateral tests."""
+    if 'Name' not in df.columns:
+        return pd.DataFrame()
+
+    if left_col not in df.columns or right_col not in df.columns:
+        return pd.DataFrame()
+
+    table_df = df[['Name', left_col, right_col]].dropna().copy()
+    if table_df.empty:
+        return pd.DataFrame()
+
+    # Calculate asymmetry
+    table_df['Asymmetry'] = abs(table_df[left_col] - table_df[right_col]) / ((table_df[left_col] + table_df[right_col]) / 2) * 100
+
+    # Determine status
+    def get_status(asym):
+        if asym <= 5:
+            return '🟢 Good'
+        elif asym <= 10:
+            return '🟡 Monitor'
+        else:
+            return '🔴 Flag'
+
+    table_df['Status'] = table_df['Asymmetry'].apply(get_status)
+
+    # Format columns
+    table_df = table_df.rename(columns={
+        'Name': 'Athlete',
+        left_col: f'Left ({unit})',
+        right_col: f'Right ({unit})'
+    })
+
+    table_df['Asymmetry'] = table_df['Asymmetry'].apply(lambda x: f"{x:.1f}%")
+
+    return table_df[['Athlete', f'Left ({unit})', f'Right ({unit})', 'Asymmetry', 'Status']]
+
+
+# Stacked bar colors for quadrant tests (4 directions)
+QUADRANT_COLORS = {
+    'Supine': '#007167',      # Teal
+    'Prone': '#FF9800',       # Orange
+    'Lateral_Left': '#0077B6', # Blue
+    'Lateral_Right': '#a08e66', # Gold
+    'Flexion': '#007167',
+    'Extension': '#FF9800',
+    'Left': '#0077B6',
+    'Right': '#a08e66',
+    'IR': '#007167',          # Internal Rotation
+    'ER': '#FF9800',          # External Rotation
+    'Adduction': '#0077B6',
+    'Abduction': '#a08e66',
+}
+
+
+def create_stacked_quadrant_chart(
+    df: pd.DataFrame,
+    metric_cols: Dict[str, str],
+    metric_name: str,
+    unit: str,
+    title: str = None,
+    vertical: bool = True
+) -> go.Figure:
+    """
+    Create a stacked multi-variable bar chart for quadrant tests.
+
+    Args:
+        df: DataFrame with athlete data
+        metric_cols: Dict mapping display names to column names
+                    e.g., {'Supine': 'supine_col', 'Prone': 'prone_col', ...}
+        metric_name: Name of the metric being measured
+        unit: Unit of measurement
+        title: Chart title
+        vertical: If True, athletes on X-axis (vertical bars). If False, horizontal bars.
+    """
+    if 'Name' not in df.columns:
+        return None
+
+    # Check that at least some metric columns exist
+    available_cols = {k: v for k, v in metric_cols.items() if v in df.columns}
+    if not available_cols:
+        return None
+
+    # Get data
+    cols_to_use = ['Name'] + list(available_cols.values())
+    plot_df = df[cols_to_use].dropna(subset=list(available_cols.values()), how='all')
+    if plot_df.empty:
+        return None
+
+    # Calculate total for sorting
+    plot_df['total'] = plot_df[list(available_cols.values())].sum(axis=1)
+    plot_df = plot_df.sort_values('total', ascending=not vertical)
+
+    fig = go.Figure()
+
+    # Add stacked bars for each metric
+    for display_name, col_name in available_cols.items():
+        color = QUADRANT_COLORS.get(display_name, TEAL_PRIMARY)
+
+        if vertical:
+            fig.add_trace(go.Bar(
+                x=plot_df['Name'],
+                y=plot_df[col_name],
+                name=display_name,
+                marker_color=color,
+                text=[f"{v:.0f}" for v in plot_df[col_name]],
+                textposition='inside',
+                textfont=dict(size=9, color='white')
+            ))
+        else:
+            fig.add_trace(go.Bar(
+                y=plot_df['Name'],
+                x=plot_df[col_name],
+                name=display_name,
+                marker_color=color,
+                orientation='h',
+                text=[f"{v:.0f}" for v in plot_df[col_name]],
+                textposition='inside',
+                textfont=dict(size=9, color='white')
+            ))
+
+    # Update layout
+    if vertical:
+        fig.update_layout(
+            barmode='stack',
+            title=title or f"{metric_name} - Quadrant Profile",
+            xaxis_title="",
+            yaxis_title=f"{metric_name} ({unit})" if unit else metric_name,
+            xaxis=dict(tickangle=-45),
+            height=400,
+        )
+    else:
+        fig.update_layout(
+            barmode='stack',
+            title=title or f"{metric_name} - Quadrant Profile",
+            xaxis_title=f"{metric_name} ({unit})" if unit else metric_name,
+            yaxis_title="",
+            height=max(300, len(plot_df) * 40),
+        )
+
+    fig.update_layout(
+        plot_bgcolor='white',
+        paper_bgcolor='white',
+        font=dict(family='Inter, sans-serif', color='#333'),
+        margin=dict(l=10, r=10, t=50, b=100 if vertical else 30),
+        legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1)
+    )
+
+    fig.update_xaxes(showgrid=False if vertical else True, gridwidth=1, gridcolor='lightgray')
+    fig.update_yaxes(showgrid=True if vertical else False, gridwidth=1, gridcolor='lightgray')
+
+    return fig
+
+
+def create_quadrant_summary_table(
+    df: pd.DataFrame,
+    metric_cols: Dict[str, str],
+    unit: str = ''
+) -> pd.DataFrame:
+    """
+    Create summary table for quadrant tests with % differences and flagging.
+    Compares opposite directions (e.g., Left vs Right, Flexion vs Extension).
+    """
+    if 'Name' not in df.columns:
+        return pd.DataFrame()
+
+    available_cols = {k: v for k, v in metric_cols.items() if v in df.columns}
+    if len(available_cols) < 2:
+        return pd.DataFrame()
+
+    cols_to_use = ['Name'] + list(available_cols.values())
+    table_df = df[cols_to_use].dropna(subset=list(available_cols.values()), how='all').copy()
+    if table_df.empty:
+        return pd.DataFrame()
+
+    # Rename columns for display
+    rename_map = {'Name': 'Athlete'}
+    for display_name, col_name in available_cols.items():
+        rename_map[col_name] = f"{display_name} ({unit})"
+
+    table_df = table_df.rename(columns=rename_map)
+
+    # Calculate asymmetries between opposing pairs
+    # Common pairs: Left/Right, Flexion/Extension, IR/ER, Adduction/Abduction
+    opposing_pairs = [
+        ('Lateral_Left', 'Lateral_Right'),
+        ('Left', 'Right'),
+        ('Flexion', 'Extension'),
+        ('Supine', 'Prone'),
+        ('IR', 'ER'),
+        ('Adduction', 'Abduction'),
+    ]
+
+    for pair in opposing_pairs:
+        if pair[0] in available_cols and pair[1] in available_cols:
+            col1 = f"{pair[0]} ({unit})"
+            col2 = f"{pair[1]} ({unit})"
+
+            if col1 in table_df.columns and col2 in table_df.columns:
+                # Calculate % difference
+                avg_val = (table_df[col1] + table_df[col2]) / 2
+                diff = abs(table_df[col1] - table_df[col2]) / avg_val * 100
+                table_df[f'{pair[0]}/{pair[1]} Diff'] = diff.apply(lambda x: f"{x:.1f}%")
+
+                # Status flag
+                def get_status(val):
+                    if val <= 10:
+                        return '🟢'
+                    elif val <= 20:
+                        return '🟡'
+                    else:
+                        return '🔴'
+
+                table_df[f'{pair[0]}/{pair[1]} Status'] = diff.apply(get_status)
+
+    # Format numeric columns
+    for col in table_df.columns:
+        if f'({unit})' in col and 'Diff' not in col and 'Status' not in col:
+            table_df[col] = table_df[col].apply(lambda x: f"{x:.1f}" if pd.notna(x) else "")
+
+    return table_df
+
+
+def create_stacked_individual_trend_chart(
+    df: pd.DataFrame,
+    athlete_name: str,
+    metric_cols: Dict[str, str],
+    metric_name: str,
+    unit: str,
+    title: str = None
+) -> go.Figure:
+    """
+    Create stacked bar chart showing quadrant test progression over time for an individual.
+    X-axis: dates, Y-axis: stacked values for each direction.
+    """
+    if 'Name' not in df.columns or 'recordedDateUtc' not in df.columns:
+        return None
+
+    available_cols = {k: v for k, v in metric_cols.items() if v in df.columns}
+    if not available_cols:
+        return None
+
+    # Filter for athlete
+    athlete_df = df[df['Name'] == athlete_name].copy()
+    if athlete_df.empty:
+        return None
+
+    # Sort by date
+    athlete_df['recordedDateUtc'] = pd.to_datetime(athlete_df['recordedDateUtc'])
+    athlete_df = athlete_df.sort_values('recordedDateUtc')
+
+    # Format dates for display
+    athlete_df['date_label'] = athlete_df['recordedDateUtc'].dt.strftime('%d %b %Y')
+
+    fig = go.Figure()
+
+    # Add stacked bars for each metric
+    for display_name, col_name in available_cols.items():
+        if col_name not in athlete_df.columns:
+            continue
+
+        color = QUADRANT_COLORS.get(display_name, TEAL_PRIMARY)
+
+        fig.add_trace(go.Bar(
+            x=athlete_df['date_label'],
+            y=athlete_df[col_name],
+            name=display_name,
+            marker_color=color,
+            text=[f"{v:.0f}" for v in athlete_df[col_name]],
+            textposition='inside',
+            textfont=dict(size=9, color='white')
+        ))
+
+    fig.update_layout(
+        barmode='stack',
+        title=title or f"{athlete_name} - {metric_name} Progression",
+        xaxis_title="Test Date",
+        yaxis_title=f"{metric_name} ({unit})" if unit else metric_name,
+        plot_bgcolor='white',
+        paper_bgcolor='white',
+        font=dict(family='Inter, sans-serif', color='#333'),
+        height=400,
+        margin=dict(l=10, r=10, t=50, b=30),
+        legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1)
+    )
+
+    fig.update_xaxes(showgrid=False)
+    fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
+
+    return fig
+
+
+def create_individual_line_chart(
+    df: pd.DataFrame,
+    selected_athletes: List[str],
+    metric_col: str,
+    metric_name: str,
+    unit: str,
+    show_squad_avg: bool = True,
+    title: str = None
+) -> go.Figure:
+    """
+    Create individual line chart with multiple athlete selection and squad average.
+    """
+    if 'Name' not in df.columns or 'recordedDateUtc' not in df.columns:
+        return None
+
+    if metric_col not in df.columns:
+        return None
+
+    fig = go.Figure()
+
+    # Add line for each selected athlete
+    for i, athlete in enumerate(selected_athletes):
+        athlete_df = df[df['Name'] == athlete].sort_values('recordedDateUtc')
+        if athlete_df.empty:
+            continue
+
+        color = MULTI_LINE_COLORS[i % len(MULTI_LINE_COLORS)]
+
+        fig.add_trace(go.Scatter(
+            x=athlete_df['recordedDateUtc'],
+            y=athlete_df[metric_col],
+            mode='markers+lines',
+            marker=dict(size=8, color=color),
+            line=dict(color=color, width=2),
+            name=athlete
+        ))
+
+    # Add squad average line if requested
+    if show_squad_avg:
+        # Calculate squad average per date
+        squad_avg = df.groupby('recordedDateUtc')[metric_col].mean().reset_index()
+        squad_avg = squad_avg.sort_values('recordedDateUtc')
+
+        fig.add_trace(go.Scatter(
+            x=squad_avg['recordedDateUtc'],
+            y=squad_avg[metric_col],
+            mode='lines',
+            line=dict(color=SQUAD_AVG_COLOR, width=2, dash='dash'),
+            name='Squad Average'
+        ))
+
+    # Update layout
+    fig.update_layout(
+        title=title or f"{metric_name} - Individual Trends",
+        xaxis_title="Date",
+        yaxis_title=f"{metric_name} ({unit})" if unit else metric_name,
+        plot_bgcolor='white',
+        paper_bgcolor='white',
+        font=dict(family='Inter, sans-serif', color='#333'),
+        height=400,
+        margin=dict(l=10, r=10, t=50, b=30),
+        legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1),
+        hovermode='x unified'
+    )
+
+    fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
+    fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
+
+    return fig
+
+
+def create_dual_line_chart(
+    df: pd.DataFrame,
+    selected_athletes: List[str],
+    left_col: str,
+    right_col: str,
+    metric_name: str,
+    unit: str,
+    show_squad_avg: bool = True,
+    title: str = None
+) -> go.Figure:
+    """
+    Create dual line chart for unilateral tests (Left vs Right over time).
+    """
+    if 'Name' not in df.columns or 'recordedDateUtc' not in df.columns:
+        return None
+
+    fig = go.Figure()
+
+    # For single athlete, show L/R lines
+    if len(selected_athletes) == 1:
+        athlete = selected_athletes[0]
+        athlete_df = df[df['Name'] == athlete].sort_values('recordedDateUtc')
+
+        if not athlete_df.empty and left_col in athlete_df.columns and right_col in athlete_df.columns:
+            # Left line
+            fig.add_trace(go.Scatter(
+                x=athlete_df['recordedDateUtc'],
+                y=athlete_df[left_col],
+                mode='markers+lines',
+                marker=dict(size=8, color=TEAL_PRIMARY),
+                line=dict(color=TEAL_PRIMARY, width=2),
+                name='Left'
+            ))
+
+            # Right line
+            fig.add_trace(go.Scatter(
+                x=athlete_df['recordedDateUtc'],
+                y=athlete_df[right_col],
+                mode='markers+lines',
+                marker=dict(size=8, color=CORAL_ACCENT),
+                line=dict(color=CORAL_ACCENT, width=2),
+                name='Right'
+            ))
+
+        # Add squad average if requested
+        if show_squad_avg and left_col in df.columns and right_col in df.columns:
+            df['avg_lr'] = (df[left_col] + df[right_col]) / 2
+            squad_avg = df.groupby('recordedDateUtc')['avg_lr'].mean().reset_index()
+            squad_avg = squad_avg.sort_values('recordedDateUtc')
+
+            fig.add_trace(go.Scatter(
+                x=squad_avg['recordedDateUtc'],
+                y=squad_avg['avg_lr'],
+                mode='lines',
+                line=dict(color=SQUAD_AVG_COLOR, width=2, dash='dash'),
+                name='Squad Average'
+            ))
+    else:
+        # Multiple athletes - show average of L/R for each
+        for i, athlete in enumerate(selected_athletes):
+            athlete_df = df[df['Name'] == athlete].sort_values('recordedDateUtc')
+            if athlete_df.empty:
+                continue
+
+            if left_col in athlete_df.columns and right_col in athlete_df.columns:
+                athlete_df['avg_lr'] = (athlete_df[left_col] + athlete_df[right_col]) / 2
+                color = MULTI_LINE_COLORS[i % len(MULTI_LINE_COLORS)]
+
+                fig.add_trace(go.Scatter(
+                    x=athlete_df['recordedDateUtc'],
+                    y=athlete_df['avg_lr'],
+                    mode='markers+lines',
+                    marker=dict(size=8, color=color),
+                    line=dict(color=color, width=2),
+                    name=athlete
+                ))
+
+    # Update layout
+    fig.update_layout(
+        title=title or f"{metric_name} - Left vs Right Trends",
+        xaxis_title="Date",
+        yaxis_title=f"{metric_name} ({unit})" if unit else metric_name,
+        plot_bgcolor='white',
+        paper_bgcolor='white',
+        font=dict(family='Inter, sans-serif', color='#333'),
+        height=400,
+        margin=dict(l=10, r=10, t=50, b=30),
+        legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1),
+        hovermode='x unified'
+    )
+
+    fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
+    fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
+
+    return fig
+
+
+def create_multi_line_strength_chart(
+    df: pd.DataFrame,
+    athlete_name: str,
+    exercises: List[str],
+    bodyweight_col: str = 'Bodyweight in Kilograms_Trial',
+    title: str = None
+) -> go.Figure:
+    """
+    Create multi-line chart for Strength RM progression.
+    Shows multiple lifts with relative strength labels.
+    """
+    # This would work with manual entry data
+    # Placeholder for now - needs integration with manual entry system
+
+    fig = go.Figure()
+
+    fig.update_layout(
+        title=title or "Repetition Max Strength Progression",
+        xaxis_title="Date",
+        yaxis_title="Repetition Max Load (Kg)",
+        plot_bgcolor='white',
+        paper_bgcolor='white',
+        font=dict(family='Inter, sans-serif', color='#333'),
+        height=400,
+        margin=dict(l=10, r=10, t=50, b=30)
+    )
+
+    return fig
+
+
+def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.DataFrame = None, forceframe_df: pd.DataFrame = None):
+    """
+    Main function to render the S&C Diagnostics Canvas tab.
+    """
+    st.markdown("""
+    <div style="background: linear-gradient(135deg, #007167 0%, #005a51 100%); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+        <h2 style="color: white; margin: 0;">S&C Diagnostics Canvas</h2>
+        <p style="color: rgba(255,255,255,0.9); margin: 0.5rem 0 0 0;">Comprehensive strength & conditioning testing analysis</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Test type selector
+    test_tabs = st.tabs([
+        "📊 IMTP",
+        "🦘 CMJ",
+        "🦵 SL Tests",
+        "💪 NordBord",
+        "🏃 10:5 Hop",
+        "🔄 Quadrant Tests",
+        "🏋️ Strength RM"
+    ])
+
+    # =====================
+    # IMTP Tab
+    # =====================
+    with test_tabs[0]:
+        st.markdown("### Isometric Mid-Thigh Pull (IMTP)")
+
+        # Filter for IMTP tests
+        imtp_df = forcedecks_df[forcedecks_df['testType'] == 'IMTP'].copy() if 'testType' in forcedecks_df.columns else pd.DataFrame()
+
+        if imtp_df.empty:
+            st.warning("No IMTP test data available.")
+        else:
+            # Filters
+            filtered_df, sport, gender = render_filters(imtp_df, "imtp")
+
+            # Benchmark input
+            col1, col2 = st.columns([3, 1])
+            with col2:
+                benchmark = render_benchmark_input('IMTP', 'imtp')
+
+            # Sub-tabs for Group vs Individual
+            view_tabs = st.tabs(["👥 Group View", "🏃 Individual View"])
+
+            with view_tabs[0]:
+                # Group ranked bar chart
+                metric_col = 'Peak Force / BM_Trial'
+                if metric_col not in filtered_df.columns:
+                    # Try alternative column names
+                    alt_cols = ['Peak Vertical Force / BM_Trial', 'Takeoff Peak Force / BM_Trial']
+                    for alt in alt_cols:
+                        if alt in filtered_df.columns:
+                            metric_col = alt
+                            break
+
+                if metric_col in filtered_df.columns:
+                    fig = create_ranked_bar_chart(
+                        filtered_df,
+                        metric_col,
+                        'Relative Peak Force',
+                        'N/Kg',
+                        benchmark,
+                        'IMTP - Relative Peak Force'
+                    )
+                    if fig:
+                        st.plotly_chart(fig, use_container_width=True, key="imtp_group_bar")
+                else:
+                    st.warning("Peak Force metric not found in data.")
+
+            with view_tabs[1]:
+                # Individual line chart with multi-select
+                athletes = sorted(filtered_df['Name'].dropna().unique()) if 'Name' in filtered_df.columns else []
+
+                if athletes:
+                    selected_athletes = st.multiselect(
+                        "Select Athletes:",
+                        options=athletes,
+                        default=[athletes[0]] if athletes else [],
+                        key="imtp_athlete_select"
+                    )
+
+                    show_squad = st.checkbox("Show Squad Average", value=True, key="imtp_show_squad")
+
+                    if selected_athletes:
+                        # Get all data (not just most recent) for trends
+                        all_imtp = forcedecks_df[forcedecks_df['testType'] == 'IMTP'].copy()
+
+                        if sport != 'All' and 'athlete_sport' in all_imtp.columns:
+                            all_imtp = all_imtp[all_imtp['athlete_sport'] == sport]
+                        if gender != 'All' and 'athlete_sex' in all_imtp.columns:
+                            all_imtp = all_imtp[all_imtp['athlete_sex'] == gender]
+
+                        fig = create_individual_line_chart(
+                            all_imtp,
+                            selected_athletes,
+                            metric_col,
+                            'Relative Peak Force',
+                            'N/Kg',
+                            show_squad,
+                            'IMTP - Individual Trends'
+                        )
+                        if fig:
+                            st.plotly_chart(fig, use_container_width=True, key="imtp_ind_line")
+                else:
+                    st.info("No athletes found in filtered data.")
+
+    # =====================
+    # CMJ Tab
+    # =====================
+    with test_tabs[1]:
+        st.markdown("### Counter Movement Jump (CMJ)")
+
+        cmj_df = forcedecks_df[forcedecks_df['testType'] == 'CMJ'].copy() if 'testType' in forcedecks_df.columns else pd.DataFrame()
+
+        if cmj_df.empty:
+            st.warning("No CMJ test data available.")
+        else:
+            filtered_df, sport, gender = render_filters(cmj_df, "cmj")
+
+            col1, col2 = st.columns([3, 1])
+            with col2:
+                benchmark = render_benchmark_input('CMJ', 'cmj')
+
+            view_tabs = st.tabs(["👥 Group View", "🏃 Individual View"])
+
+            with view_tabs[0]:
+                metric_col = 'Peak Power / BM_Trial'
+
+                if metric_col in filtered_df.columns:
+                    fig = create_ranked_bar_chart(
+                        filtered_df,
+                        metric_col,
+                        'Relative Peak Power',
+                        'W/Kg',
+                        benchmark,
+                        'CMJ - Relative Peak Power'
+                    )
+                    if fig:
+                        st.plotly_chart(fig, use_container_width=True, key="cmj_group_bar")
+
+                    # Also show jump height if available
+                    height_col = 'Jump Height (Imp-Mom)_Trial'
+                    if height_col in filtered_df.columns:
+                        st.markdown("---")
+                        height_df = filtered_df.copy()
+                        height_df[height_col] = height_df[height_col] * 100  # m to cm
+
+                        fig2 = create_ranked_bar_chart(
+                            height_df,
+                            height_col,
+                            'Jump Height (Imp-Mom)',
+                            'cm',
+                            None,
+                            'CMJ - Jump Height'
+                        )
+                        if fig2:
+                            st.plotly_chart(fig2, use_container_width=True, key="cmj_height_bar")
+
+            with view_tabs[1]:
+                athletes = sorted(filtered_df['Name'].dropna().unique()) if 'Name' in filtered_df.columns else []
+
+                if athletes:
+                    selected_athletes = st.multiselect(
+                        "Select Athletes:",
+                        options=athletes,
+                        default=[athletes[0]] if athletes else [],
+                        key="cmj_athlete_select"
+                    )
+
+                    show_squad = st.checkbox("Show Squad Average", value=True, key="cmj_show_squad")
+
+                    if selected_athletes:
+                        all_cmj = forcedecks_df[forcedecks_df['testType'] == 'CMJ'].copy()
+
+                        if sport != 'All' and 'athlete_sport' in all_cmj.columns:
+                            all_cmj = all_cmj[all_cmj['athlete_sport'] == sport]
+                        if gender != 'All' and 'athlete_sex' in all_cmj.columns:
+                            all_cmj = all_cmj[all_cmj['athlete_sex'] == gender]
+
+                        fig = create_individual_line_chart(
+                            all_cmj,
+                            selected_athletes,
+                            metric_col,
+                            'Relative Peak Power',
+                            'W/Kg',
+                            show_squad,
+                            'CMJ - Individual Trends'
+                        )
+                        if fig:
+                            st.plotly_chart(fig, use_container_width=True, key="cmj_ind_line")
+
+    # =====================
+    # SL Tests Tab
+    # =====================
+    with test_tabs[2]:
+        st.markdown("### Single Leg Tests")
+
+        sl_test_options = ['SL ISO Squat', 'SL IMTP', 'SL CMJ']
+        selected_sl_test = st.selectbox("Select Test:", sl_test_options, key="sl_test_select")
+
+        # Filter for selected SL test
+        if 'testType' in forcedecks_df.columns:
+            sl_df = forcedecks_df[forcedecks_df['testType'].str.contains(selected_sl_test, case=False, na=False)].copy()
+        else:
+            sl_df = pd.DataFrame()
+
+        if sl_df.empty:
+            st.warning(f"No {selected_sl_test} test data available.")
+        else:
+            filtered_df, sport, gender = render_filters(sl_df, "sl")
+
+            col1, col2 = st.columns([3, 1])
+            with col2:
+                test_key = selected_sl_test.replace(' ', '_')
+                benchmark = render_benchmark_input(test_key, 'sl')
+
+            view_tabs = st.tabs(["👥 Group View", "🏃 Individual View"])
+
+            with view_tabs[0]:
+                # Determine left/right columns based on test type
+                if 'ISO' in selected_sl_test or 'IMTP' in selected_sl_test:
+                    left_col = 'Peak Force / BM_Left'
+                    right_col = 'Peak Force / BM_Right'
+                    metric_name = 'Relative Peak Force'
+                    unit = 'N/Kg'
+                else:  # CMJ
+                    left_col = 'Peak Power / BM_Left'
+                    right_col = 'Peak Power / BM_Right'
+                    metric_name = 'Relative Peak Power'
+                    unit = 'W/Kg'
+
+                # Try alternative column names
+                if left_col not in filtered_df.columns:
+                    alt_left = ['Peak Vertical Force / BM_Left', 'Takeoff Peak Force / BM_Left']
+                    for alt in alt_left:
+                        if alt in filtered_df.columns:
+                            left_col = alt
+                            break
+
+                if right_col not in filtered_df.columns:
+                    alt_right = ['Peak Vertical Force / BM_Right', 'Takeoff Peak Force / BM_Right']
+                    for alt in alt_right:
+                        if alt in filtered_df.columns:
+                            right_col = alt
+                            break
+
+                if left_col in filtered_df.columns and right_col in filtered_df.columns:
+                    fig = create_ranked_side_by_side_chart(
+                        filtered_df,
+                        left_col,
+                        right_col,
+                        metric_name,
+                        unit,
+                        benchmark,
+                        f'{selected_sl_test} - {metric_name} (Left & Right)'
+                    )
+                    if fig:
+                        st.plotly_chart(fig, use_container_width=True, key="sl_group_bar")
+
+                    # Asymmetry table
+                    st.markdown("### Asymmetry Status")
+                    asym_table = create_asymmetry_table(filtered_df, left_col, right_col, unit)
+                    if not asym_table.empty:
+                        st.dataframe(asym_table, use_container_width=True, hide_index=True)
+                else:
+                    st.warning(f"Left/Right metrics not found for {selected_sl_test}.")
+
+            with view_tabs[1]:
+                athletes = sorted(filtered_df['Name'].dropna().unique()) if 'Name' in filtered_df.columns else []
+
+                if athletes:
+                    selected_athletes = st.multiselect(
+                        "Select Athletes:",
+                        options=athletes,
+                        default=[athletes[0]] if athletes else [],
+                        key="sl_athlete_select"
+                    )
+
+                    show_squad = st.checkbox("Show Squad Average", value=True, key="sl_show_squad")
+
+                    if selected_athletes:
+                        all_sl = forcedecks_df[forcedecks_df['testType'].str.contains(selected_sl_test, case=False, na=False)].copy()
+
+                        if sport != 'All' and 'athlete_sport' in all_sl.columns:
+                            all_sl = all_sl[all_sl['athlete_sport'] == sport]
+                        if gender != 'All' and 'athlete_sex' in all_sl.columns:
+                            all_sl = all_sl[all_sl['athlete_sex'] == gender]
+
+                        fig = create_dual_line_chart(
+                            all_sl,
+                            selected_athletes,
+                            left_col,
+                            right_col,
+                            metric_name,
+                            unit,
+                            show_squad,
+                            f'{selected_sl_test} - Left vs Right Trends'
+                        )
+                        if fig:
+                            st.plotly_chart(fig, use_container_width=True, key="sl_ind_line")
+
+    # =====================
+    # NordBord Tab
+    # =====================
+    with test_tabs[3]:
+        st.markdown("### NordBord - Hamstring Strength")
+
+        if nordbord_df is None or nordbord_df.empty:
+            st.warning("No NordBord data available.")
+        else:
+            filtered_df, sport, gender = render_filters(nordbord_df, "nordbord")
+
+            col1, col2 = st.columns([3, 1])
+            with col2:
+                benchmark = render_benchmark_input('NordBord', 'nordbord')
+
+            view_tabs = st.tabs(["👥 Group View", "🏃 Individual View"])
+
+            with view_tabs[0]:
+                left_col = 'leftMaxForce'
+                right_col = 'rightMaxForce'
+
+                # Try alternative column names
+                if left_col not in filtered_df.columns:
+                    for alt in ['maxForceLeftN', 'leftMax']:
+                        if alt in filtered_df.columns:
+                            left_col = alt
+                            break
+
+                if right_col not in filtered_df.columns:
+                    for alt in ['maxForceRightN', 'rightMax']:
+                        if alt in filtered_df.columns:
+                            right_col = alt
+                            break
+
+                if left_col in filtered_df.columns and right_col in filtered_df.columns:
+                    fig = create_ranked_side_by_side_chart(
+                        filtered_df,
+                        left_col,
+                        right_col,
+                        'Max Force',
+                        'N',
+                        benchmark,
+                        'NordBord - Left vs Right Hamstring Force'
+                    )
+                    if fig:
+                        st.plotly_chart(fig, use_container_width=True, key="nordbord_group_bar")
+
+                    # Asymmetry table
+                    st.markdown("### Asymmetry Status")
+                    asym_table = create_asymmetry_table(filtered_df, left_col, right_col, 'N')
+                    if not asym_table.empty:
+                        st.dataframe(asym_table, use_container_width=True, hide_index=True)
+                else:
+                    st.warning("NordBord force columns not found.")
+
+            with view_tabs[1]:
+                athletes = sorted(filtered_df['Name'].dropna().unique()) if 'Name' in filtered_df.columns else []
+
+                if athletes:
+                    selected_athletes = st.multiselect(
+                        "Select Athletes:",
+                        options=athletes,
+                        default=[athletes[0]] if athletes else [],
+                        key="nordbord_athlete_select"
+                    )
+
+                    show_squad = st.checkbox("Show Squad Average", value=True, key="nordbord_show_squad")
+
+                    if selected_athletes and left_col in nordbord_df.columns and right_col in nordbord_df.columns:
+                        fig = create_dual_line_chart(
+                            nordbord_df,
+                            selected_athletes,
+                            left_col,
+                            right_col,
+                            'Max Force',
+                            'N',
+                            show_squad,
+                            'NordBord - Left vs Right Trends'
+                        )
+                        if fig:
+                            st.plotly_chart(fig, use_container_width=True, key="nordbord_ind_line")
+
+    # =====================
+    # 10:5 Hop Test Tab
+    # =====================
+    with test_tabs[4]:
+        st.markdown("### 10:5 Hop Test")
+
+        hop_df = forcedecks_df[forcedecks_df['testType'].str.contains('Hop', case=False, na=False)].copy() if 'testType' in forcedecks_df.columns else pd.DataFrame()
+
+        if hop_df.empty:
+            st.warning("No Hop Test data available.")
+        else:
+            filtered_df, sport, gender = render_filters(hop_df, "hop")
+
+            col1, col2 = st.columns([3, 1])
+            with col2:
+                benchmark = render_benchmark_input('10_5_Hop', 'hop')
+
+            view_tabs = st.tabs(["👥 Group View", "🏃 Individual View"])
+
+            with view_tabs[0]:
+                metric_col = 'RSI-modified_Trial'
+
+                # Try alternatives
+                if metric_col not in filtered_df.columns:
+                    for alt in ['RSI (Flight/Contact Time)_Trial', 'Best RSI (Flight/Contact Time)_Trial']:
+                        if alt in filtered_df.columns:
+                            metric_col = alt
+                            break
+
+                if metric_col in filtered_df.columns:
+                    fig = create_ranked_bar_chart(
+                        filtered_df,
+                        metric_col,
+                        'RSI',
+                        '',
+                        benchmark,
+                        '10:5 Hop Test - Reactive Strength Index'
+                    )
+                    if fig:
+                        st.plotly_chart(fig, use_container_width=True, key="hop_group_bar")
+                else:
+                    st.warning("RSI metric not found in data.")
+
+            with view_tabs[1]:
+                athletes = sorted(filtered_df['Name'].dropna().unique()) if 'Name' in filtered_df.columns else []
+
+                if athletes:
+                    selected_athletes = st.multiselect(
+                        "Select Athletes:",
+                        options=athletes,
+                        default=[athletes[0]] if athletes else [],
+                        key="hop_athlete_select"
+                    )
+
+                    show_squad = st.checkbox("Show Squad Average", value=True, key="hop_show_squad")
+
+                    if selected_athletes and metric_col in hop_df.columns:
+                        fig = create_individual_line_chart(
+                            hop_df,
+                            selected_athletes,
+                            metric_col,
+                            'RSI',
+                            '',
+                            show_squad,
+                            '10:5 Hop Test - Individual Trends'
+                        )
+                        if fig:
+                            st.plotly_chart(fig, use_container_width=True, key="hop_ind_line")
+
+    # =====================
+    # Quadrant Tests Tab (ForceFrame)
+    # =====================
+    with test_tabs[5]:
+        st.markdown("### Quadrant Tests (ForceFrame)")
+
+        quadrant_test_options = [
+            'Trunk Profile (Supine/Prone/Lateral)',
+            '4-Way Neck Profile',
+            'Shoulder IR/ER',
+            'Hip Adduction/Abduction'
+        ]
+        selected_quadrant_test = st.selectbox("Select Test:", quadrant_test_options, key="quadrant_test_select")
+
+        # Use ForceFrame data if available
+        if forceframe_df is not None and not forceframe_df.empty:
+            filtered_df, sport, gender = render_filters(forceframe_df, "quadrant")
+
+            # Define metric columns based on selected test
+            # These column names may need adjustment based on actual ForceFrame data structure
+            if 'Trunk' in selected_quadrant_test:
+                metric_cols = {
+                    'Supine': 'supine_force',
+                    'Prone': 'prone_force',
+                    'Lateral_Left': 'lateral_left_force',
+                    'Lateral_Right': 'lateral_right_force'
+                }
+                metric_name = 'Force'
+                unit = 'N'
+            elif 'Neck' in selected_quadrant_test:
+                metric_cols = {
+                    'Flexion': 'neck_flexion_force',
+                    'Extension': 'neck_extension_force',
+                    'Left': 'neck_left_force',
+                    'Right': 'neck_right_force'
+                }
+                metric_name = 'Force'
+                unit = 'N'
+            elif 'Shoulder' in selected_quadrant_test:
+                metric_cols = {
+                    'IR': 'shoulder_ir_force',
+                    'ER': 'shoulder_er_force'
+                }
+                metric_name = 'Force'
+                unit = 'N'
+            else:  # Hip
+                metric_cols = {
+                    'Adduction': 'hip_adduction_force',
+                    'Abduction': 'hip_abduction_force'
+                }
+                metric_name = 'Force'
+                unit = 'N'
+
+            view_tabs = st.tabs(["👥 Group View", "🏃 Individual View"])
+
+            with view_tabs[0]:
+                # Check if we have the required columns
+                available_cols = {k: v for k, v in metric_cols.items() if v in filtered_df.columns}
+
+                if available_cols:
+                    # Vertical orientation toggle
+                    vertical = st.checkbox("Vertical Layout", value=True, key="quadrant_vertical")
+
+                    fig = create_stacked_quadrant_chart(
+                        filtered_df,
+                        metric_cols,
+                        metric_name,
+                        unit,
+                        f'{selected_quadrant_test} - Group Profile',
+                        vertical
+                    )
+                    if fig:
+                        st.plotly_chart(fig, use_container_width=True, key="quadrant_group_chart")
+
+                    # Summary table with flagging
+                    st.markdown("### Summary Table")
+                    summary_table = create_quadrant_summary_table(filtered_df, metric_cols, unit)
+                    if not summary_table.empty:
+                        st.dataframe(summary_table, use_container_width=True, hide_index=True)
+                else:
+                    st.info(f"No {selected_quadrant_test} data found. ForceFrame quadrant test columns not detected in the data.")
+                    st.markdown("""
+                    **Expected data structure for quadrant tests:**
+                    - Trunk: supine_force, prone_force, lateral_left_force, lateral_right_force
+                    - Neck: neck_flexion_force, neck_extension_force, neck_left_force, neck_right_force
+                    - Shoulder: shoulder_ir_force, shoulder_er_force
+                    - Hip: hip_adduction_force, hip_abduction_force
+
+                    *Note: Column names may vary based on ForceFrame export settings.*
+                    """)
+
+            with view_tabs[1]:
+                athletes = sorted(filtered_df['Name'].dropna().unique()) if 'Name' in filtered_df.columns else []
+
+                if athletes:
+                    selected_athlete = st.selectbox(
+                        "Select Athlete:",
+                        options=athletes,
+                        key="quadrant_athlete_select"
+                    )
+
+                    if selected_athlete:
+                        # Get all data for this athlete over time
+                        fig = create_stacked_individual_trend_chart(
+                            forceframe_df,
+                            selected_athlete,
+                            metric_cols,
+                            metric_name,
+                            unit,
+                            f'{selected_athlete} - {selected_quadrant_test} Progression'
+                        )
+                        if fig:
+                            st.plotly_chart(fig, use_container_width=True, key="quadrant_ind_chart")
+                        else:
+                            st.info("Not enough data points to show progression.")
+                else:
+                    st.info("No athletes found in filtered data.")
+        else:
+            st.warning("No ForceFrame data available for quadrant tests.")
+
+    # =====================
+    # Strength RM Tab (Manual Entry)
+    # =====================
+    with test_tabs[6]:
+        st.markdown("### Strength RM (Manual Entry)")
+        st.info("Strength RM data comes from manual entry. This section will display data once entered through the Data Entry tab.")
+
+        # Placeholder for manual entry integration
+        st.markdown("""
+        **Available Exercises:**
+        - Back Squat
+        - Bench Press
+        - Deadlift
+        - Chin-Up
+        - And more...
+
+        **Metrics:**
+        - Absolute Strength (Kg)
+        - Relative Strength (Kg/BM)
+        """)
