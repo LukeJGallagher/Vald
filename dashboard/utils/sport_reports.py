@@ -33,6 +33,19 @@ except ImportError:
     def load_saudi_norms():
         return {}
 
+# Import S&C Diagnostics chart functions
+try:
+    from .snc_diagnostics import (
+        create_ranked_bar_chart,
+        create_ranked_side_by_side_chart,
+        create_individual_line_chart,
+        TEST_CONFIG
+    )
+    SNC_CHARTS_AVAILABLE = True
+except ImportError:
+    SNC_CHARTS_AVAILABLE = False
+    TEST_CONFIG = {}
+
 # Team Saudi colors
 TEAL_PRIMARY = '#007167'
 GOLD_ACCENT = '#a08e66'
@@ -558,20 +571,38 @@ def create_group_report(df: pd.DataFrame,
         return
 
     # =========================================================================
-    # SECTION 1: Lower Body Strength & Power
+    # SECTION 1: Lower Body Strength & Power (S&C Diagnostics Style)
     # =========================================================================
     st.markdown("### Lower Body Strength & Power")
 
-    # Row 1: IMTP and CMJ Jump Height (2 columns for better readability)
+    # Get benchmark values for reference lines
+    imtp_benchmark = benchmarks.get('peak_force', {}).get('good', 30)
+    cmj_power_benchmark = benchmarks.get('peak_power', {}).get('good', 50)
+    cmj_height_benchmark = benchmarks.get('cmj_height', {}).get('good', 35)
+    rsi_benchmark = benchmarks.get('rsi', {}).get('good', 1.5)
+    nordbord_benchmark = benchmarks.get('nordbord_force', {}).get('good', 337)
+
+    # Row 1: IMTP and CMJ Power (Tier 1 tests - Ranked Bars)
     col1, col2 = st.columns(2)
 
-    # IMTP - Relative Peak Force
+    # IMTP - Relative Peak Force (Ranked Bar with Squad Avg + Benchmark)
     with col1:
         metric_col = get_metric_column(sport_df, 'peak_force')
         if metric_col:
-            # Filter for IMTP/ISOT tests
             imtp_df = sport_df[sport_df['testType'].str.contains('IMTP|ISOT|Isometric', case=False, na=False)]
-            if not imtp_df.empty:
+            if not imtp_df.empty and SNC_CHARTS_AVAILABLE:
+                # Get latest per athlete
+                latest_imtp = imtp_df.groupby('Name')[metric_col].last().reset_index()
+                fig = create_ranked_bar_chart(
+                    latest_imtp, metric_col,
+                    "Relative Peak Force", "N/kg",
+                    benchmark=imtp_benchmark,
+                    title="IMTP - Relative Peak Force"
+                )
+                if fig:
+                    st.plotly_chart(fig, use_container_width=True)
+            elif not imtp_df.empty:
+                # Fallback to old style
                 fig = create_benchmark_bar_chart(
                     imtp_df, metric_col, 'Name', benchmarks,
                     "IMTP - Relative Peak Force", 'peak_force', 'N/kg'
@@ -583,32 +614,22 @@ def create_group_report(df: pd.DataFrame,
         else:
             st.info("IMTP metric not found")
 
-    # CMJ - Jump Height
+    # CMJ - Relative Peak Power (Ranked Bar)
     with col2:
-        metric_col = get_metric_column(sport_df, 'cmj_height')
-        if metric_col:
-            cmj_df = sport_df[sport_df['testType'].str.contains('CMJ|Counter', case=False, na=False)]
-            if not cmj_df.empty:
-                fig = create_benchmark_bar_chart(
-                    cmj_df, metric_col, 'Name', benchmarks,
-                    "CMJ - Jump Height", 'cmj_height', 'cm'
-                )
-                if fig:
-                    st.plotly_chart(fig, use_container_width=True)
-            else:
-                st.info("No CMJ data available")
-        else:
-            st.info("CMJ metric not found")
-
-    # Row 2: CMJ Power and Reactive Strength
-    col1, col2 = st.columns(2)
-
-    # CMJ - Relative Peak Power
-    with col1:
         metric_col = get_metric_column(sport_df, 'relative_power')
         if metric_col:
             cmj_df = sport_df[sport_df['testType'].str.contains('CMJ|Counter', case=False, na=False)]
-            if not cmj_df.empty:
+            if not cmj_df.empty and SNC_CHARTS_AVAILABLE:
+                latest_cmj = cmj_df.groupby('Name')[metric_col].last().reset_index()
+                fig = create_ranked_bar_chart(
+                    latest_cmj, metric_col,
+                    "Relative Peak Power", "W/kg",
+                    benchmark=cmj_power_benchmark,
+                    title="CMJ - Relative Peak Power"
+                )
+                if fig:
+                    st.plotly_chart(fig, use_container_width=True)
+            elif not cmj_df.empty:
                 fig = create_benchmark_bar_chart(
                     cmj_df, metric_col, 'Name', benchmarks,
                     "CMJ - Relative Peak Power", 'peak_power', 'W/kg'
@@ -620,40 +641,92 @@ def create_group_report(df: pd.DataFrame,
         else:
             st.info("Power metric not found")
 
-    # Reactive Strength (DJ/RSHIP)
-    with col2:
-        metric_col = get_metric_column(sport_df, 'rsi')
+    # Row 2: CMJ Height and 10:5 Hop RSI (Tier 1/2 - Ranked Bars)
+    col1, col2 = st.columns(2)
+
+    # CMJ - Jump Height
+    with col1:
+        metric_col = get_metric_column(sport_df, 'cmj_height')
         if metric_col:
-            # RSHIP = Repeat Single Hop In Place (10-5), DJ = Drop Jump, SLDJ = Single Leg Drop Jump
-            hop_df = sport_df[sport_df['testType'].str.contains('RSHIP|DJ|SLDJ|Hop|Drop', case=False, na=False)]
-            if not hop_df.empty:
+            cmj_df = sport_df[sport_df['testType'].str.contains('CMJ|Counter', case=False, na=False)]
+            if not cmj_df.empty and SNC_CHARTS_AVAILABLE:
+                latest_cmj = cmj_df.groupby('Name')[metric_col].last().reset_index()
+                # Convert m to cm if needed
+                if latest_cmj[metric_col].max() < 1:
+                    latest_cmj[metric_col] = latest_cmj[metric_col] * 100
+                fig = create_ranked_bar_chart(
+                    latest_cmj, metric_col,
+                    "Jump Height", "cm",
+                    benchmark=cmj_height_benchmark,
+                    title="CMJ - Jump Height (Impulse-Mom)"
+                )
+                if fig:
+                    st.plotly_chart(fig, use_container_width=True)
+            elif not cmj_df.empty:
                 fig = create_benchmark_bar_chart(
-                    hop_df, metric_col, 'Name', benchmarks,
-                    "Reactive Strength - RSI", 'rsi', ''
+                    cmj_df, metric_col, 'Name', benchmarks,
+                    "CMJ - Jump Height", 'cmj_height', 'cm'
                 )
                 if fig:
                     st.plotly_chart(fig, use_container_width=True)
             else:
-                st.info("No reactive strength data (DJ/RSHIP) available")
+                st.info("No CMJ height data available")
+        else:
+            st.info("CMJ height metric not found")
 
-    # Row 3: NordBord Hamstring Strength and Asymmetry
+    # 10:5 Hop Test - RSI (Ranked Bar)
+    with col2:
+        metric_col = get_metric_column(sport_df, 'rsi')
+        if metric_col:
+            # RSHIP = 10:5 Repeat Single Hop In Place
+            hop_df = sport_df[sport_df['testType'].str.contains('RSHIP|DJ|SLDJ|Hop|Drop', case=False, na=False)]
+            if not hop_df.empty and SNC_CHARTS_AVAILABLE:
+                latest_hop = hop_df.groupby('Name')[metric_col].last().reset_index()
+                fig = create_ranked_bar_chart(
+                    latest_hop, metric_col,
+                    "RSI", "",
+                    benchmark=rsi_benchmark,
+                    title="10:5 Hop Test - RSI"
+                )
+                if fig:
+                    st.plotly_chart(fig, use_container_width=True)
+            elif not hop_df.empty:
+                fig = create_benchmark_bar_chart(
+                    hop_df, metric_col, 'Name', benchmarks,
+                    "10:5 Hop Test - RSI", 'rsi', ''
+                )
+                if fig:
+                    st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.info("No 10:5 Hop / reactive strength data available")
+
+    # Row 3: NordBord (Unilateral Side-by-Side)
     col1, col2 = st.columns(2)
 
-    # NordBord - Hamstring Strength
+    # NordBord - Left vs Right (Side-by-Side Bar)
     with col1:
         if nordbord_df is not None and not nordbord_df.empty:
-            # Filter NordBord data for sport if possible
             nb_df = nordbord_df.copy()
             if 'athlete_sport' in nb_df.columns:
                 sport_mask = nb_df['athlete_sport'].str.contains(sport.split()[0], case=False, na=False)
                 if sport_mask.any():
                     nb_df = nb_df[sport_mask]
 
-            # Get the force columns using helper function
             left_col, right_col = get_nordbord_force_columns(nb_df)
 
-            if left_col and right_col and 'Name' in nb_df.columns:
-                # Calculate average of left/right
+            if left_col and right_col and 'Name' in nb_df.columns and SNC_CHARTS_AVAILABLE:
+                # Get latest per athlete
+                latest_nb = nb_df.groupby('Name').agg({left_col: 'last', right_col: 'last'}).reset_index()
+                fig = create_ranked_side_by_side_chart(
+                    latest_nb, left_col, right_col,
+                    "Hamstring Force", "N",
+                    benchmark=nordbord_benchmark,
+                    title="NordBord - L/R Hamstring Strength"
+                )
+                if fig:
+                    st.plotly_chart(fig, use_container_width=True)
+            elif left_col and right_col and 'Name' in nb_df.columns:
+                # Fallback: Calculate average of left/right
                 nb_df['avg_hamstring_force'] = (nb_df[left_col] + nb_df[right_col]) / 2
 
                 fig = create_benchmark_bar_chart(
@@ -667,35 +740,89 @@ def create_group_report(df: pd.DataFrame,
         else:
             st.info("NordBord data not available")
 
-    # NordBord Asymmetry
+    # SL ISO Squat - Unilateral (Side-by-Side Bar)
     with col2:
-        if nordbord_df is not None and not nordbord_df.empty:
-            nb_df = nordbord_df.copy()
-            if 'athlete_sport' in nb_df.columns:
-                sport_mask = nb_df['athlete_sport'].str.contains(sport.split()[0], case=False, na=False)
-                if sport_mask.any():
-                    nb_df = nb_df[sport_mask]
+        # Look for Single Leg Isometric Squat tests
+        sliso_df = sport_df[sport_df['testType'].str.contains('SLISOSQT|SLISO|SL.*Squat', case=False, na=False)]
+        if not sliso_df.empty:
+            # Try to find left/right force columns
+            left_col = None
+            right_col = None
+            for col in sliso_df.columns:
+                if 'Left' in col and ('Force' in col or 'Peak' in col):
+                    left_col = col
+                elif 'Right' in col and ('Force' in col or 'Peak' in col):
+                    right_col = col
 
-            # Calculate asymmetry if both sides available
-            left_col, right_col = get_nordbord_force_columns(nb_df)
-            if left_col and right_col:
-                nb_df['hamstring_asymmetry'] = abs(
-                    (nb_df[left_col] - nb_df[right_col]) /
-                    ((nb_df[left_col] + nb_df[right_col]) / 2) * 100
+            if left_col and right_col and 'Name' in sliso_df.columns and SNC_CHARTS_AVAILABLE:
+                latest_sliso = sliso_df.groupby('Name').agg({left_col: 'last', right_col: 'last'}).reset_index()
+                fig = create_ranked_side_by_side_chart(
+                    latest_sliso, left_col, right_col,
+                    "Relative Peak Force", "N/kg",
+                    title="SL ISO Squat - L/R"
                 )
-                if 'Name' in nb_df.columns:
-                    fig = create_benchmark_bar_chart(
-                        nb_df, 'hamstring_asymmetry', 'Name', benchmarks,
-                        "NordBord - Asymmetry", 'asymmetry', '%'
-                    )
-                    if fig:
-                        st.plotly_chart(fig, use_container_width=True)
-                else:
-                    st.info("NordBord asymmetry data not available")
+                if fig:
+                    st.plotly_chart(fig, use_container_width=True)
             else:
-                st.info("NordBord asymmetry data not available")
+                st.info("SL ISO Squat data not available")
         else:
-            st.info("NordBord asymmetry data not available")
+            st.info("SL ISO Squat data not available")
+
+    # Row 4: SL IMTP and SL CMJ (Tier 2 - Unilateral Side-by-Side)
+    col1, col2 = st.columns(2)
+
+    # SL IMTP - Unilateral
+    with col1:
+        slimtp_df = sport_df[sport_df['testType'].str.contains('SLIMTP', case=False, na=False)]
+        if not slimtp_df.empty:
+            left_col = None
+            right_col = None
+            for col in slimtp_df.columns:
+                if 'Left' in col and ('Force' in col or 'Peak' in col):
+                    left_col = col
+                elif 'Right' in col and ('Force' in col or 'Peak' in col):
+                    right_col = col
+
+            if left_col and right_col and 'Name' in slimtp_df.columns and SNC_CHARTS_AVAILABLE:
+                latest_slimtp = slimtp_df.groupby('Name').agg({left_col: 'last', right_col: 'last'}).reset_index()
+                fig = create_ranked_side_by_side_chart(
+                    latest_slimtp, left_col, right_col,
+                    "Relative Peak Force", "N/kg",
+                    title="SL IMTP - L/R"
+                )
+                if fig:
+                    st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.info("SL IMTP data not available")
+        else:
+            st.info("SL IMTP data not available")
+
+    # SL CMJ - Unilateral
+    with col2:
+        slcmj_df = sport_df[sport_df['testType'].str.contains('SLCMJ|SLCMRJ|SL.*CMJ', case=False, na=False)]
+        if not slcmj_df.empty:
+            # Try to find left/right power columns
+            left_col = None
+            right_col = None
+            for col in slcmj_df.columns:
+                if 'Left' in col and ('Power' in col or 'Peak' in col):
+                    left_col = col
+                elif 'Right' in col and ('Power' in col or 'Peak' in col):
+                    right_col = col
+
+            if left_col and right_col and 'Name' in slcmj_df.columns and SNC_CHARTS_AVAILABLE:
+                latest_slcmj = slcmj_df.groupby('Name').agg({left_col: 'last', right_col: 'last'}).reset_index()
+                fig = create_ranked_side_by_side_chart(
+                    latest_slcmj, left_col, right_col,
+                    "Relative Peak Power", "W/kg",
+                    title="SL CMJ - L/R Peak Power"
+                )
+                if fig:
+                    st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.info("SL CMJ data not available")
+        else:
+            st.info("SL CMJ data not available")
 
     st.markdown("---")
 
