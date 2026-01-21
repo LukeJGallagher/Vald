@@ -39,12 +39,16 @@ try:
         create_ranked_bar_chart,
         create_ranked_side_by_side_chart,
         create_individual_line_chart,
-        TEST_CONFIG
+        create_stacked_quadrant_chart,
+        create_multi_line_strength_chart,
+        TEST_CONFIG,
+        QUADRANT_COLORS
     )
     SNC_CHARTS_AVAILABLE = True
 except ImportError:
     SNC_CHARTS_AVAILABLE = False
     TEST_CONFIG = {}
+    QUADRANT_COLORS = {}
 
 # Team Saudi colors
 TEAL_PRIMARY = '#007167'
@@ -960,7 +964,7 @@ def create_group_report(df: pd.DataFrame,
     st.markdown("---")
 
     # =========================================================================
-    # SECTION 3: Shoulder Health (ForceFrame)
+    # SECTION 3: Shoulder Health (ForceFrame) - Stacked Quadrant Charts
     # =========================================================================
     st.markdown("### Shoulder Health")
 
@@ -973,10 +977,32 @@ def create_group_report(df: pd.DataFrame,
                 forceframe_df['testTypeName'].str.contains('^Shoulder', case=False, na=False, regex=True)
             ] if 'testTypeName' in forceframe_df.columns else pd.DataFrame()
 
-            if not shoulder_df.empty and 'Name' in shoulder_df.columns:
-                # Calculate IR/ER ratio if possible
-                st.markdown("**Shoulder IR/ER**")
-                st.info("ForceFrame shoulder IR/ER data - visualization pending")
+            if not shoulder_df.empty and 'Name' in shoulder_df.columns and SNC_CHARTS_AVAILABLE:
+                # Look for IR/ER columns (Internal/External Rotation)
+                ir_col = None
+                er_col = None
+                for col in shoulder_df.columns:
+                    if 'IR' in col.upper() or 'Internal' in col:
+                        ir_col = col
+                    elif 'ER' in col.upper() or 'External' in col:
+                        er_col = col
+
+                if ir_col and er_col:
+                    # Get latest per athlete
+                    latest_shoulder = shoulder_df.groupby('Name').agg({ir_col: 'last', er_col: 'last'}).reset_index()
+                    metric_cols = {'IR': ir_col, 'ER': er_col}
+                    fig = create_stacked_quadrant_chart(
+                        latest_shoulder, metric_cols,
+                        "Shoulder Rotation", "N",
+                        title="Shoulder IR/ER Profile",
+                        vertical=True
+                    )
+                    if fig:
+                        st.plotly_chart(fig, use_container_width=True)
+                else:
+                    st.info("Shoulder IR/ER columns not found in data")
+            elif not shoulder_df.empty:
+                st.info("Shoulder IR/ER data available - enable S&C charts for visualization")
             else:
                 st.info("Shoulder IR/ER data not available")
         else:
@@ -984,31 +1010,316 @@ def create_group_report(df: pd.DataFrame,
 
     with col2:
         if forceframe_df is not None and not forceframe_df.empty:
-            st.markdown("**Shoulder ASH**")
-            st.info("ForceFrame shoulder ASH data - visualization pending")
+            # Look for ASH test or abduction/adduction
+            ash_df = forceframe_df[
+                forceframe_df['testTypeName'].str.contains('ASH|Abduct', case=False, na=False, regex=True)
+            ] if 'testTypeName' in forceframe_df.columns else pd.DataFrame()
+
+            if not ash_df.empty and 'Name' in ash_df.columns:
+                st.markdown("**Shoulder ASH**")
+                st.info("ForceFrame shoulder ASH data - visualization pending")
+            else:
+                st.info("Shoulder ASH data not available")
         else:
             st.info("ForceFrame data not available")
 
     st.markdown("---")
 
     # =========================================================================
-    # SECTION 4: Hip Health (ForceFrame)
+    # SECTION 4: Hip Health (ForceFrame) - Stacked Quadrant Charts
     # =========================================================================
     st.markdown("### Hip Health")
 
-    if forceframe_df is not None and not forceframe_df.empty:
-        # Filter for hip tests (tests starting with 'Hip')
-        hip_df = forceframe_df[
-            forceframe_df['testTypeName'].str.contains('^Hip', case=False, na=False, regex=True)
-        ] if 'testTypeName' in forceframe_df.columns else pd.DataFrame()
+    col1, col2 = st.columns(2)
 
-        if not hip_df.empty:
-            st.markdown("**Hip IR/ER - ABD/ADD**")
-            st.info("ForceFrame hip ABD/ADD data - visualization pending")
+    with col1:
+        if forceframe_df is not None and not forceframe_df.empty:
+            # Filter for hip tests (tests starting with 'Hip')
+            hip_df = forceframe_df[
+                forceframe_df['testTypeName'].str.contains('^Hip', case=False, na=False, regex=True)
+            ] if 'testTypeName' in forceframe_df.columns else pd.DataFrame()
+
+            if not hip_df.empty and 'Name' in hip_df.columns and SNC_CHARTS_AVAILABLE:
+                # Look for ABD/ADD columns (Abduction/Adduction)
+                abd_col = None
+                add_col = None
+                for col in hip_df.columns:
+                    if 'ABD' in col.upper() or 'Abduct' in col:
+                        abd_col = col
+                    elif 'ADD' in col.upper() or 'Adduct' in col:
+                        add_col = col
+
+                if abd_col and add_col:
+                    latest_hip = hip_df.groupby('Name').agg({abd_col: 'last', add_col: 'last'}).reset_index()
+                    metric_cols = {'ABD': abd_col, 'ADD': add_col}
+                    fig = create_stacked_quadrant_chart(
+                        latest_hip, metric_cols,
+                        "Hip Strength", "N",
+                        title="Hip ABD/ADD Profile",
+                        vertical=True
+                    )
+                    if fig:
+                        st.plotly_chart(fig, use_container_width=True)
+                else:
+                    st.info("Hip ABD/ADD columns not found in data")
+            elif not hip_df.empty:
+                st.info("Hip ABD/ADD data available - enable S&C charts for visualization")
+            else:
+                st.info("Hip ABD/ADD data not available")
         else:
-            st.info("Hip ABD/ADD data not available")
+            st.info("ForceFrame data not available")
+
+    with col2:
+        # Hip IR/ER if available
+        if forceframe_df is not None and not forceframe_df.empty:
+            hip_df = forceframe_df[
+                forceframe_df['testTypeName'].str.contains('^Hip', case=False, na=False, regex=True)
+            ] if 'testTypeName' in forceframe_df.columns else pd.DataFrame()
+
+            if not hip_df.empty and 'Name' in hip_df.columns:
+                st.markdown("**Hip IR/ER**")
+                st.info("Hip IR/ER data - visualization pending")
+            else:
+                st.info("Hip IR/ER data not available")
+        else:
+            st.info("ForceFrame data not available")
+
+    st.markdown("---")
+
+    # =========================================================================
+    # SECTION 5: Strength RM (Manual Entry Data) - Multi-Line Chart
+    # =========================================================================
+    st.markdown("### Strength RM Progression")
+    st.caption("Manual entry S&C data - select athlete and exercises to view progression")
+
+    # Load S&C manual entry data
+    sc_upper_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'sc_upper_body.csv')
+    sc_lower_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'sc_lower_body.csv')
+    sc_df = pd.DataFrame()
+
+    # Try to load from session state first, then CSV
+    if hasattr(st, 'session_state') and 'sc_upper_body' in st.session_state and not st.session_state.sc_upper_body.empty:
+        sc_df = st.session_state.sc_upper_body.copy()
+    elif os.path.exists(sc_upper_path):
+        try:
+            sc_df = pd.read_csv(sc_upper_path)
+            if 'date' in sc_df.columns:
+                sc_df['date'] = pd.to_datetime(sc_df['date'])
+        except Exception:
+            pass
+
+    # Also try to load lower body data
+    if hasattr(st, 'session_state') and 'sc_lower_body' in st.session_state and not st.session_state.sc_lower_body.empty:
+        sc_lower = st.session_state.sc_lower_body.copy()
+        if not sc_df.empty:
+            sc_df = pd.concat([sc_df, sc_lower], ignore_index=True)
+        else:
+            sc_df = sc_lower
+    elif os.path.exists(sc_lower_path):
+        try:
+            sc_lower = pd.read_csv(sc_lower_path)
+            if 'date' in sc_lower.columns:
+                sc_lower['date'] = pd.to_datetime(sc_lower['date'])
+            if not sc_df.empty:
+                sc_df = pd.concat([sc_df, sc_lower], ignore_index=True)
+            else:
+                sc_df = sc_lower
+        except Exception:
+            pass
+
+    if not sc_df.empty and 'athlete' in sc_df.columns and SNC_CHARTS_AVAILABLE:
+        # Athlete selector
+        sc_athletes = sorted(sc_df['athlete'].dropna().unique().tolist())
+
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col1:
+            selected_sc_athlete = st.selectbox(
+                "Select Athlete:",
+                sc_athletes,
+                key="group_v1_strength_athlete"
+            )
+
+        with col2:
+            # Exercise multiselect
+            if 'exercise' in sc_df.columns:
+                available_exercises = sorted(sc_df['exercise'].dropna().unique().tolist())
+                default_exercises = [e for e in ['Back Squat', 'Bench Press', 'Deadlift'] if e in available_exercises]
+                if not default_exercises and available_exercises:
+                    default_exercises = available_exercises[:3]
+
+                selected_exercises = st.multiselect(
+                    "Select Exercises:",
+                    available_exercises,
+                    default=default_exercises,
+                    key="group_v1_strength_exercises"
+                )
+            else:
+                selected_exercises = []
+
+        with col3:
+            # Bodyweight input for relative strength
+            bodyweight = st.number_input(
+                "Bodyweight (kg):",
+                min_value=40.0,
+                max_value=200.0,
+                value=80.0,
+                step=1.0,
+                key="group_v1_bodyweight"
+            )
+
+        if selected_sc_athlete and selected_exercises:
+            fig = create_multi_line_strength_chart(
+                sc_df,
+                selected_sc_athlete,
+                selected_exercises,
+                bodyweight=bodyweight,
+                title=f"{selected_sc_athlete} - Strength RM Progression"
+            )
+            if fig:
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.info(f"No strength data found for {selected_sc_athlete}")
+        else:
+            st.info("Select athlete and exercises to view strength progression")
     else:
-        st.info("ForceFrame data not available")
+        st.info("No S&C manual entry data available. Use ✏️ Data Entry tab to add strength records.")
+
+    st.markdown("---")
+
+    # =========================================================================
+    # SECTION 6: Individual Athlete Trends (Line charts with Squad Avg)
+    # =========================================================================
+    st.markdown("### Individual Athlete Trends")
+    st.caption("Select athletes to view their performance over time compared to squad average")
+
+    # Get all athletes in the sport group
+    all_athletes = sorted(sport_df['Name'].dropna().unique().tolist()) if 'Name' in sport_df.columns else []
+
+    if not all_athletes:
+        st.info("No athlete data available for individual trends")
+    else:
+        # Athlete multiselect - allow up to 4 athletes for comparison
+        selected_athletes = st.multiselect(
+            "Select Athletes (max 4):",
+            all_athletes,
+            default=all_athletes[:min(2, len(all_athletes))],  # Default to first 2
+            max_selections=4,
+            key="group_v1_individual_athletes"
+        )
+
+        if selected_athletes and SNC_CHARTS_AVAILABLE:
+            # Row 1: IMTP Trend and CMJ Power Trend
+            col1, col2 = st.columns(2)
+
+            with col1:
+                # IMTP Trend Line Chart
+                metric_col = get_metric_column(sport_df, 'peak_force')
+                if metric_col:
+                    imtp_df = sport_df[sport_df['testType'].str.contains('IMTP|ISOT|Isometric', case=False, na=False)]
+                    if not imtp_df.empty:
+                        fig = create_individual_line_chart(
+                            imtp_df, selected_athletes, metric_col,
+                            "Relative Peak Force", "N/kg",
+                            show_squad_avg=True,
+                            title="IMTP - Individual Trends"
+                        )
+                        if fig:
+                            st.plotly_chart(fig, use_container_width=True)
+                    else:
+                        st.info("No IMTP trend data")
+                else:
+                    st.info("IMTP metric not found")
+
+            with col2:
+                # CMJ Power Trend Line Chart
+                metric_col = get_metric_column(sport_df, 'relative_power')
+                if metric_col:
+                    cmj_df = sport_df[sport_df['testType'].str.contains('CMJ|Counter', case=False, na=False)]
+                    if not cmj_df.empty:
+                        fig = create_individual_line_chart(
+                            cmj_df, selected_athletes, metric_col,
+                            "Relative Peak Power", "W/kg",
+                            show_squad_avg=True,
+                            title="CMJ - Individual Trends"
+                        )
+                        if fig:
+                            st.plotly_chart(fig, use_container_width=True)
+                    else:
+                        st.info("No CMJ trend data")
+                else:
+                    st.info("CMJ metric not found")
+
+            # Row 2: CMJ Height Trend and 10:5 Hop Trend
+            col1, col2 = st.columns(2)
+
+            with col1:
+                # CMJ Height Trend
+                metric_col = get_metric_column(sport_df, 'cmj_height')
+                if metric_col:
+                    cmj_df = sport_df[sport_df['testType'].str.contains('CMJ|Counter', case=False, na=False)]
+                    if not cmj_df.empty:
+                        # Create a copy and convert if needed
+                        cmj_plot = cmj_df.copy()
+                        if cmj_plot[metric_col].max() < 1:
+                            cmj_plot[metric_col] = cmj_plot[metric_col] * 100
+                        fig = create_individual_line_chart(
+                            cmj_plot, selected_athletes, metric_col,
+                            "Jump Height", "cm",
+                            show_squad_avg=True,
+                            title="CMJ Height - Individual Trends"
+                        )
+                        if fig:
+                            st.plotly_chart(fig, use_container_width=True)
+                    else:
+                        st.info("No CMJ height trend data")
+                else:
+                    st.info("CMJ height metric not found")
+
+            with col2:
+                # 10:5 Hop RSI Trend
+                metric_col = get_metric_column(sport_df, 'rsi')
+                if metric_col:
+                    hop_df = sport_df[sport_df['testType'].str.contains('RSHIP|DJ|SLDJ|Hop|Drop', case=False, na=False)]
+                    if not hop_df.empty:
+                        fig = create_individual_line_chart(
+                            hop_df, selected_athletes, metric_col,
+                            "RSI", "",
+                            show_squad_avg=True,
+                            title="10:5 Hop - Individual Trends"
+                        )
+                        if fig:
+                            st.plotly_chart(fig, use_container_width=True)
+                    else:
+                        st.info("No hop test trend data")
+
+            # Row 3: NordBord Trend (if available)
+            if nordbord_df is not None and not nordbord_df.empty:
+                col1, col2 = st.columns(2)
+
+                with col1:
+                    nb_df = nordbord_df.copy()
+                    if 'athlete_sport' in nb_df.columns:
+                        sport_mask = nb_df['athlete_sport'].str.contains(sport.split()[0], case=False, na=False)
+                        if sport_mask.any():
+                            nb_df = nb_df[sport_mask]
+
+                    left_col, right_col = get_nordbord_force_columns(nb_df)
+                    if left_col and right_col and 'Name' in nb_df.columns:
+                        # Calculate average force for trend
+                        nb_df['avg_hamstring_force'] = (nb_df[left_col] + nb_df[right_col]) / 2
+                        fig = create_individual_line_chart(
+                            nb_df, selected_athletes, 'avg_hamstring_force',
+                            "Avg Hamstring Force", "N",
+                            show_squad_avg=True,
+                            title="NordBord - Individual Trends"
+                        )
+                        if fig:
+                            st.plotly_chart(fig, use_container_width=True)
+
+        elif selected_athletes:
+            st.warning("Individual line charts require S&C Diagnostics module")
+        else:
+            st.info("Select athletes above to view individual trends")
 
 
 def create_individual_report(df: pd.DataFrame,

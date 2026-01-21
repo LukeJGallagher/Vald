@@ -932,28 +932,137 @@ def create_multi_line_strength_chart(
     df: pd.DataFrame,
     athlete_name: str,
     exercises: List[str],
-    bodyweight_col: str = 'Bodyweight in Kilograms_Trial',
+    bodyweight: float = 80.0,
+    bodyweight_exercises: List[str] = None,
     title: str = None
 ) -> go.Figure:
     """
     Create multi-line chart for Strength RM progression.
-    Shows multiple lifts with relative strength labels.
+    Shows multiple lifts with relative strength labels (kg/BM).
+
+    Args:
+        df: DataFrame with columns: date, athlete, exercise, estimated_1rm (or weight_kg)
+        athlete_name: Name of athlete to display
+        exercises: List of exercise names to plot
+        bodyweight: Athlete's bodyweight for relative strength calculation
+        bodyweight_exercises: Exercises that use secondary Y-axis (e.g., Chin-Up, Pull Up)
+        title: Chart title
+
+    Data structure expected (from manual S&C entry):
+        date, athlete, exercise, weight_kg, reps, sets, estimated_1rm, ...
     """
-    # This would work with manual entry data
-    # Placeholder for now - needs integration with manual entry system
+    if df.empty or athlete_name is None:
+        return None
 
-    fig = go.Figure()
+    if bodyweight_exercises is None:
+        bodyweight_exercises = ['Chin-Up', 'Pull Up', 'Weighted Pull Up', 'Chin Up']
 
+    # Filter for athlete
+    athlete_df = df[df['athlete'] == athlete_name].copy()
+    if athlete_df.empty:
+        return None
+
+    # Ensure date column is datetime
+    if 'date' in athlete_df.columns:
+        athlete_df['date'] = pd.to_datetime(athlete_df['date'])
+
+    # Determine value column (prefer estimated_1rm, fallback to weight_kg)
+    value_col = 'estimated_1rm' if 'estimated_1rm' in athlete_df.columns else 'weight_kg'
+
+    # Create figure with secondary y-axis for bodyweight exercises
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
+
+    # Color palette for exercises
+    exercise_colors = {
+        'Back Squat': '#007167',      # Teal
+        'Bench Press': '#FF9800',      # Orange
+        'Deadlift': '#0077B6',         # Blue
+        'Chin-Up': '#a08e66',          # Gold (dashed)
+        'Pull Up': '#a08e66',
+        'Weighted Pull Up': '#a08e66',
+        'Overhead Press': '#9C27B0',   # Purple
+        'Push Press': '#E91E63',       # Pink
+        'Front Squat': '#00BCD4',      # Cyan
+    }
+
+    for i, exercise in enumerate(exercises):
+        exercise_df = athlete_df[athlete_df['exercise'].str.contains(exercise, case=False, na=False)]
+        if exercise_df.empty:
+            continue
+
+        # Sort by date
+        exercise_df = exercise_df.sort_values('date')
+
+        # Get color
+        color = exercise_colors.get(exercise, MULTI_LINE_COLORS[i % len(MULTI_LINE_COLORS)])
+
+        # Check if this is a bodyweight exercise (secondary axis)
+        is_bw_exercise = any(bw in exercise for bw in bodyweight_exercises)
+
+        # Calculate relative strength labels
+        labels = []
+        for val in exercise_df[value_col]:
+            rel_strength = val / bodyweight if bodyweight > 0 else 0
+            labels.append(f"{rel_strength:.2f} kg/BM")
+
+        # Line style
+        line_style = dict(color=color, width=2)
+        if is_bw_exercise:
+            line_style['dash'] = 'dash'
+
+        fig.add_trace(
+            go.Scatter(
+                x=exercise_df['date'],
+                y=exercise_df[value_col],
+                mode='markers+lines+text',
+                marker=dict(size=10, color=color),
+                line=line_style,
+                name=exercise,
+                text=labels,
+                textposition='top center',
+                textfont=dict(size=9, color=color),
+                hovertemplate=f"<b>{exercise}</b><br>Date: %{{x|%d %b %Y}}<br>{value_col}: %{{y:.1f}} kg<br>Relative: %{{text}}<extra></extra>"
+            ),
+            secondary_y=is_bw_exercise
+        )
+
+    # Update layout
     fig.update_layout(
-        title=title or "Repetition Max Strength Progression",
-        xaxis_title="Date",
-        yaxis_title="Repetition Max Load (Kg)",
+        title=dict(
+            text=title or f"Repetition Max Strength Progression<br><sub>Relative Strength Labels (kg/BM), BM={bodyweight:.0f} kg</sub>",
+            font=dict(size=14)
+        ),
+        xaxis_title="Test Date",
         plot_bgcolor='white',
         paper_bgcolor='white',
         font=dict(family='Inter, sans-serif', color='#333'),
-        height=400,
-        margin=dict(l=10, r=10, t=50, b=30)
+        height=450,
+        margin=dict(l=60, r=60, t=80, b=50),
+        legend=dict(
+            orientation='h',
+            yanchor='bottom',
+            y=1.02,
+            xanchor='left',
+            x=0
+        ),
+        hovermode='x unified'
     )
+
+    # Update y-axes
+    fig.update_yaxes(
+        title_text="Repetition Max Load (kg)",
+        showgrid=True,
+        gridwidth=1,
+        gridcolor='lightgray',
+        secondary_y=False
+    )
+    fig.update_yaxes(
+        title_text="Chin-Up (kg)" if any(bw in exercises for bw in bodyweight_exercises) else "",
+        showgrid=False,
+        secondary_y=True
+    )
+
+    fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
 
     return fig
 
