@@ -562,7 +562,8 @@ def create_group_report(df: pd.DataFrame,
     # =========================================================================
     st.markdown("### Lower Body Strength & Power")
 
-    col1, col2, col3 = st.columns(3)
+    # Row 1: IMTP and CMJ Jump Height (2 columns for better readability)
+    col1, col2 = st.columns(2)
 
     # IMTP - Relative Peak Force
     with col1:
@@ -599,8 +600,11 @@ def create_group_report(df: pd.DataFrame,
         else:
             st.info("CMJ metric not found")
 
+    # Row 2: CMJ Power and Reactive Strength
+    col1, col2 = st.columns(2)
+
     # CMJ - Relative Peak Power
-    with col3:
+    with col1:
         metric_col = get_metric_column(sport_df, 'relative_power')
         if metric_col:
             cmj_df = sport_df[sport_df['testType'].str.contains('CMJ|Counter', case=False, na=False)]
@@ -616,9 +620,8 @@ def create_group_report(df: pd.DataFrame,
         else:
             st.info("Power metric not found")
 
-    # Second row - Reactive Strength (DJ/RSHIP) and NordBord
-    col1, col2, col3 = st.columns(3)
-    with col1:
+    # Reactive Strength (DJ/RSHIP)
+    with col2:
         metric_col = get_metric_column(sport_df, 'rsi')
         if metric_col:
             # RSHIP = Repeat Single Hop In Place (10-5), DJ = Drop Jump, SLDJ = Single Leg Drop Jump
@@ -633,8 +636,11 @@ def create_group_report(df: pd.DataFrame,
             else:
                 st.info("No reactive strength data (DJ/RSHIP) available")
 
-    # NordBord - Hamstring Strength (in Lower Body section)
-    with col2:
+    # Row 3: NordBord Hamstring Strength and Asymmetry
+    col1, col2 = st.columns(2)
+
+    # NordBord - Hamstring Strength
+    with col1:
         if nordbord_df is not None and not nordbord_df.empty:
             # Filter NordBord data for sport if possible
             nb_df = nordbord_df.copy()
@@ -662,7 +668,7 @@ def create_group_report(df: pd.DataFrame,
             st.info("NordBord data not available")
 
     # NordBord Asymmetry
-    with col3:
+    with col2:
         if nordbord_df is not None and not nordbord_df.empty:
             nb_df = nordbord_df.copy()
             if 'athlete_sport' in nb_df.columns:
@@ -712,7 +718,8 @@ def create_group_report(df: pd.DataFrame,
         except Exception:
             pass
 
-    col1, col2, col3 = st.columns(3)
+    # Row 1: Bench Press and Pull Up
+    col1, col2 = st.columns(2)
 
     with col1:
         # Bench Press - check VALD data first, then S&C data
@@ -751,7 +758,7 @@ def create_group_report(df: pd.DataFrame,
                     title="Bench Press - Est. 1RM (Manual Entry)",
                     xaxis_title="Estimated 1RM (kg)",
                     yaxis_title="",
-                    height=max(250, len(best_bench) * 40),
+                    height=max(250, min(350, len(best_bench) * 35)),
                     margin=dict(l=10, r=10, t=40, b=10)
                 )
                 st.plotly_chart(fig, use_container_width=True)
@@ -797,7 +804,7 @@ def create_group_report(df: pd.DataFrame,
                     title="Pull Up - Max Reps (Manual Entry)",
                     xaxis_title="Reps",
                     yaxis_title="",
-                    height=max(250, len(best_pullup) * 40),
+                    height=max(250, min(350, len(best_pullup) * 35)),
                     margin=dict(l=10, r=10, t=40, b=10)
                 )
                 st.plotly_chart(fig, use_container_width=True)
@@ -806,9 +813,11 @@ def create_group_report(df: pd.DataFrame,
         else:
             st.info("Pull Up data not available - Use ✏️ Data Entry tab")
 
-    with col3:
-        # Plyo Push Up
-        plyo_df = sport_df[sport_df['testType'].str.contains('Plyo|Plyometric', case=False, na=False)]
+    # Row 2: Plyo Push Up (PPU test type)
+    col1, col2 = st.columns(2)
+    with col1:
+        # Plyo Push Up - PPU is the test type code
+        plyo_df = sport_df[sport_df['testType'].str.contains('PPU|Plyo|Plyometric', case=False, na=False)]
         if not plyo_df.empty:
             metric_col = get_metric_column(plyo_df, 'peak_power')
             if metric_col:
@@ -819,7 +828,7 @@ def create_group_report(df: pd.DataFrame,
                 if fig:
                     st.plotly_chart(fig, use_container_width=True)
         else:
-            st.info("Plyo Push Up data not available")
+            st.info("Plyo Push Up (PPU) data not available")
 
     st.markdown("---")
 
