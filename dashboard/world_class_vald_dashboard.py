@@ -4798,8 +4798,8 @@ with tabs[1]:
                 key="report_sport_selector"
             )
 
-            # Report type tabs - Group v1, v2, v3, Individual, Shooting, and S&C Diagnostics
-            report_tabs = st.tabs(["👥 Group v1", "📊 Group v2", "📈 Group v3", "🏃 Individual Report", "🎯 Shooting Balance", "🏋️ S&C Diagnostics"])
+            # Report type tabs - Group v1, v2, v3, Individual, Shooting, S&C Diagnostics, and Benchmark Settings
+            report_tabs = st.tabs(["👥 Group v1", "📊 Group v2", "📈 Group v3", "🏃 Individual Report", "🎯 Shooting Balance", "🏋️ S&C Diagnostics", "⚙️ Benchmark Settings"])
 
             # Render benchmark legend
             render_benchmark_legend()
@@ -4953,6 +4953,21 @@ with tabs[1]:
                     )
                 else:
                     st.error("S&C Diagnostics module not found. Please check utils/snc_diagnostics.py")
+
+            with report_tabs[6]:
+                # Benchmark Settings - S&C staff can edit VALD norms
+                try:
+                    from dashboard.utils.benchmark_database import render_benchmark_editor
+                except ImportError:
+                    try:
+                        from utils.benchmark_database import render_benchmark_editor
+                    except ImportError:
+                        render_benchmark_editor = None
+
+                if render_benchmark_editor:
+                    render_benchmark_editor()
+                else:
+                    st.error("Benchmark database module not found. Please check utils/benchmark_database.py")
         else:
             st.warning("No sports found in the data. Check athlete_sport column.")
 

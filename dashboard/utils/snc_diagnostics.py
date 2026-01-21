@@ -10,6 +10,11 @@ Provides comprehensive S&C testing visualizations:
 Test Types:
 - Tier 1: IMTP, CMJ, 6 Minute Aerobic
 - Tier 2: SL ISO Squat, Strength RM, SL CMJ, Broad Jump, 10:5 Hop, Peak Power, Repeat Power, Glycolytic Power
+
+Benchmarks are loaded from the benchmark_database module which provides:
+- VALD normative data as defaults
+- Editable benchmarks with audit trail
+- Gender-specific values
 """
 
 import streamlit as st
@@ -20,6 +25,23 @@ import plotly.express as px
 from plotly.subplots import make_subplots
 from typing import Dict, List, Optional, Tuple
 from datetime import datetime, timedelta
+
+# Import benchmark database for VALD norms
+try:
+    from .benchmark_database import (
+        load_benchmarks,
+        get_benchmark_for_test,
+        get_asymmetry_threshold,
+        get_injury_threshold,
+        get_benchmark_status,
+        get_status_color,
+        get_status_emoji,
+        VALD_NORMS
+    )
+    BENCHMARK_DB_AVAILABLE = True
+except ImportError:
+    BENCHMARK_DB_AVAILABLE = False
+    VALD_NORMS = {}
 
 # Team Saudi Brand Colors
 TEAL_PRIMARY = '#007167'
@@ -140,7 +162,8 @@ TEST_CONFIG = {
     }
 }
 
-# Default benchmarks (can be customized per group)
+# Default benchmarks - These are fallbacks if benchmark database not available
+# Actual benchmarks are loaded from benchmark_database.py which uses VALD norms
 DEFAULT_BENCHMARKS = {
     'IMTP': {'benchmark': 35.0, 'unit': 'N/Kg'},
     'CMJ': {'benchmark': 50.0, 'unit': 'W/Kg'},
@@ -152,6 +175,38 @@ DEFAULT_BENCHMARKS = {
     'Broad_Jump': {'benchmark': 250.0, 'unit': 'cm'},
     'Strength_RM': {'benchmark': 1.5, 'unit': 'kg/BM'},
 }
+
+
+def get_benchmark_value(test_type: str, metric: str = None, gender: str = "male") -> float:
+    """
+    Get benchmark value from database or fallback to defaults.
+
+    Args:
+        test_type: Test type code (CMJ, IMTP, etc.)
+        metric: Specific metric column name (optional)
+        gender: 'male' or 'female'
+
+    Returns:
+        Benchmark value (uses 'good' level from database)
+    """
+    if BENCHMARK_DB_AVAILABLE:
+        # Try to get from database with specific metric
+        if metric:
+            benchmark = get_benchmark_for_test(test_type, metric, gender, "good")
+            if benchmark is not None:
+                return benchmark
+
+        # If no metric specified, try to get first available metric from test type
+        benchmarks = load_benchmarks()
+        if test_type in benchmarks:
+            metrics = benchmarks[test_type].get("metrics", {})
+            for metric_key, metric_config in metrics.items():
+                gender_values = metric_config.get(gender.lower(), {})
+                if "good" in gender_values:
+                    return gender_values["good"]
+
+    # Fallback to simple defaults
+    return DEFAULT_BENCHMARKS.get(test_type, {}).get('benchmark', 0)
 
 
 def render_filters(df: pd.DataFrame, key_prefix: str = "snc") -> Tuple[pd.DataFrame, str, str]:
@@ -211,18 +266,33 @@ def render_filters(df: pd.DataFrame, key_prefix: str = "snc") -> Tuple[pd.DataFr
     return filtered_df, selected_sport, selected_gender
 
 
-def render_benchmark_input(test_key: str, key_prefix: str = "snc") -> float:
-    """Render inline benchmark input field."""
+def render_benchmark_input(test_key: str, key_prefix: str = "snc", gender: str = "male") -> float:
+    """
+    Render benchmark display with value from VALD norms database.
+
+    Benchmarks are now managed through the Benchmark Settings tab.
+    This shows the current benchmark value from the database.
+    """
     default = DEFAULT_BENCHMARKS.get(test_key, {}).get('benchmark', 0)
     unit = DEFAULT_BENCHMARKS.get(test_key, {}).get('unit', '')
 
-    benchmark = st.number_input(
-        f"Benchmark ({unit}):",
-        value=float(default),
-        step=0.5,
-        key=f"{key_prefix}_{test_key}_benchmark"
-    )
-    return benchmark
+    # Try to get from benchmark database
+    if BENCHMARK_DB_AVAILABLE:
+        db_benchmark = get_benchmark_value(test_key, None, gender)
+        if db_benchmark > 0:
+            default = db_benchmark
+
+    # Show as read-only with info about where to edit
+    col1, col2 = st.columns([2, 1])
+    with col1:
+        st.markdown(f"**Benchmark:** {default:.1f} {unit}")
+    with col2:
+        if BENCHMARK_DB_AVAILABLE:
+            st.caption("📊 VALD Norm")
+        else:
+            st.caption("Default")
+
+    return default
 
 
 def create_ranked_bar_chart(
@@ -1086,12 +1156,25 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
     with test_tabs[2]:
         st.markdown("### Single Leg Tests")
 
-        sl_test_options = ['SL ISO Squat', 'SL IMTP', 'SL CMJ']
+        # Map display names to actual VALD test type codes
+        sl_test_mapping = {
+            'SL ISO Squat': 'SLISOSQT',
+            'SL IMTP': 'SLIMTP',
+            'SL CMJ': 'SLCMRJ',
+            'SL Drop Jump': 'SLDJ',
+            'SL Jump': 'SLJ',
+            'SL Hop Jump': 'SLHJ'
+        }
+
+        sl_test_options = list(sl_test_mapping.keys())
         selected_sl_test = st.selectbox("Select Test:", sl_test_options, key="sl_test_select")
 
-        # Filter for selected SL test
+        # Get the actual test type code
+        test_type_code = sl_test_mapping.get(selected_sl_test, selected_sl_test)
+
+        # Filter for selected SL test using exact match
         if 'testType' in forcedecks_df.columns:
-            sl_df = forcedecks_df[forcedecks_df['testType'].str.contains(selected_sl_test, case=False, na=False)].copy()
+            sl_df = forcedecks_df[forcedecks_df['testType'] == test_type_code].copy()
         else:
             sl_df = pd.DataFrame()
 
