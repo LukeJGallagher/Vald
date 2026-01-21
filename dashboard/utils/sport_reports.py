@@ -972,25 +972,24 @@ def create_group_report(df: pd.DataFrame,
 
     with col1:
         if forceframe_df is not None and not forceframe_df.empty:
-            # Filter for shoulder tests (tests starting with 'Shoulder')
-            shoulder_df = forceframe_df[
-                forceframe_df['testTypeName'].str.contains('^Shoulder', case=False, na=False, regex=True)
+            # Filter for Shoulder IR/ER tests specifically
+            shoulder_irer_df = forceframe_df[
+                forceframe_df['testTypeName'].str.contains('Shoulder IR/ER', case=False, na=False)
             ] if 'testTypeName' in forceframe_df.columns else pd.DataFrame()
 
-            if not shoulder_df.empty and 'Name' in shoulder_df.columns and SNC_CHARTS_AVAILABLE:
-                # Look for IR/ER columns (Internal/External Rotation)
-                ir_col = None
-                er_col = None
-                for col in shoulder_df.columns:
-                    if 'IR' in col.upper() or 'Internal' in col:
-                        ir_col = col
-                    elif 'ER' in col.upper() or 'External' in col:
-                        er_col = col
+            if not shoulder_irer_df.empty and 'Name' in shoulder_irer_df.columns and SNC_CHARTS_AVAILABLE:
+                # ForceFrame uses inner/outer columns for IR/ER
+                # Inner = Internal Rotation, Outer = External Rotation (typically)
+                inner_col = 'innerLeftMaxForce' if 'innerLeftMaxForce' in shoulder_irer_df.columns else None
+                outer_col = 'outerLeftMaxForce' if 'outerLeftMaxForce' in shoulder_irer_df.columns else None
 
-                if ir_col and er_col:
-                    # Get latest per athlete
-                    latest_shoulder = shoulder_df.groupby('Name').agg({ir_col: 'last', er_col: 'last'}).reset_index()
-                    metric_cols = {'IR': ir_col, 'ER': er_col}
+                if inner_col and outer_col:
+                    # Get latest per athlete, averaging left and right
+                    shoulder_irer_df['IR_avg'] = (shoulder_irer_df['innerLeftMaxForce'].fillna(0) + shoulder_irer_df.get('innerRightMaxForce', shoulder_irer_df['innerLeftMaxForce']).fillna(0)) / 2
+                    shoulder_irer_df['ER_avg'] = (shoulder_irer_df['outerLeftMaxForce'].fillna(0) + shoulder_irer_df.get('outerRightMaxForce', shoulder_irer_df['outerLeftMaxForce']).fillna(0)) / 2
+
+                    latest_shoulder = shoulder_irer_df.groupby('Name').agg({'IR_avg': 'last', 'ER_avg': 'last'}).reset_index()
+                    metric_cols = {'IR': 'IR_avg', 'ER': 'ER_avg'}
                     fig = create_stacked_quadrant_chart(
                         latest_shoulder, metric_cols,
                         "Shoulder Rotation", "N",
@@ -1000,11 +999,11 @@ def create_group_report(df: pd.DataFrame,
                     if fig:
                         st.plotly_chart(fig, use_container_width=True)
                 else:
-                    st.info("Shoulder IR/ER columns not found in data")
-            elif not shoulder_df.empty:
+                    st.info("Shoulder IR/ER force columns not found")
+            elif not shoulder_irer_df.empty:
                 st.info("Shoulder IR/ER data available - enable S&C charts for visualization")
             else:
-                st.info("Shoulder IR/ER data not available")
+                st.info("No Shoulder IR/ER tests found in ForceFrame data")
         else:
             st.info("ForceFrame data not available")
 
@@ -1034,53 +1033,73 @@ def create_group_report(df: pd.DataFrame,
 
     with col1:
         if forceframe_df is not None and not forceframe_df.empty:
-            # Filter for hip tests (tests starting with 'Hip')
-            hip_df = forceframe_df[
-                forceframe_df['testTypeName'].str.contains('^Hip', case=False, na=False, regex=True)
+            # Filter for Hip AD/AB tests (Adduction/Abduction)
+            hip_adab_df = forceframe_df[
+                forceframe_df['testTypeName'].str.contains('Hip AD/AB', case=False, na=False)
             ] if 'testTypeName' in forceframe_df.columns else pd.DataFrame()
 
-            if not hip_df.empty and 'Name' in hip_df.columns and SNC_CHARTS_AVAILABLE:
-                # Look for ABD/ADD columns (Abduction/Adduction)
-                abd_col = None
-                add_col = None
-                for col in hip_df.columns:
-                    if 'ABD' in col.upper() or 'Abduct' in col:
-                        abd_col = col
-                    elif 'ADD' in col.upper() or 'Adduct' in col:
-                        add_col = col
+            if not hip_adab_df.empty and 'Name' in hip_adab_df.columns and SNC_CHARTS_AVAILABLE:
+                # ForceFrame uses inner/outer columns
+                # Inner = Adduction, Outer = Abduction (typically)
+                inner_col = 'innerLeftMaxForce' if 'innerLeftMaxForce' in hip_adab_df.columns else None
+                outer_col = 'outerLeftMaxForce' if 'outerLeftMaxForce' in hip_adab_df.columns else None
 
-                if abd_col and add_col:
-                    latest_hip = hip_df.groupby('Name').agg({abd_col: 'last', add_col: 'last'}).reset_index()
-                    metric_cols = {'ABD': abd_col, 'ADD': add_col}
+                if inner_col and outer_col:
+                    # Get latest per athlete, averaging left and right
+                    hip_adab_df['ADD_avg'] = (hip_adab_df['innerLeftMaxForce'].fillna(0) + hip_adab_df.get('innerRightMaxForce', hip_adab_df['innerLeftMaxForce']).fillna(0)) / 2
+                    hip_adab_df['ABD_avg'] = (hip_adab_df['outerLeftMaxForce'].fillna(0) + hip_adab_df.get('outerRightMaxForce', hip_adab_df['outerLeftMaxForce']).fillna(0)) / 2
+
+                    latest_hip = hip_adab_df.groupby('Name').agg({'ADD_avg': 'last', 'ABD_avg': 'last'}).reset_index()
+                    metric_cols = {'ADD': 'ADD_avg', 'ABD': 'ABD_avg'}
                     fig = create_stacked_quadrant_chart(
                         latest_hip, metric_cols,
                         "Hip Strength", "N",
-                        title="Hip ABD/ADD Profile",
+                        title="Hip ADD/ABD Profile",
                         vertical=True
                     )
                     if fig:
                         st.plotly_chart(fig, use_container_width=True)
                 else:
-                    st.info("Hip ABD/ADD columns not found in data")
-            elif not hip_df.empty:
-                st.info("Hip ABD/ADD data available - enable S&C charts for visualization")
+                    st.info("Hip AD/AB force columns not found")
+            elif not hip_adab_df.empty:
+                st.info("Hip AD/AB data available - enable S&C charts for visualization")
             else:
-                st.info("Hip ABD/ADD data not available")
+                st.info("No Hip AD/AB tests found in ForceFrame data")
         else:
             st.info("ForceFrame data not available")
 
     with col2:
         # Hip IR/ER if available
         if forceframe_df is not None and not forceframe_df.empty:
-            hip_df = forceframe_df[
-                forceframe_df['testTypeName'].str.contains('^Hip', case=False, na=False, regex=True)
+            hip_irer_df = forceframe_df[
+                forceframe_df['testTypeName'].str.contains('Hip IR/ER', case=False, na=False)
             ] if 'testTypeName' in forceframe_df.columns else pd.DataFrame()
 
-            if not hip_df.empty and 'Name' in hip_df.columns:
-                st.markdown("**Hip IR/ER**")
-                st.info("Hip IR/ER data - visualization pending")
+            if not hip_irer_df.empty and 'Name' in hip_irer_df.columns and SNC_CHARTS_AVAILABLE:
+                # Use inner/outer for IR/ER
+                inner_col = 'innerLeftMaxForce' if 'innerLeftMaxForce' in hip_irer_df.columns else None
+                outer_col = 'outerLeftMaxForce' if 'outerLeftMaxForce' in hip_irer_df.columns else None
+
+                if inner_col and outer_col:
+                    hip_irer_df['IR_avg'] = (hip_irer_df['innerLeftMaxForce'].fillna(0) + hip_irer_df.get('innerRightMaxForce', hip_irer_df['innerLeftMaxForce']).fillna(0)) / 2
+                    hip_irer_df['ER_avg'] = (hip_irer_df['outerLeftMaxForce'].fillna(0) + hip_irer_df.get('outerRightMaxForce', hip_irer_df['outerLeftMaxForce']).fillna(0)) / 2
+
+                    latest_hip_irer = hip_irer_df.groupby('Name').agg({'IR_avg': 'last', 'ER_avg': 'last'}).reset_index()
+                    metric_cols = {'IR': 'IR_avg', 'ER': 'ER_avg'}
+                    fig = create_stacked_quadrant_chart(
+                        latest_hip_irer, metric_cols,
+                        "Hip Rotation", "N",
+                        title="Hip IR/ER Profile",
+                        vertical=True
+                    )
+                    if fig:
+                        st.plotly_chart(fig, use_container_width=True)
+                else:
+                    st.info("Hip IR/ER force columns not found")
+            elif not hip_irer_df.empty:
+                st.info("Hip IR/ER data available - enable S&C charts")
             else:
-                st.info("Hip IR/ER data not available")
+                st.info("No Hip IR/ER tests found in ForceFrame data")
         else:
             st.info("ForceFrame data not available")
 
