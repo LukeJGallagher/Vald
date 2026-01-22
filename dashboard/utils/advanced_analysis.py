@@ -11,6 +11,14 @@ from scipy import signal, stats
 from typing import Dict, List, Optional, Tuple
 import streamlit as st
 
+# Team Saudi colors
+TEAL_PRIMARY = '#255035'      # Saudi Green
+GOLD_ACCENT = '#a08e66'       # Gold accent
+TEAL_DARK = '#1C3D28'         # Dark green
+TEAL_LIGHT = '#2E6040'        # Light green
+GRAY_BLUE = '#78909C'         # Neutral gray/blue
+INFO_BLUE = '#0077B6'         # Info blue
+
 
 # ============================================================================
 # ASYMMETRY ANALYSIS
@@ -93,11 +101,11 @@ def create_asymmetry_circle_plot(asymmetry_data: pd.DataFrame, athlete_name: str
     """
     fig = go.Figure()
 
-    # Add circles for each test
+    # Add circles for each test (Team Saudi colors)
     for _, row in asymmetry_data.iterrows():
         if pd.notna(row.get('asymmetry_percent')):
             size = max(10, row['asymmetry_percent'] * 2)  # Scale circle size
-            color = 'red' if row['asymmetry_percent'] > 15 else 'orange' if row['asymmetry_percent'] > 10 else 'green'
+            color = GRAY_BLUE if row['asymmetry_percent'] > 15 else GOLD_ACCENT if row['asymmetry_percent'] > 10 else TEAL_PRIMARY
 
             fig.add_trace(go.Scatter(
                 x=[row['recordedDateUtc']],
@@ -111,10 +119,10 @@ def create_asymmetry_circle_plot(asymmetry_data: pd.DataFrame, athlete_name: str
                              f"{row.get('interpretation', '')}<extra></extra>"
             ))
 
-    # Add threshold lines
-    fig.add_hline(y=15, line_dash="dash", line_color="red",
+    # Add threshold lines (Team Saudi colors)
+    fig.add_hline(y=15, line_dash="dash", line_color=GRAY_BLUE,
                   annotation_text="Intervention Threshold (15%)")
-    fig.add_hline(y=10, line_dash="dash", line_color="orange",
+    fig.add_hline(y=10, line_dash="dash", line_color=GOLD_ACCENT,
                   annotation_text="Monitor Threshold (10%)")
 
     fig.update_layout(
@@ -217,7 +225,7 @@ def create_meaningful_change_plot(df: pd.DataFrame, metric: str,
                   fillcolor="lightgray", opacity=0.2,
                   annotation_text="±1 SD", annotation_position="left")
 
-    # Plot data points with meaningful change colors
+    # Plot data points with meaningful change colors (Team Saudi)
     colors = []
     for i in range(1, len(df)):
         change = calculate_meaningful_change(
@@ -225,16 +233,16 @@ def create_meaningful_change_plot(df: pd.DataFrame, metric: str,
             df.iloc[i-1][metric],
             group_sd
         )
-        colors.append('red' if change['is_meaningful'] else 'blue')
+        colors.append(GOLD_ACCENT if change['is_meaningful'] else TEAL_PRIMARY)
 
-    colors.insert(0, 'blue')  # First point
+    colors.insert(0, TEAL_PRIMARY)  # First point
 
     fig.add_trace(go.Scatter(
         x=df['recordedDateUtc'],
         y=df[metric],
         mode='lines+markers',
         marker=dict(color=colors, size=8),
-        line=dict(color='lightblue'),
+        line=dict(color=TEAL_LIGHT),
         name=metric,
         hovertemplate="<b>%{x}</b><br>" +
                      f"{metric}: %{{y:.2f}}<br>" +
@@ -332,19 +340,19 @@ def calculate_percentile_rank(value: float, reference_values: List[float]) -> Di
 
     percentile = stats.percentileofscore(reference_values, value)
 
-    # Color zones based on research
+    # Color zones based on research (Team Saudi colors)
     if percentile >= 75:
         zone = 'Excellent'
-        color = 'green'
+        color = TEAL_PRIMARY
     elif percentile >= 50:
         zone = 'Good'
-        color = 'lightgreen'
+        color = TEAL_LIGHT
     elif percentile >= 25:
         zone = 'Average'
-        color = 'yellow'
+        color = GOLD_ACCENT
     else:
         zone = 'Below Average'
-        color = 'red'
+        color = GRAY_BLUE
 
     return {
         'percentile': round(percentile, 1),
@@ -372,26 +380,26 @@ def create_normative_benchmark_plot(athlete_value: float,
 
     fig = go.Figure()
 
-    # Add distribution
+    # Add distribution (Team Saudi colors)
     fig.add_trace(go.Histogram(
         x=reference_values,
         name='Sport Distribution',
-        marker_color='lightblue',
+        marker_color=TEAL_LIGHT,
         opacity=0.6,
         nbinsx=30
     ))
 
-    # Add percentile lines
-    fig.add_vline(x=p25, line_dash="dash", line_color="orange",
+    # Add percentile lines (Team Saudi colors)
+    fig.add_vline(x=p25, line_dash="dash", line_color=GOLD_ACCENT,
                   annotation_text="25th %ile")
-    fig.add_vline(x=p50, line_dash="dash", line_color="blue",
+    fig.add_vline(x=p50, line_dash="dash", line_color=INFO_BLUE,
                   annotation_text="50th %ile (Median)")
-    fig.add_vline(x=p75, line_dash="dash", line_color="green",
+    fig.add_vline(x=p75, line_dash="dash", line_color=TEAL_PRIMARY,
                   annotation_text="75th %ile (Target)")
 
-    # Add athlete value
+    # Add athlete value (use gold to highlight)
     if pd.notna(athlete_value):
-        fig.add_vline(x=athlete_value, line_color="red", line_width=3,
+        fig.add_vline(x=athlete_value, line_color=GOLD_ACCENT, line_width=3,
                       annotation_text="Athlete")
 
     fig.update_layout(
@@ -516,17 +524,17 @@ def create_zscore_distribution_plot(df: pd.DataFrame, metric: str) -> go.Figure:
     """
     fig = go.Figure()
 
-    # Add histogram
+    # Add histogram (Team Saudi colors)
     fig.add_trace(go.Histogram(
         x=df['z_score'],
         name='Distribution',
-        marker_color='lightblue',
+        marker_color=TEAL_LIGHT,
         nbinsx=30
     ))
 
-    # Add threshold lines
+    # Add threshold lines (Team Saudi colors)
     for z in [-2, -1, 1, 2]:
-        color = 'red' if abs(z) == 2 else 'orange'
+        color = GRAY_BLUE if abs(z) == 2 else GOLD_ACCENT
         fig.add_vline(x=z, line_dash="dash", line_color=color,
                       annotation_text=f"Z={z}")
 
@@ -556,18 +564,18 @@ def create_bilateral_force_curve(time: np.ndarray,
 
     fig = go.Figure()
 
-    # Add force traces
+    # Add force traces (Team Saudi colors)
     fig.add_trace(go.Scatter(
         x=time, y=force_left,
         name='Left',
-        line=dict(color='blue', width=2),
+        line=dict(color=TEAL_PRIMARY, width=2),
         mode='lines'
     ))
 
     fig.add_trace(go.Scatter(
         x=time, y=force_right,
         name='Right',
-        line=dict(color='orange', width=2),
+        line=dict(color=INFO_BLUE, width=2),
         mode='lines'
     ))
 

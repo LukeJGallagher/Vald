@@ -101,7 +101,7 @@ def create_fv_profile_plot(profile: Dict, athlete_name: str = "Athlete") -> go.F
         name='Actual Tests',
         marker=dict(
             size=12,
-            color='#007167',  # Saudi teal
+            color='#1D4D3B',  # Saudi teal
             symbol='circle',
             line=dict(width=2, color='white')
         )
@@ -146,7 +146,7 @@ def create_fv_profile_plot(profile: Dict, athlete_name: str = "Athlete") -> go.F
         y=[profile['F0']],
         mode='markers+text',
         name='F0 (Max Force)',
-        marker=dict(size=12, color='#007167', symbol='diamond'),
+        marker=dict(size=12, color='#1D4D3B', symbol='diamond'),
         text=[f"F0: {profile['F0']:.0f} N"],
         textposition='top right'
     ))
@@ -157,7 +157,7 @@ def create_fv_profile_plot(profile: Dict, athlete_name: str = "Athlete") -> go.F
         y=[0],
         mode='markers+text',
         name='V0 (Max Velocity)',
-        marker=dict(size=12, color='#007167', symbol='diamond'),
+        marker=dict(size=12, color='#1D4D3B', symbol='diamond'),
         text=[f"V0: {profile['V0']:.2f} m/s"],
         textposition='top left'
     ))
@@ -166,7 +166,7 @@ def create_fv_profile_plot(profile: Dict, athlete_name: str = "Athlete") -> go.F
     fig.update_layout(
         title=dict(
             text=f'Force-Velocity Profile - {athlete_name}',
-            font=dict(size=20, family='Arial Black', color='#007167')
+            font=dict(size=20, family='Arial Black', color='#1D4D3B')
         ),
         xaxis=dict(
             title='Velocity (m/s)',
@@ -206,7 +206,7 @@ def create_fv_profile_plot(profile: Dict, athlete_name: str = "Athlete") -> go.F
     )
 
     # FV Imbalance indicator
-    imbalance_color = '#007167' if abs(profile['FV_imbalance']) < 10 else '#a08e66' if abs(profile['FV_imbalance']) < 20 else 'red'
+    imbalance_color = '#1D4D3B' if abs(profile['FV_imbalance']) < 10 else '#a08e66' if abs(profile['FV_imbalance']) < 20 else 'red'
     imbalance_text = "Force" if profile['FV_imbalance'] > 0 else "Velocity"
 
     fig.add_annotation(
@@ -244,7 +244,7 @@ def create_power_force_plot(profile: Dict, athlete_name: str = "Athlete") -> go.
         y=powers,
         mode='lines',
         name='Power-Force',
-        line=dict(color='#007167', width=3),
+        line=dict(color='#1D4D3B', width=3),
         fill='tozeroy',
         fillcolor='rgba(0, 113, 103, 0.1)'
     ))
@@ -273,7 +273,7 @@ def create_power_force_plot(profile: Dict, athlete_name: str = "Athlete") -> go.
     fig.update_layout(
         title=dict(
             text=f'Power-Force Profile - {athlete_name}',
-            font=dict(size=20, family='Arial Black', color='#007167')
+            font=dict(size=20, family='Arial Black', color='#1D4D3B')
         ),
         xaxis=dict(title='Force (N)', showgrid=True),
         yaxis=dict(title='Power (W)', showgrid=True),
@@ -303,7 +303,7 @@ def create_power_velocity_plot(profile: Dict, athlete_name: str = "Athlete") -> 
         y=powers,
         mode='lines',
         name='Power-Velocity',
-        line=dict(color='#007167', width=3),
+        line=dict(color='#1D4D3B', width=3),
         fill='tozeroy',
         fillcolor='rgba(0, 113, 103, 0.1)'
     ))
@@ -332,7 +332,7 @@ def create_power_velocity_plot(profile: Dict, athlete_name: str = "Athlete") -> 
     fig.update_layout(
         title=dict(
             text=f'Power-Velocity Profile - {athlete_name}',
-            font=dict(size=20, family='Arial Black', color='#007167')
+            font=dict(size=20, family='Arial Black', color='#1D4D3B')
         ),
         xaxis=dict(title='Velocity (m/s)', showgrid=True),
         yaxis=dict(title='Power (W)', showgrid=True),
@@ -376,7 +376,7 @@ def create_combined_fvp_dashboard(profile: Dict, athlete_name: str = "Athlete") 
     fig.add_trace(go.Scatter(
         x=profile['velocities'], y=profile['forces'],
         mode='markers', name='Actual',
-        marker=dict(size=10, color='#007167')
+        marker=dict(size=10, color='#1D4D3B')
     ), row=1, col=1)
 
     fig.add_trace(go.Scatter(
@@ -399,7 +399,7 @@ def create_combined_fvp_dashboard(profile: Dict, athlete_name: str = "Athlete") 
     fig.add_trace(go.Scatter(
         x=forces, y=powers,
         mode='lines', name='P-F',
-        line=dict(color='#007167', width=2),
+        line=dict(color='#1D4D3B', width=2),
         fill='tozeroy', fillcolor='rgba(0, 113, 103, 0.1)'
     ), row=1, col=2)
 
@@ -418,7 +418,7 @@ def create_combined_fvp_dashboard(profile: Dict, athlete_name: str = "Athlete") 
     fig.add_trace(go.Scatter(
         x=velocities, y=powers,
         mode='lines', name='P-V',
-        line=dict(color='#007167', width=2),
+        line=dict(color='#1D4D3B', width=2),
         fill='tozeroy', fillcolor='rgba(0, 113, 103, 0.1)'
     ), row=2, col=1)
 
@@ -435,7 +435,7 @@ def create_combined_fvp_dashboard(profile: Dict, athlete_name: str = "Athlete") 
     fig.add_trace(go.Table(
         header=dict(
             values=['<b>Metric</b>', '<b>Value</b>', '<b>Interpretation</b>'],
-            fill_color='#007167',
+            fill_color='#1D4D3B',
             align='left',
             font=dict(color='white', size=12, family='Arial Black')
         ),
@@ -467,7 +467,7 @@ def create_combined_fvp_dashboard(profile: Dict, athlete_name: str = "Athlete") 
     fig.update_layout(
         title=dict(
             text=f'Complete Force-Velocity-Power Profile - {athlete_name}',
-            font=dict(size=22, family='Arial Black', color='#007167'),
+            font=dict(size=22, family='Arial Black', color='#1D4D3B'),
             x=0.5,
             xanchor='center'
         ),

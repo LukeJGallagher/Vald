@@ -19,6 +19,13 @@ from scipy.optimize import minimize
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
+# Team Saudi colors
+TEAL_PRIMARY = '#255035'      # Saudi Green
+GOLD_ACCENT = '#a08e66'       # Gold accent
+TEAL_DARK = '#1C3D28'         # Dark green
+TEAL_LIGHT = '#2E6040'        # Light green
+GRAY_BLUE = '#78909C'         # Neutral gray/blue for warning boundaries
+
 
 class AdaptiveRangeCalculator:
     """
@@ -202,8 +209,8 @@ class AdaptiveRangeDashboard:
             y=range_data['upper_limits_history'][:-1],
             mode='lines',
             name=f'Upper Limit ({self.calculator.confidence_level * 100:.0f}% CI)',
-            line=dict(color='red', width=2, dash='dash'),
-            fillcolor='rgba(255, 0, 0, 0.1)',
+            line=dict(color=GRAY_BLUE, width=2, dash='dash'),
+            fillcolor='rgba(120, 144, 156, 0.1)',
             fill='tonexty'
         ))
 
@@ -213,9 +220,9 @@ class AdaptiveRangeDashboard:
             y=range_data['lower_limits_history'][:-1],
             mode='lines',
             name=f'Lower Limit ({self.calculator.confidence_level * 100:.0f}% CI)',
-            line=dict(color='red', width=2, dash='dash'),
+            line=dict(color=GRAY_BLUE, width=2, dash='dash'),
             fill='tonexty',
-            fillcolor='rgba(255, 0, 0, 0.1)'
+            fillcolor='rgba(120, 144, 156, 0.1)'
         ))
 
         # EM Mean
@@ -224,7 +231,7 @@ class AdaptiveRangeDashboard:
             y=range_data['mean_history'][:-1],
             mode='lines',
             name='EM Estimated Mean',
-            line=dict(color='#007167', width=3)
+            line=dict(color=TEAL_PRIMARY, width=3)
         ))
 
         # Actual values (non-flagged)
@@ -235,11 +242,11 @@ class AdaptiveRangeDashboard:
                 y=values[non_flagged],
                 mode='markers',
                 name='Within Range',
-                marker=dict(size=10, color='#007167', symbol='circle',
+                marker=dict(size=10, color=TEAL_PRIMARY, symbol='circle',
                           line=dict(width=2, color='white'))
             ))
 
-        # Flagged values
+        # Flagged values (use gold for attention)
         if len(range_data['flagged_indices']) > 0:
             flagged_x = x[range_data['flagged_indices']]
             flagged_y = values[range_data['flagged_indices']]
@@ -249,15 +256,15 @@ class AdaptiveRangeDashboard:
                 y=flagged_y,
                 mode='markers',
                 name='Outside Range (Flagged)',
-                marker=dict(size=14, color='red', symbol='x',
-                          line=dict(width=3, color='darkred'))
+                marker=dict(size=14, color=GOLD_ACCENT, symbol='x',
+                          line=dict(width=3, color=TEAL_DARK))
             ))
 
         # Layout
         fig.update_layout(
             title=dict(
                 text=f'Adaptive Range Monitoring - {athlete_name}<br><sub>{metric_name} (α={self.calculator.alpha})</sub>',
-                font=dict(size=20, family='Arial Black', color='#007167'),
+                font=dict(size=20, family='Arial Black', color=TEAL_PRIMARY),
                 x=0.5,
                 xanchor='center'
             ),
@@ -295,7 +302,7 @@ class AdaptiveRangeDashboard:
             font=dict(size=11, color='#333', family='Arial'),
             align='right',
             bgcolor='rgba(255,255,255,0.9)',
-            bordercolor='#007167',
+            bordercolor='#1D4D3B',
             borderwidth=2,
             borderpad=8,
             xanchor='right',
@@ -341,8 +348,8 @@ class AdaptiveRangeDashboard:
             fig.add_trace(go.Scatter(
                 x=dates, y=range_data['upper_limits_history'][:-1],
                 mode='lines', name=f'Upper ({metric})',
-                line=dict(color='red', width=1, dash='dash'),
-                fill='tonexty', fillcolor='rgba(255, 0, 0, 0.05)',
+                line=dict(color=GRAY_BLUE, width=1, dash='dash'),
+                fill='tonexty', fillcolor='rgba(120, 144, 156, 0.05)',
                 showlegend=(i == 1)
             ), row=i, col=1)
 
@@ -350,8 +357,8 @@ class AdaptiveRangeDashboard:
             fig.add_trace(go.Scatter(
                 x=dates, y=range_data['lower_limits_history'][:-1],
                 mode='lines', name=f'Lower ({metric})',
-                line=dict(color='red', width=1, dash='dash'),
-                fill='tonexty', fillcolor='rgba(255, 0, 0, 0.05)',
+                line=dict(color=GRAY_BLUE, width=1, dash='dash'),
+                fill='tonexty', fillcolor='rgba(120, 144, 156, 0.05)',
                 showlegend=(i == 1)
             ), row=i, col=1)
 
@@ -359,7 +366,7 @@ class AdaptiveRangeDashboard:
             fig.add_trace(go.Scatter(
                 x=dates, y=range_data['mean_history'][:-1],
                 mode='lines', name=f'Mean ({metric})',
-                line=dict(color='#007167', width=2),
+                line=dict(color=TEAL_PRIMARY, width=2),
                 showlegend=(i == 1)
             ), row=i, col=1)
 
@@ -369,11 +376,11 @@ class AdaptiveRangeDashboard:
                 fig.add_trace(go.Scatter(
                     x=dates.iloc[non_flagged], y=values[non_flagged],
                     mode='markers', name='Within Range',
-                    marker=dict(size=8, color='#007167', symbol='circle'),
+                    marker=dict(size=8, color=TEAL_PRIMARY, symbol='circle'),
                     showlegend=(i == 1)
                 ), row=i, col=1)
 
-            # Flagged
+            # Flagged (use gold for attention)
             if len(range_data['flagged_indices']) > 0:
                 flagged_dates = dates.iloc[range_data['flagged_indices']]
                 flagged_values = values[range_data['flagged_indices']]
@@ -381,7 +388,7 @@ class AdaptiveRangeDashboard:
                 fig.add_trace(go.Scatter(
                     x=flagged_dates, y=flagged_values,
                     mode='markers', name='Flagged',
-                    marker=dict(size=12, color='red', symbol='x'),
+                    marker=dict(size=12, color=GOLD_ACCENT, symbol='x'),
                     showlegend=(i == 1)
                 ), row=i, col=1)
 
@@ -392,7 +399,7 @@ class AdaptiveRangeDashboard:
         fig.update_layout(
             title=dict(
                 text=f'CMJ Adaptive Range Monitoring - {athlete_name}<br><sub>EM Approximation (α={self.calculator.alpha}, {self.calculator.confidence_level*100:.0f}% CI)</sub>',
-                font=dict(size=22, family='Arial Black', color='#007167'),
+                font=dict(size=22, family='Arial Black', color='#1D4D3B'),
                 x=0.5,
                 xanchor='center'
             ),

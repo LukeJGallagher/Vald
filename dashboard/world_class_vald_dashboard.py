@@ -41,6 +41,26 @@ if _parent_dir not in sys.path:
 if _current_dir not in sys.path:
     sys.path.insert(0, _current_dir)
 
+# Import centralized theme module
+try:
+    from theme import (
+        get_main_css,
+        get_sidebar_css,
+        render_header,
+        metric_card,
+        metric_card_colored,
+        section_header,
+        apply_team_saudi_theme,
+        TEAL_PRIMARY,
+        TEAL_DARK,
+        GOLD_ACCENT,
+        COLORS,
+        CHART_COLORS,
+    )
+    THEME_MODULE_AVAILABLE = True
+except ImportError:
+    THEME_MODULE_AVAILABLE = False
+
 # Import configuration
 try:
     from config.sports_config import (
@@ -607,33 +627,33 @@ st.set_page_config(
 )
 
 # ============================================================================
-# CUSTOM CSS - OFFICIAL SAUDI OLYMPIC THEME
-# Theme based on: https://olympic.sa/team-saudi/
+# CUSTOM CSS - TEAM SAUDI PROFESSIONAL THEME
+# Centralized theme module with rollback support
 # ============================================================================
 
-st.markdown("""
+# Apply theme from centralized module (with fallback to inline CSS)
+if THEME_MODULE_AVAILABLE:
+    st.markdown(get_main_css(), unsafe_allow_html=True)
+    st.markdown(get_sidebar_css(), unsafe_allow_html=True)
+else:
+    # Fallback inline CSS if theme module not available
+    st.markdown("""
 <style>
-    /* Import Official Saudi Olympic fonts */
-    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
-    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
-    @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap');
+    /* Import fonts */
+    @import url('https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
 
-    /* CSS Variables - Official Team Saudi Green (from TEAM SAUDI GREEN.png) */
+    /* CSS Variables - Team Saudi Green (matching banner) */
     :root {
-        --saudi-green: #1D4D3B;
-        --saudi-green-dark: #153829;
-        --saudi-green-light: #2A6A50;
-        --saudi-gold: #a08e66;
-        --saudi-gold-alt: #9d8e65;
-        --saudi-gold-hover: #998967;
-        --saudi-text-primary: #111827;
-        --saudi-text-secondary: #4b5563;
-        --saudi-border: #eeeeee;
-        --saudi-white: #ffffff;
-        --saudi-gray: #f1f1f1;
-        --saudi-light-gray: #f5f5f5;
-        --saudi-shadow: rgba(0, 0, 0, 0.1);
-        --saudi-shadow-strong: rgba(0, 0, 0, 0.2);
+        --teal-primary: #255035;
+        --teal-dark: #1C3D28;
+        --teal-light: #2E6040;
+        --gold-accent: #a08e66;
+        --gray-blue: #78909C;
+        --bg-primary: #f8f9fa;
+        --bg-surface: #ffffff;
+        --text-primary: #1a1a1a;
+        --text-secondary: #4b5563;
+        --border: #e9ecef;
     }
 
     /* Main App Styling - Saudi Olympic Theme */
@@ -1134,27 +1154,41 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ============================================================================
-# HEADER
+# HEADER - Team Saudi Cover Banner
 # ============================================================================
 
-# Header with logo
-st.markdown("""
-<div class="main-header">
-""", unsafe_allow_html=True)
+# Load and display the cover banner (banner 4)
+import base64
 
-# Logo section with white backdrop for visibility
-col1, col2, col3 = st.columns([2, 1, 2])
-with col1:
-    st.write("")  # Spacer
-with col2:
-    st.write("")  # Spacer
-with col3:
-    st.write("")  # Spacer
+banner_path = os.path.join(os.path.dirname(__file__), 'assets', 'logos', 'cover_banner.jpg')
+if os.path.exists(banner_path):
+    with open(banner_path, 'rb') as f:
+        banner_b64 = base64.b64encode(f.read()).decode()
 
-st.markdown("""
-    <div style="height: 1rem;"></div>
-</div>
-""", unsafe_allow_html=True)
+    st.markdown(f"""
+    <div style="
+        width: 100%;
+        margin-bottom: 0.5rem;
+        border-radius: 4px;
+        overflow: hidden;
+    ">
+        <img src="data:image/jpeg;base64,{banner_b64}" style="width: 100%; height: auto; display: block; max-height: 100px; object-fit: cover; object-position: center;">
+    </div>
+    """, unsafe_allow_html=True)
+else:
+    # Fallback header if banner not found
+    if THEME_MODULE_AVAILABLE:
+        render_header(
+            title="Team Saudi Performance Analysis",
+            subtitle="World-class strength & conditioning analytics powered by VALD Performance"
+        )
+    else:
+        st.markdown("""
+        <div class="ts-header">
+            <h1>Team Saudi Performance Analysis</h1>
+            <p>World-class strength & conditioning analytics powered by VALD Performance</p>
+        </div>
+        """, unsafe_allow_html=True)
 
 
 # ============================================================================
@@ -1746,31 +1780,31 @@ if df.empty:
 # SIDEBAR - FILTERS
 # ============================================================================
 
-# Sidebar branding with new logo
+# Sidebar branding with Team Saudi logo
 try:
     import base64
     import os
-    # Try multiple locations for the logo
-    sidebar_logo_path = os.path.join(os.path.dirname(__file__), 'Saudi logo.png')
+    # Use the new Team Saudi logo (cover-banner-5.jpg)
+    sidebar_logo_path = os.path.join(os.path.dirname(__file__), 'assets', 'logos', 'team_saudi_logo.jpg')
     if not os.path.exists(sidebar_logo_path):
-        sidebar_logo_path = os.path.join(os.path.dirname(__file__), 'team_saudi_logo.png')
+        sidebar_logo_path = os.path.join(os.path.dirname(__file__), 'Saudi logo.png')
     if not os.path.exists(sidebar_logo_path):
         sidebar_logo_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'Saudi logo.png')
-    if not os.path.exists(sidebar_logo_path):
-        sidebar_logo_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'idxJjwCtfw_logos.png')
 
     if os.path.exists(sidebar_logo_path):
         with open(sidebar_logo_path, "rb") as f:
             sidebar_logo_data = base64.b64encode(f.read()).decode()
+        # Determine image format from extension
+        img_format = "jpeg" if sidebar_logo_path.endswith('.jpg') else "png"
         st.sidebar.markdown(f"""
-        <div style="text-align: center; padding: 1.5rem 1rem 2rem 1rem; border-bottom: 3px solid #a08e66; margin-bottom: 1.5rem;">
-            <img src="data:image/png;base64,{sidebar_logo_data}"
+        <div style="text-align: center; padding: 1rem; border-bottom: 3px solid #a08e66; margin-bottom: 1.5rem;">
+            <img src="data:image/{img_format};base64,{sidebar_logo_data}"
                  alt="Team Saudi"
                  style="
-                     width: 100%;
-                     max-width: 200px;
+                     width: auto;
+                     max-width: 140px;
                      height: auto;
-                     filter: brightness(1.1);
+                     max-height: 180px;
                  ">
         </div>
         """, unsafe_allow_html=True)
@@ -1792,21 +1826,62 @@ except Exception as e:
     """, unsafe_allow_html=True)
 
 # ============================================================================
-# DATA SETUP - No sidebar filters (filters removed per user request)
-# See docs/DASHBOARD_TABS_REFERENCE.md for filter restoration
+# SPORT FILTER - Simple dropdown selector in sidebar
 # ============================================================================
-filtered_df = df.copy()
-filtered_forceframe = df_forceframe.copy()
-filtered_nordbord = df_nordbord.copy()
+
+# Get available sports from data
+available_sports = []
+if 'athlete_sport' in df.columns:
+    available_sports = sorted(df['athlete_sport'].dropna().unique().tolist())
+
+# Sport dropdown filter
+st.sidebar.markdown("---")
+st.sidebar.markdown("### 🏅 Select Sport")
+sport_options = ['All Sports'] + available_sports
+selected_sport_dropdown = st.sidebar.selectbox("Sport:", sport_options, key="sport_filter", label_visibility="collapsed")
+
+# Store selection in session state for consistency
+if 'selected_sport_icon' not in st.session_state:
+    st.session_state.selected_sport_icon = None
+st.session_state.selected_sport_icon = None if selected_sport_dropdown == 'All Sports' else selected_sport_dropdown
+
+# ============================================================================
+# DATA SETUP - Filter by selected sport
+# ============================================================================
+
+# Apply global sport filter
+selected_sport = st.session_state.selected_sport_icon
+if selected_sport:
+    # Filter by selected sport
+    if 'athlete_sport' in df.columns:
+        filtered_df = df[df['athlete_sport'].str.contains(selected_sport.split()[0], case=False, na=False)].copy()
+    else:
+        filtered_df = df.copy()
+
+    if 'athlete_sport' in df_forceframe.columns:
+        filtered_forceframe = df_forceframe[df_forceframe['athlete_sport'].str.contains(selected_sport.split()[0], case=False, na=False)].copy()
+    else:
+        filtered_forceframe = df_forceframe.copy()
+
+    if 'athlete_sport' in df_nordbord.columns:
+        filtered_nordbord = df_nordbord[df_nordbord['athlete_sport'].str.contains(selected_sport.split()[0], case=False, na=False)].copy()
+    else:
+        filtered_nordbord = df_nordbord.copy()
+else:
+    filtered_df = df.copy()
+    filtered_forceframe = df_forceframe.copy()
+    filtered_nordbord = df_nordbord.copy()
 
 # Variables for backward compatibility
-selected_sports = []
+selected_sports = [selected_sport] if selected_sport else []
 selected_athletes = []
-selected_test_types = df['testType'].dropna().unique().tolist() if 'testType' in df.columns else []
+selected_test_types = filtered_df['testType'].dropna().unique().tolist() if 'testType' in filtered_df.columns else []
 
 # Summary stats in sidebar
 st.sidebar.markdown("---")
 st.sidebar.markdown("### 📊 Data Summary")
+if selected_sport:
+    st.sidebar.caption(f"Filtered: {selected_sport}")
 st.sidebar.metric("Total Tests", len(filtered_df))
 st.sidebar.metric("Athletes", filtered_df['Name'].nunique() if 'Name' in filtered_df.columns else 0)
 st.sidebar.metric("Sports", filtered_df['athlete_sport'].nunique() if 'athlete_sport' in filtered_df.columns else 0)
@@ -1815,11 +1890,11 @@ st.sidebar.metric("Sports", filtered_df['athlete_sport'].nunique() if 'athlete_s
 # TABS - Streamlined (removed tabs preserved in docs/DASHBOARD_TABS_REFERENCE.md)
 # ============================================================================
 
-# New tab order: Home, Reports, ForceFrame, NordBord, Throws, Data Entry, Trace, Data
-# Original indices: 0=Home, 1=Reports, 2=ForceFrame, 3=NordBord, 7=Throws, 8=Trace, 16=Data
-# New indices:      0=Home, 1=Reports, 2=ForceFrame, 3=NordBord, 4=Throws, 5=Data Entry, 6=Trace, 7=Data
+# New tab order: Home, Reports, ForceFrame, NordBord, Data Entry, Trace, Data
+# Throws moved under Reports tab
+# New indices:      0=Home, 1=Reports, 2=ForceFrame, 3=NordBord, 4=Data Entry, 5=Trace, 6=Data
 tabs = st.tabs([
-    "🏠 Home", "📊 Reports", "🔲 ForceFrame", "🦵 NordBord", "🥏 Throws", "✏️ Data Entry", "📉 Trace", "📋 Data"
+    "🏠 Home", "📊 Reports", "🔲 ForceFrame", "🦵 NordBord", "✏️ Data Entry", "📉 Trace", "📋 Data"
 ])
 
 # ============================================================================
@@ -1913,68 +1988,15 @@ with tabs[0]:
 
 
 
-with tabs[4]:  # Throws (was tabs[7])
-    st.markdown("## 🥏 Throws Training Dashboard")
-    st.markdown("*Performance dashboard for Athletics athletes - tracking power, force, and technical consistency*")
-
-    if TEST_TYPE_MODULES_AVAILABLE:
-        # Filter for Athletics athletes (or all athletes if no sport column)
-        if 'athlete_sport' in filtered_df.columns and 'Name' in filtered_df.columns:
-            # Prefer Athletics athletes, but show all if none found
-            athletics_df = filtered_df[
-                filtered_df['athlete_sport'].str.contains('Athletics|Track|Field|Shot|Discus|Javelin|Hammer|Throws', case=False, na=False)
-            ].copy()
-
-            # Use athletics athletes if found, otherwise use all athletes
-            display_df = athletics_df if not athletics_df.empty else filtered_df.copy()
-
-            if not display_df.empty:
-                athletes = sorted([a for a in display_df['Name'].unique() if pd.notna(a)])
-
-                if athletes:
-                    selected_athlete = st.selectbox("Select Athlete:", athletes, key="throws_athlete")
-
-                    # Filter athlete data
-                    athlete_df = display_df[display_df['Name'] == selected_athlete].copy()
-                    sport = athlete_df['athlete_sport'].iloc[0] if 'athlete_sport' in athlete_df.columns else "Athletics"
-
-                    # Display throws dashboard
-                    ThrowsTrainingModule.display_throws_dashboard(athlete_df, selected_athlete, sport)
-
-                else:
-                    st.warning("No athletes with name data available")
-            else:
-                st.info("No athlete data available")
-        else:
-            st.warning("Required columns (Name, athlete_sport) not found in data")
-    else:
-        st.error("Throws Training module not available. Please check utils/test_type_modules.py")
-
 # ============================================================================
-# TAB: SPORT ANALYSIS (REMOVED - See docs/DASHBOARD_TABS_REFERENCE.md)
+# TAB: THROWS (REMOVED - Moved to Reports tab)
 # ============================================================================
 
 # ============================================================================
-# TAB: RISK & READINESS (REMOVED - See docs/DASHBOARD_TABS_REFERENCE.md)
+# TAB 4: DATA ENTRY - Training Distances & External Data
 # ============================================================================
 
-# ============================================================================
-# TAB: COMPARISONS (REMOVED - See docs/DASHBOARD_TABS_REFERENCE.md)
-# ============================================================================
-
-# ============================================================================
-# TAB: PROGRESS TRACKING (REMOVED - See docs/DASHBOARD_TABS_REFERENCE.md)
-# ============================================================================
-
-# ============================================================================
-# TAB: RANKINGS (REMOVED - See docs/DASHBOARD_TABS_REFERENCE.md)
-# ============================================================================
-
-# ============================================================================
-# TAB 5: DATA ENTRY - Training Distances & External Data
-# ============================================================================
-
-with tabs[5]:  # Data Entry
+with tabs[4]:  # Data Entry
     st.markdown("## ✏️ Data Entry")
     st.markdown("*Record training distances, S&C metrics, and other external data*")
 
@@ -2045,7 +2067,7 @@ with tabs[5]:  # Data Entry
 
         st.markdown("""
         <div style="
-            background: linear-gradient(135deg, #007167 0%, #005a51 100%);
+            background: linear-gradient(135deg, #255035 0%, #1C3D28 100%);
             border-radius: 12px;
             padding: 1rem;
             margin-bottom: 1.5rem;
@@ -2274,7 +2296,7 @@ with tabs[5]:  # Data Entry
 
         st.markdown("""
         <div style="
-            background: linear-gradient(135deg, #007167 0%, #005a51 100%);
+            background: linear-gradient(135deg, #255035 0%, #1C3D28 100%);
             border-radius: 12px;
             padding: 1rem;
             margin-bottom: 1.5rem;
@@ -2520,7 +2542,7 @@ with tabs[5]:  # Data Entry
 
         st.markdown("""
         <div style="
-            background: linear-gradient(135deg, #007167 0%, #005a51 100%);
+            background: linear-gradient(135deg, #255035 0%, #1C3D28 100%);
             border-radius: 12px;
             padding: 1rem;
             margin-bottom: 1.5rem;
@@ -3288,7 +3310,7 @@ with tabs[5]:  # Data Entry
 
                     # Color mapping for session types
                     session_colors = {
-                        'Training': '#007167',
+                        'Training': '#255035',
                         'Competition': '#FFB800',
                         'Testing': '#0077B6',
                         'Warm-up': '#6c757d'
@@ -3298,7 +3320,7 @@ with tabs[5]:  # Data Entry
                     if 'session_type' in filtered_throws_df.columns:
                         for session_type in filtered_throws_df['session_type'].unique():
                             session_data = filtered_throws_df[filtered_throws_df['session_type'] == session_type]
-                            color = session_colors.get(session_type, '#007167')
+                            color = session_colors.get(session_type, '#255035')
 
                             fig_throws.add_trace(go.Scatter(
                                 x=session_data['date'],
@@ -3330,8 +3352,8 @@ with tabs[5]:  # Data Entry
                             y=filtered_throws_df['distance_m'],
                             mode='markers+lines',
                             name='Throws',
-                            marker=dict(size=10, color='#007167'),
-                            line=dict(color='#007167', width=2),
+                            marker=dict(size=10, color='#255035'),
+                            line=dict(color='#255035', width=2),
                             hovertemplate='<b>%{x|%d %b %Y}</b><br>Distance: %{y:.2f}m<extra></extra>'
                         ))
 
@@ -3421,8 +3443,8 @@ with tabs[5]:  # Data Entry
                         y=filtered_upper_df['estimated_1rm'],
                         mode='markers+lines',
                         name='Estimated 1RM',
-                        marker=dict(size=10, color='#007167'),
-                        line=dict(color='#007167', width=2),
+                        marker=dict(size=10, color='#255035'),
+                        line=dict(color='#255035', width=2),
                         hovertemplate='<b>%{x|%d %b %Y}</b><br>Est. 1RM: %{y:.1f}kg<extra></extra>'
                     ))
 
@@ -3522,8 +3544,8 @@ with tabs[5]:  # Data Entry
                         y=filtered_lower_df['estimated_1rm'],
                         mode='markers+lines',
                         name='Estimated 1RM',
-                        marker=dict(size=10, color='#007167'),
-                        line=dict(color='#007167', width=2),
+                        marker=dict(size=10, color='#255035'),
+                        line=dict(color='#255035', width=2),
                         hovertemplate='<b>%{x|%d %b %Y}</b><br>Est. 1RM: %{y:.1f}kg<extra></extra>'
                     ))
 
@@ -3585,16 +3607,158 @@ with tabs[5]:  # Data Entry
 
 
 
-with tabs[6]:  # Trace (was tabs[8], now tabs[6])
+with tabs[5]:  # Trace
     st.markdown("## 📉 Force Trace Analysis")
+    st.markdown("""
+    <div style="background: linear-gradient(135deg, #255035 0%, #1C3D28 100%); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+        <p style="color: white; margin: 0; font-size: 0.95rem;">
+            <strong>Raw Force-Time Curves</strong> • View Left/Right bilateral force • Compare trials over time
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Load API credentials first
+    env_creds, env_loaded = load_env_credentials()
+
+    # =========================================================================
+    # SINGLE TRACE VIEW - Quick view of one test's raw force data
+    # =========================================================================
+    st.markdown("### 📈 View Single Force Trace")
+
+    if env_loaded and 'testId' in filtered_df.columns:
+        # Quick athlete and test selection
+        single_col1, single_col2 = st.columns([1, 2])
+
+        with single_col1:
+            single_athletes = sorted([n for n in filtered_df['Name'].unique() if pd.notna(n)])
+            single_athlete = st.selectbox(
+                "Athlete:",
+                single_athletes if single_athletes else ["No athletes"],
+                key="single_trace_athlete"
+            )
+
+        with single_col2:
+            # Get tests for selected athlete
+            single_athlete_tests = filtered_df[filtered_df['Name'] == single_athlete].copy()
+            if not single_athlete_tests.empty and 'recordedDateUtc' in single_athlete_tests.columns:
+                single_athlete_tests = single_athlete_tests.sort_values('recordedDateUtc', ascending=False)
+                test_labels = []
+                for _, row in single_athlete_tests.head(20).iterrows():
+                    date_str = pd.to_datetime(row['recordedDateUtc']).strftime('%Y-%m-%d %H:%M') if pd.notna(row.get('recordedDateUtc')) else 'N/A'
+                    test_type = row.get('testType', 'Unknown')
+                    test_labels.append(f"{test_type} - {date_str}")
+
+                single_test_idx = st.selectbox(
+                    "Select Test:",
+                    range(len(test_labels)),
+                    format_func=lambda i: test_labels[i],
+                    key="single_trace_test"
+                )
+                selected_single_test = single_athlete_tests.iloc[single_test_idx]
+            else:
+                st.info("No tests available for this athlete")
+                selected_single_test = None
+
+        # Fetch and display single trace
+        if selected_single_test is not None:
+            if st.button("📈 Fetch & Display Force Trace", type="primary", key="fetch_single_trace"):
+                test_id = str(selected_single_test.get('testId', ''))
+                trial_id = str(selected_single_test.get('trialId', '')) if 'trialId' in selected_single_test else ''
+
+                with st.spinner("Fetching force trace from VALD API..."):
+                    try:
+                        trace_data = get_force_trace(
+                            test_id,
+                            trial_id,
+                            env_creds['token'],
+                            env_creds['tenant_id'],
+                            env_creds['region']
+                        )
+
+                        if isinstance(trace_data, pd.DataFrame) and not trace_data.empty:
+                            st.success(f"✅ Fetched {len(trace_data)} data points")
+
+                            # Extract data
+                            time_ms = trace_data['time_ms'].values if 'time_ms' in trace_data.columns else np.arange(len(trace_data))
+
+                            # Create figure with bilateral data if available
+                            fig_single = go.Figure()
+
+                            if 'force_left' in trace_data.columns and 'force_right' in trace_data.columns:
+                                # Show Left/Right separately
+                                fig_single.add_trace(go.Scatter(
+                                    x=time_ms, y=trace_data['force_left'],
+                                    mode='lines', name='Left',
+                                    line=dict(color='#255035', width=2)  # Saudi Green
+                                ))
+                                fig_single.add_trace(go.Scatter(
+                                    x=time_ms, y=trace_data['force_right'],
+                                    mode='lines', name='Right',
+                                    line=dict(color='#0077B6', width=2)  # Info Blue
+                                ))
+                                if 'force_n' in trace_data.columns:
+                                    fig_single.add_trace(go.Scatter(
+                                        x=time_ms, y=trace_data['force_n'],
+                                        mode='lines', name='Total',
+                                        line=dict(color='#a08e66', width=2, dash='dot')  # Gold
+                                    ))
+                            elif 'force_n' in trace_data.columns:
+                                fig_single.add_trace(go.Scatter(
+                                    x=time_ms, y=trace_data['force_n'],
+                                    mode='lines', name='Force',
+                                    line=dict(color='#255035', width=2)
+                                ))
+
+                            fig_single.update_layout(
+                                title=f"Force Trace - {single_athlete}<br><sub>{selected_single_test.get('testType', '')} | {pd.to_datetime(selected_single_test.get('recordedDateUtc')).strftime('%Y-%m-%d %H:%M') if pd.notna(selected_single_test.get('recordedDateUtc')) else ''}</sub>",
+                                xaxis_title="Time (ms)",
+                                yaxis_title="Force (N)",
+                                height=450,
+                                hovermode='x unified',
+                                legend=dict(orientation='h', yanchor='bottom', y=1.02),
+                                plot_bgcolor='white',
+                                paper_bgcolor='white'
+                            )
+                            fig_single.update_xaxes(showgrid=True, gridwidth=1, gridcolor='#e9ecef')
+                            fig_single.update_yaxes(showgrid=True, gridwidth=1, gridcolor='#e9ecef')
+
+                            st.plotly_chart(fig_single, use_container_width=True)
+
+                            # Key metrics
+                            m1, m2, m3, m4 = st.columns(4)
+                            force_vals = trace_data['force_n'].values if 'force_n' in trace_data.columns else trace_data.iloc[:, 0].values
+
+                            with m1:
+                                st.metric("Peak Force", f"{max(force_vals):.0f} N")
+                            with m2:
+                                st.metric("Avg Force", f"{np.mean(force_vals):.0f} N")
+                            with m3:
+                                st.metric("Duration", f"{max(time_ms):.0f} ms")
+                            with m4:
+                                sampling = trace_data.attrs.get('sampling_frequency', 200) if hasattr(trace_data, 'attrs') else 200
+                                st.metric("Sample Rate", f"{sampling} Hz")
+
+                            # Raw data expander
+                            with st.expander("📋 View Raw Data"):
+                                st.dataframe(trace_data.head(100), use_container_width=True)
+
+                        else:
+                            st.error("❌ Could not fetch force trace data. This test may not have raw trace data available.")
+
+                    except Exception as e:
+                        st.error(f"Error: {str(e)}")
+    else:
+        if not env_loaded:
+            st.info("⚠️ API credentials required. Add MANUAL_TOKEN, TENANT_ID to your .env file")
+        else:
+            st.info("⚠️ Data must include testId column to fetch force traces")
+
+    st.markdown("---")
 
     # =========================================================================
     # TRIAL COMPARISON - Show available tests and allow selection
     # =========================================================================
     st.markdown("### 🔄 Compare Force Traces")
-
-    # Load API credentials first
-    env_creds, env_loaded = load_env_credentials()
 
     if env_loaded:
         st.success("✅ API credentials loaded from .env file")
@@ -3679,7 +3843,7 @@ with tabs[6]:  # Trace (was tabs[8], now tabs[6])
             col1, col2 = st.columns(2)
 
             with col1:
-                st.markdown("**🔵 Trial 1 (Blue line)**")
+                st.markdown("**🟢 Trial 1 (Saudi Green line)**")
                 test1_idx = st.selectbox(
                     "Select first test:",
                     range(len(test_options)),
@@ -3693,7 +3857,7 @@ with tabs[6]:  # Trace (was tabs[8], now tabs[6])
                     st.caption(f"Trial ID: `{test1_data['trialId'][:16]}...`")
 
             with col2:
-                st.markdown("**🟢 Trial 2 (Green line)**")
+                st.markdown("**🔵 Trial 2 (Blue line)**")
                 # Default to second test if available
                 default_idx2 = 1 if len(test_options) > 1 else 0
                 test2_idx = st.selectbox(
@@ -3769,21 +3933,21 @@ with tabs[6]:  # Trace (was tabs[8], now tabs[6])
                                 else:
                                     x_title = "Time (ms)"
 
-                                # Create overlay plot
+                                # Create overlay plot (Team Saudi colors)
                                 fig = go.Figure()
 
                                 fig.add_trace(go.Scatter(
                                     x=time1, y=force1,
                                     mode='lines',
                                     name=f"Trial 1: {test1_data['date']}",
-                                    line=dict(color='#1f77b4', width=2.5)
+                                    line=dict(color='#255035', width=2.5)  # Saudi Green
                                 ))
 
                                 fig.add_trace(go.Scatter(
                                     x=time2, y=force2,
                                     mode='lines',
                                     name=f"Trial 2: {test2_data['date']}",
-                                    line=dict(color='#2ca02c', width=2.5)
+                                    line=dict(color='#0077B6', width=2.5)  # Info Blue
                                 ))
 
                                 fig.update_layout(
@@ -3840,8 +4004,8 @@ with tabs[6]:  # Trace (was tabs[8], now tabs[6])
                                         x=time1, y=force_diff,
                                         mode='lines',
                                         fill='tozeroy',
-                                        fillcolor='rgba(214, 39, 40, 0.2)',
-                                        line=dict(color='#d62728', width=2)
+                                        fillcolor='rgba(160, 142, 102, 0.2)',  # Gold accent
+                                        line=dict(color='#a08e66', width=2)  # Gold accent
                                     ))
                                     fig_diff.add_hline(y=0, line_dash="dash", line_color="gray")
                                     fig_diff.update_layout(
@@ -4635,7 +4799,7 @@ Tenant: {env_creds['tenant_id']}
 
 
 
-with tabs[7]:  # Data (was tabs[16], now tabs[7])
+with tabs[6]:  # Data
     st.markdown("## 📋 Data Table View")
     st.markdown("Browse and export all testing data in table format")
 
@@ -4760,7 +4924,7 @@ with tabs[7]:  # Data (was tabs[16], now tabs[7])
 with tabs[1]:
     st.markdown("## 📊 Sport Reports")
     st.markdown("""
-    <div style="background: linear-gradient(135deg, #007167 0%, #005a51 100%); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+    <div style="background: linear-gradient(135deg, #255035 0%, #1C3D28 100%); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
         <p style="color: white; margin: 0; font-size: 0.95rem;">
             <strong>Group & Individual Reports</strong> • Benchmark zones • Trend analysis over time
         </p>
@@ -4788,27 +4952,36 @@ with tabs[1]:
             st.error("Sport reports module not found. Please check utils/sport_reports.py")
 
     if sport_reports_available:
-        # Sport selector
+        # Use sidebar sport selection instead of duplicate dropdown
+        # selected_sport comes from sidebar (set earlier in the file)
+        # Default to "All Sports" if no specific sport selected
+        selected_report_sport = selected_sport if selected_sport else "All Sports"
+
+        # Get available sports for filtering
         available_sports = sorted(filtered_df['athlete_sport'].dropna().unique()) if 'athlete_sport' in filtered_df.columns else []
 
-        if available_sports:
-            selected_report_sport = st.selectbox(
-                "Select Sport:",
-                options=available_sports,
-                key="report_sport_selector"
-            )
+        if available_sports or selected_report_sport:
 
-            # Report type tabs - Group v1 (S&C Diagnostics), v2, v3, Individual, Shooting, and Benchmark Settings
-            # Note: S&C Diagnostics is now integrated into Group v1
-            report_tabs = st.tabs(["👥 Group v1", "📊 Group v2", "📈 Group v3", "🏃 Individual Report", "🎯 Shooting Balance", "⚙️ Benchmark Settings"])
+            # Report type tabs - Strength Diagnostics, Group v2, Individual, Shooting, Throws, and Benchmark Settings
+            # Note: Group v3 hidden, Throws added
+            report_tabs = st.tabs(["💪 Strength Diagnostics", "📊 Group v2", "🏃 Individual Report", "🎯 Shooting Balance", "🥏 Throws", "⚙️ Benchmark Settings"])
 
             # Render benchmark legend
             render_benchmark_legend()
 
             # Filter data for selected sport (used by all tabs)
-            sport_mask = filtered_df['athlete_sport'].str.contains(
-                selected_report_sport.split()[0], case=False, na=False
-            ) if 'athlete_sport' in filtered_df.columns else pd.Series([True] * len(filtered_df))
+            # If no sport selected from sidebar, use all data
+            if selected_report_sport == "All Sports":
+                sport_mask = pd.Series([True] * len(filtered_df))
+            elif 'Throw' in str(selected_report_sport) or selected_report_sport == 'Athletics - Throws':
+                # Special handling for throws athletes
+                sport_mask = filtered_df['athlete_sport'].str.contains(
+                    'Throw|Shot|Discus|Javelin|Hammer', case=False, na=False
+                ) if 'athlete_sport' in filtered_df.columns else pd.Series([True] * len(filtered_df))
+            else:
+                sport_mask = filtered_df['athlete_sport'].str.contains(
+                    selected_report_sport.split()[0], case=False, na=False
+                ) if 'athlete_sport' in filtered_df.columns else pd.Series([True] * len(filtered_df))
 
             sport_data = filtered_df[sport_mask].copy()
 
@@ -4827,28 +5000,36 @@ with tabs[1]:
             if not sport_ff.empty and 'Name' in sport_ff.columns:
                 if 'athlete_sport' not in sport_ff.columns:
                     sport_ff['athlete_sport'] = sport_ff['Name'].map(athlete_sport_map)
-                # Filter by selected sport
-                sport_keyword = selected_report_sport.split()[0]
-                filtered_ff = sport_ff[sport_ff['athlete_sport'].str.contains(
-                    sport_keyword, case=False, na=False
-                )]
-                if not filtered_ff.empty:
-                    sport_ff = filtered_ff
+                # Filter by selected sport (if a sport is selected)
+                if selected_report_sport is not None:
+                    if 'Throw' in str(selected_report_sport) or selected_report_sport == 'Athletics - Throws':
+                        sport_pattern = 'Throw|Shot|Discus|Javelin|Hammer'
+                    else:
+                        sport_pattern = selected_report_sport.split()[0]
+                    filtered_ff = sport_ff[sport_ff['athlete_sport'].str.contains(
+                        sport_pattern, case=False, na=False
+                    )]
+                    if not filtered_ff.empty:
+                        sport_ff = filtered_ff
 
             # Enrich NordBord with sport info from athlete mapping if missing
             if not sport_nb.empty and 'Name' in sport_nb.columns:
                 if 'athlete_sport' not in sport_nb.columns:
                     sport_nb['athlete_sport'] = sport_nb['Name'].map(athlete_sport_map)
-                sport_keyword = selected_report_sport.split()[0]
-                filtered_nb = sport_nb[sport_nb['athlete_sport'].str.contains(
-                    sport_keyword, case=False, na=False
-                )]
-                if not filtered_nb.empty:
-                    sport_nb = filtered_nb
+                # Filter by selected sport (if a sport is selected)
+                if selected_report_sport is not None:
+                    if 'Throw' in str(selected_report_sport) or selected_report_sport == 'Athletics - Throws':
+                        sport_pattern = 'Throw|Shot|Discus|Javelin|Hammer'
+                    else:
+                        sport_pattern = selected_report_sport.split()[0]
+                    filtered_nb = sport_nb[sport_nb['athlete_sport'].str.contains(
+                        sport_pattern, case=False, na=False
+                    )]
+                    if not filtered_nb.empty:
+                        sport_nb = filtered_nb
 
             with report_tabs[0]:
-                # Group Report v1 - Updated with S&C Diagnostics chart styles
-                # Keeps existing layout (Lower Body, Upper Body sections) but with new charts
+                # Strength Diagnostics (formerly Group v1) - S&C Diagnostics chart styles
                 create_group_report(
                     sport_data,
                     selected_report_sport,
@@ -4869,18 +5050,6 @@ with tabs[1]:
                 )
 
             with report_tabs[2]:
-                # Group Report v3 - Alternative visualizations
-                st.markdown("### Alternative Visualizations")
-                st.caption("Bullet charts, radar plots, and distribution analysis")
-
-                create_group_report_v3(
-                    sport_data,
-                    selected_report_sport,
-                    forceframe_df=sport_ff if not sport_ff.empty else None,
-                    nordbord_df=sport_nb if not sport_nb.empty else None
-                )
-
-            with report_tabs[3]:
                 # Individual Report
                 st.markdown("### Individual Athlete Analysis")
 
@@ -4906,8 +5075,9 @@ with tabs[1]:
                 else:
                     st.info("No athletes found for the selected sport")
 
-            with report_tabs[4]:
+            with report_tabs[3]:
                 # Shooting Balance Report - 10m Pistol
+                # Note: Uses original df, not filtered_df, so shooting athletes show regardless of sport filter
                 st.markdown("### 🎯 10m Pistol - Balance Analysis")
                 st.caption("Quiet Standing Balance tests for shooting athletes")
 
@@ -4915,19 +5085,29 @@ with tabs[1]:
                 shooting_tabs = st.tabs(["👥 Group Report", "🏃 Individual Report"])
 
                 with shooting_tabs[0]:
-                    # Group Shooting Report
-                    create_shooting_group_report(filtered_df, "Shooting")
+                    # Group Shooting Report - use original df to always show shooting athletes
+                    create_shooting_group_report(df, "Shooting")
 
                 with shooting_tabs[1]:
                     # Individual Shooting Report
-                    # Get athletes who have QSB data
+                    # Use original df so shooting athletes always appear
+                    # Get athletes who have QSB data (flexible matching)
                     qsb_athletes = []
-                    if 'testType' in filtered_df.columns:
-                        qsb_df = filtered_df[filtered_df['testType'] == 'QSB']
+                    if 'testType' in df.columns:
+                        # Match QSB, Quiet Standing, Balance tests
+                        qsb_mask = df['testType'].str.contains('QSB|Quiet|Standing|Balance', case=False, na=False)
+                        qsb_df = df[qsb_mask]
                         if 'Name' in qsb_df.columns:
                             qsb_athletes = sorted(qsb_df['Name'].dropna().unique())
                         elif 'full_name' in qsb_df.columns:
                             qsb_athletes = sorted(qsb_df['full_name'].dropna().unique())
+
+                    # If no QSB tests, try filtering by shooting sport athletes
+                    if not qsb_athletes and 'athlete_sport' in df.columns:
+                        shooting_mask = df['athlete_sport'].str.contains('Shoot|Pistol|Rifle', case=False, na=False)
+                        shooting_df = df[shooting_mask]
+                        if 'Name' in shooting_df.columns:
+                            qsb_athletes = sorted(shooting_df['Name'].dropna().unique())
 
                     if qsb_athletes:
                         selected_shooting_athlete = st.selectbox(
@@ -4937,12 +5117,95 @@ with tabs[1]:
                         )
 
                         create_shooting_individual_report(
-                            filtered_df,
+                            df,
                             selected_shooting_athlete,
                             "Shooting"
                         )
                     else:
-                        st.info("No athletes with Quiet Standing Balance (QSB) tests found. Ensure athletes have completed QSB tests on ForceDecks.")
+                        st.info("No athletes with Quiet Standing Balance (QSB) tests found.")
+
+                        # Show what test types and sports exist to help with debugging
+                        if 'testType' in df.columns:
+                            available_tests = df['testType'].dropna().unique().tolist()
+                            with st.expander("📋 Available test types in data"):
+                                st.write("The following test types are available:")
+                                for t in sorted(available_tests)[:20]:
+                                    st.write(f"• {t}")
+                                if len(available_tests) > 20:
+                                    st.write(f"... and {len(available_tests) - 20} more")
+
+                        if 'athlete_sport' in df.columns:
+                            available_sports = df['athlete_sport'].dropna().unique().tolist()
+                            with st.expander("🏅 Available sports in data"):
+                                st.write("Sports found in the data:")
+                                for s in sorted(available_sports)[:20]:
+                                    st.write(f"• {s}")
+                                if len(available_sports) > 20:
+                                    st.write(f"... and {len(available_sports) - 20} more")
+
+            with report_tabs[4]:
+                # Throws Report - Athletics throws analysis using ThrowsTrainingModule
+                st.markdown("### 🥏 Throws Analysis")
+                st.caption("Shot Put, Discus, Javelin, and Hammer performance tracking")
+
+                # Use original df so throws athletes always appear (like Shooting tab)
+                # Filter for throws athletes (includes Athletics athletes)
+                throws_mask = df['athlete_sport'].str.contains(
+                    'Athletics|Throw|Shot|Discus|Javelin|Hammer', case=False, na=False
+                ) if 'athlete_sport' in df.columns else pd.Series([False] * len(df))
+                throws_df = df[throws_mask].copy()
+
+                # Ensure Name column exists (use full_name if Name is empty)
+                if not throws_df.empty:
+                    if 'Name' not in throws_df.columns or throws_df['Name'].isna().all():
+                        if 'full_name' in throws_df.columns:
+                            throws_df['Name'] = throws_df['full_name']
+
+                if not throws_df.empty:
+                    # Get throws athletes
+                    throws_athletes = sorted(throws_df['Name'].dropna().unique()) if 'Name' in throws_df.columns else []
+
+                    if throws_athletes:
+                        selected_throws_athlete = st.selectbox(
+                            "Select Throws Athlete:",
+                            options=throws_athletes,
+                            key="throws_athlete_selector"
+                        )
+
+                        # Use ThrowsTrainingModule for full dashboard if available
+                        if TEST_TYPE_MODULES_AVAILABLE:
+                            # Get athlete data
+                            athlete_df = throws_df[throws_df['Name'] == selected_throws_athlete].copy()
+                            sport = athlete_df['athlete_sport'].iloc[0] if 'athlete_sport' in athlete_df.columns and not athlete_df.empty else "Athletics - Throws"
+
+                            # Display the full throws dashboard
+                            ThrowsTrainingModule.display_throws_dashboard(athlete_df, selected_throws_athlete, sport)
+                        else:
+                            # Fallback to basic display
+                            athlete_throws = throws_df[throws_df['Name'] == selected_throws_athlete]
+                            if not athlete_throws.empty:
+                                st.markdown(f"#### {selected_throws_athlete}")
+
+                                # Display metrics
+                                col1, col2, col3 = st.columns(3)
+                                with col1:
+                                    test_count = len(athlete_throws)
+                                    st.metric("Total Tests", test_count)
+                                with col2:
+                                    if 'testDate' in athlete_throws.columns:
+                                        latest = pd.to_datetime(athlete_throws['testDate']).max()
+                                        st.metric("Latest Test", latest.strftime('%Y-%m-%d') if pd.notna(latest) else "N/A")
+                                with col3:
+                                    if 'athlete_sport' in athlete_throws.columns:
+                                        sport_val = athlete_throws['athlete_sport'].iloc[0]
+                                        st.metric("Event", sport_val)
+
+                                # Show data table
+                                st.dataframe(athlete_throws, use_container_width=True, hide_index=True)
+                    else:
+                        st.info("No throws athletes found in the data")
+                else:
+                    st.info("No throws athletes found. Looking for Athletics athletes or those with 'Throw', 'Shot', 'Discus', 'Javelin', or 'Hammer' in their sport.")
 
             with report_tabs[5]:
                 # Benchmark Settings - S&C staff can edit VALD norms
@@ -4968,7 +5231,7 @@ with tabs[1]:
 with tabs[2]:
     st.markdown("## 🔲 ForceFrame Isometric Strength Analysis")
     st.markdown("""
-    <div style="background: linear-gradient(135deg, #1D4D3B 0%, #2d6a5a 100%); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+    <div style="background: linear-gradient(135deg, #255035 0%, #2d6a5a 100%); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
         <p style="color: white; margin: 0; font-size: 0.95rem;">
             <strong>35+ test positions</strong> • Bilateral strength assessment • Real-time asymmetry monitoring
         </p>
@@ -5024,7 +5287,7 @@ with tabs[2]:
                     y=test_counts.values,
                     labels={'x': 'Test Type', 'y': 'Count'},
                     color=test_counts.values,
-                    color_continuous_scale=['#1D4D3B', '#a08e66']
+                    color_continuous_scale=['#255035', '#a08e66']
                 )
                 fig.update_layout(
                     xaxis_tickangle=-45,
@@ -5052,7 +5315,7 @@ with tabs[2]:
                     max_val = max(plot_df[left_col].max(), plot_df[right_col].max())
                     fig.add_shape(type='line', x0=0, y0=0, x1=max_val, y1=max_val,
                                  line=dict(color='red', dash='dash'))
-                    fig.update_traces(marker=dict(color='#1D4D3B', size=10))
+                    fig.update_traces(marker=dict(color='#255035', size=10))
                     fig.update_layout(height=500)
                     st.plotly_chart(fig, use_container_width=True)
 
@@ -5117,7 +5380,7 @@ with tabs[2]:
 
                 for i, (region, count) in enumerate(region_counts.items()):
                     with cols[i]:
-                        color = region_colors.get(region, '#1D4D3B')
+                        color = region_colors.get(region, '#255035')
                         st.markdown(f"""
                         <div style="background: {color}; padding: 1rem; border-radius: 8px; text-align: center; color: white;">
                             <h3 style="margin: 0; font-size: 2rem;">{count}</h3>
@@ -5148,7 +5411,7 @@ with tabs[2]:
                         orientation='h',
                         labels={'x': 'Number of Tests', 'y': 'Test Type'},
                         color=test_breakdown.values,
-                        color_continuous_scale=['#1D4D3B', '#a08e66']
+                        color_continuous_scale=['#255035', '#a08e66']
                     )
                     fig_region.update_layout(height=max(300, len(test_breakdown) * 40), showlegend=False)
                     st.plotly_chart(fig_region, use_container_width=True)
@@ -5276,7 +5539,7 @@ with tabs[2]:
 
                         with col1:
                             st.markdown(f"""
-                            <div style="background: linear-gradient(135deg, #1D4D3B 0%, #153829 100%); padding: 1rem; border-radius: 12px; text-align: center; border-left: 4px solid #a08e66;">
+                            <div style="background: linear-gradient(135deg, #255035 0%, #1C3D28 100%); padding: 1rem; border-radius: 12px; text-align: center; border-left: 4px solid #a08e66;">
                                 <div style="font-size: 0.85rem; color: #a08e66; font-weight: 600;">TOTAL TESTS</div>
                                 <div style="font-size: 2rem; font-weight: 700; color: white;">{len(athlete_ff)}</div>
                                 <div style="font-size: 0.75rem; color: #8fb7b3;">{selected_test_type}</div>
@@ -5285,7 +5548,7 @@ with tabs[2]:
 
                         with col2:
                             st.markdown(f"""
-                            <div style="background: linear-gradient(135deg, #1D4D3B 0%, #153829 100%); padding: 1rem; border-radius: 12px; text-align: center; border-left: 4px solid #3498db;">
+                            <div style="background: linear-gradient(135deg, #255035 0%, #1C3D28 100%); padding: 1rem; border-radius: 12px; text-align: center; border-left: 4px solid #3498db;">
                                 <div style="font-size: 0.85rem; color: #3498db; font-weight: 600;">LEFT PEAK</div>
                                 <div style="font-size: 2rem; font-weight: 700; color: white;">{left_force:.0f}</div>
                                 <div style="font-size: 0.75rem; color: #8fb7b3;">Newtons</div>
@@ -5294,7 +5557,7 @@ with tabs[2]:
 
                         with col3:
                             st.markdown(f"""
-                            <div style="background: linear-gradient(135deg, #1D4D3B 0%, #153829 100%); padding: 1rem; border-radius: 12px; text-align: center; border-left: 4px solid #e74c3c;">
+                            <div style="background: linear-gradient(135deg, #255035 0%, #1C3D28 100%); padding: 1rem; border-radius: 12px; text-align: center; border-left: 4px solid #e74c3c;">
                                 <div style="font-size: 0.85rem; color: #e74c3c; font-weight: 600;">RIGHT PEAK</div>
                                 <div style="font-size: 2rem; font-weight: 700; color: white;">{right_force:.0f}</div>
                                 <div style="font-size: 0.75rem; color: #8fb7b3;">Newtons</div>
@@ -5303,7 +5566,7 @@ with tabs[2]:
 
                         with col4:
                             st.markdown(f"""
-                            <div style="background: linear-gradient(135deg, #1D4D3B 0%, #153829 100%); padding: 1rem; border-radius: 12px; text-align: center; border-left: 4px solid {asym_color};">
+                            <div style="background: linear-gradient(135deg, #255035 0%, #1C3D28 100%); padding: 1rem; border-radius: 12px; text-align: center; border-left: 4px solid {asym_color};">
                                 <div style="font-size: 0.85rem; color: {asym_color}; font-weight: 600;">ASYMMETRY</div>
                                 <div style="font-size: 2rem; font-weight: 700; color: white;">{abs(asym):.1f}%</div>
                                 <div style="font-size: 0.75rem; color: {asym_color};">{asym_icon} {asym_status}</div>
@@ -5655,7 +5918,7 @@ with tabs[2]:
                 st.markdown("#### Asymmetry Distribution (All Tests)")
                 fig_asym = px.histogram(
                     asym_df, x='Asymmetry (%)', nbins=25,
-                    color_discrete_sequence=['#1D4D3B']
+                    color_discrete_sequence=['#255035']
                 )
                 fig_asym.add_vline(x=0, line_dash='dash', line_color='gray', annotation_text='Balanced')
                 fig_asym.add_vline(x=10, line_dash='dot', line_color='orange', annotation_text='+10%')
@@ -5758,7 +6021,7 @@ with tabs[3]:
                     max_val = max(plot_df['leftMaxForce'].max(), plot_df['rightMaxForce'].max())
                     fig.add_shape(type='line', x0=0, y0=0, x1=max_val, y1=max_val,
                                  line=dict(color='red', dash='dash'))
-                    fig.update_traces(marker=dict(color='#1D4D3B', size=12))
+                    fig.update_traces(marker=dict(color='#255035', size=12))
                     fig.update_layout(height=500)
                     st.plotly_chart(fig, use_container_width=True)
 
@@ -6179,7 +6442,7 @@ with tabs[3]:
                                 y=athlete_nb['Asymmetry'],
                                 mode='lines+markers',
                                 name='Asymmetry',
-                                line=dict(color='#1D4D3B', width=2),
+                                line=dict(color='#255035', width=2),
                                 fill='tozeroy',
                                 fillcolor='rgba(29, 77, 59, 0.2)'
                             ))
@@ -6291,7 +6554,7 @@ with tabs[3]:
                 st.markdown("#### Asymmetry Distribution")
                 fig_nb_asym = px.histogram(
                     asym_nb, x='Asymmetry (%)', nbins=25,
-                    color_discrete_sequence=['#1D4D3B']
+                    color_discrete_sequence=['#255035']
                 )
                 fig_nb_asym.add_vline(x=0, line_dash='dash', line_color='gray')
                 fig_nb_asym.add_vline(x=10, line_dash='dot', line_color='orange')
@@ -6321,17 +6584,24 @@ with tabs[3]:
 # FOOTER
 # ============================================================================
 
-st.markdown("""
----
-<div style="text-align: center; color: #ffffff; padding: 3rem 2rem; background: linear-gradient(135deg, #1D4D3B 0%, #153829 50%, #0F2A1E 100%); border-radius: 12px; margin-top: 3rem; position: relative; overflow: hidden; box-shadow: 0 8px 32px rgba(29, 77, 59, 0.3);">
-    <div style="position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, #a08e66, #9d8e65, #a08e66);"></div>
-    <h3 style="font-family: 'Poppins', sans-serif; font-size: 1.8rem; margin-bottom: 0.5rem; font-weight: 700; letter-spacing: 3px; text-transform: uppercase;">TEAM SAUDI</h3>
-    <p style="font-size: 1.1rem; font-family: 'Tajawal', sans-serif; opacity: 0.95; font-weight: 500; margin-bottom: 0.5rem;">اللجنة الأولمبية والبارالمبية السعودية</p>
-    <div style="background: rgba(160, 142, 102, 0.5); height: 1px; width: 200px; margin: 1rem auto;"></div>
-    <p style="font-size: 0.95rem; opacity: 0.9; font-weight: 600;">Performance Analysis Dashboard v3.0</p>
-    <p style="font-size: 0.85rem; opacity: 0.75; margin-top: 0.5rem;">Force Trace Analysis | Advanced Analytics | Reliability Metrics</p>
-    <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1);">
-        <p style="font-size: 0.75rem; opacity: 0.6; font-family: 'Roboto', sans-serif;">© 2025 Saudi Olympic & Paralympic Committee</p>
+# Footer banner (cover-banner-3)
+footer_banner_path = os.path.join(os.path.dirname(__file__), 'assets', 'logos', 'cover_banner_footer.jpg')
+if not os.path.exists(footer_banner_path):
+    # Use same banner as header if footer-specific doesn't exist
+    footer_banner_path = os.path.join(os.path.dirname(__file__), 'assets', 'logos', 'cover_banner.jpg')
+
+if os.path.exists(footer_banner_path):
+    with open(footer_banner_path, 'rb') as f:
+        footer_b64 = base64.b64encode(f.read()).decode()
+
+    st.markdown(f"""
+    <div style="
+        width: 100%;
+        margin-top: 2rem;
+        border-radius: 4px;
+        overflow: hidden;
+    ">
+        <img src="data:image/jpeg;base64,{footer_b64}" style="width: 100%; height: auto; display: block; max-height: 100px; object-fit: cover; object-position: center;">
     </div>
-</div>
-""", unsafe_allow_html=True)
+    <p style="text-align: center; font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem;">© 2025 Saudi Olympic & Paralympic Committee</p>
+    """, unsafe_allow_html=True)

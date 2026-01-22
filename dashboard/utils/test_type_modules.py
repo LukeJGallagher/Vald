@@ -1038,7 +1038,7 @@ class ThrowsTrainingModule:
 
         # Color mapping for session types
         session_colors = {
-            'Training': ('#007167', '#005a51'),      # Teal gradient
+            'Training': ('#1D4D3B', '#153829'),      # Teal gradient
             'Competition': ('#FFB800', '#E5A600'),   # Gold gradient
             'Testing': ('#0077B6', '#005a8c'),       # Blue gradient
             'Warm-up': ('#6c757d', '#495057')        # Gray gradient
@@ -1072,7 +1072,7 @@ class ThrowsTrainingModule:
                         session_type = row.get('session_type', 'Training')
 
                         # Get colors based on session type
-                        color1, color2 = session_colors.get(session_type, ('#007167', '#005a51'))
+                        color1, color2 = session_colors.get(session_type, ('#1D4D3B', '#153829'))
                         icon = session_icons.get(session_type, '🟢')
 
                         st.markdown(f"""
@@ -1102,7 +1102,7 @@ class ThrowsTrainingModule:
 
                         # Color mapping for chart
                         chart_colors = {
-                            'Training': '#007167',
+                            'Training': '#1D4D3B',
                             'Competition': '#FFB800',
                             'Testing': '#0077B6',
                             'Warm-up': '#6c757d'
@@ -1112,7 +1112,7 @@ class ThrowsTrainingModule:
                         if 'session_type' in event_data.columns:
                             for session_type in event_data['session_type'].unique():
                                 session_data = event_data[event_data['session_type'] == session_type]
-                                color = chart_colors.get(session_type, '#007167')
+                                color = chart_colors.get(session_type, '#1D4D3B')
 
                                 fig.add_trace(go.Scatter(
                                     x=session_data['date'],
@@ -1141,8 +1141,8 @@ class ThrowsTrainingModule:
                                 x=event_data['date'],
                                 y=event_data['distance_m'],
                                 mode='markers+lines',
-                                marker=dict(size=8, color='#007167'),
-                                line=dict(color='#007167', width=2),
+                                marker=dict(size=8, color='#1D4D3B'),
+                                line=dict(color='#1D4D3B', width=2),
                                 hovertemplate='%{y:.2f}m<extra></extra>'
                             ))
 
@@ -1239,30 +1239,42 @@ class ThrowsTrainingModule:
                 else:
                     st.metric("Relative Force", "N/A")
 
-            # 3-test trend bars
-            recent_3 = imtp_df.tail(3)
+            # 3-test trend bars - filter out NaT dates
+            recent_3 = imtp_df.tail(3).copy()
+            recent_3 = recent_3[recent_3[date_col].notna()]
 
-            fig = go.Figure()
+            if not recent_3.empty:
+                fig = go.Figure()
 
-            fig.add_trace(go.Bar(
-                x=[d.strftime('%d-%b') for d in recent_3[date_col]],
-                y=recent_3[peak_force_col],
-                marker_color='#0077B6',
-                text=recent_3[peak_force_col].round(0),
-                textposition='outside',
-                textfont=dict(size=11)
-            ))
+                # Safe date formatting - handle NaT values
+                date_labels = []
+                for d in recent_3[date_col]:
+                    if pd.notna(d):
+                        date_labels.append(d.strftime('%d-%b'))
+                    else:
+                        date_labels.append('Unknown')
 
-            fig.update_layout(
-                height=250,
-                margin=dict(l=10, r=10, t=10, b=40),
-                yaxis_title="Force [N]",
-                showlegend=False,
-                plot_bgcolor='white',
-                font=dict(family='Inter, sans-serif')
-            )
+                fig.add_trace(go.Bar(
+                    x=date_labels,
+                    y=recent_3[peak_force_col],
+                    marker_color='#0077B6',
+                    text=recent_3[peak_force_col].round(0),
+                    textposition='outside',
+                    textfont=dict(size=11)
+                ))
 
-            st.plotly_chart(fig, use_container_width=True)
+                fig.update_layout(
+                    height=250,
+                    margin=dict(l=10, r=10, t=10, b=40),
+                    yaxis_title="Force [N]",
+                    showlegend=False,
+                    plot_bgcolor='white',
+                    font=dict(family='Inter, sans-serif')
+                )
+
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.info("No valid date data for trend chart")
         else:
             st.info("Peak force data not found")
 

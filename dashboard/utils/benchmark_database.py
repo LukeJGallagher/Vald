@@ -21,9 +21,9 @@ from typing import Dict, Optional, List, Any
 from pathlib import Path
 
 # Team Saudi Brand Colors
-TEAL_PRIMARY = '#007167'
+TEAL_PRIMARY = '#1D4D3B'
 GOLD_ACCENT = '#a08e66'
-TEAL_DARK = '#005a51'
+TEAL_DARK = '#153829'
 
 # Default data directory
 DATA_DIR = Path(__file__).parent.parent / "data"
@@ -471,7 +471,7 @@ def render_benchmark_editor():
     - Sport-specific adjustments
     """
     st.markdown("""
-    <div style="background: linear-gradient(135deg, #007167 0%, #005a51 100%);
+    <div style="background: linear-gradient(135deg, #1D4D3B 0%, #153829 100%);
                 padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
         <h3 style="color: white; margin: 0;">⚙️ Benchmark Settings</h3>
         <p style="color: rgba(255,255,255,0.9); margin: 0.5rem 0 0 0;">
@@ -776,7 +776,7 @@ def _render_saudi_norms_form(user_name: str):
     """Render the Saudi Population Norms entry form for S&C staff."""
 
     st.markdown("""
-    <div style="background: linear-gradient(135deg, #007167 0%, #005a51 100%);
+    <div style="background: linear-gradient(135deg, #1D4D3B 0%, #153829 100%);
                 padding: 0.75rem 1rem; border-radius: 8px; margin-bottom: 1rem;">
         <h4 style="color: white; margin: 0;">🇸🇦 Saudi Population Benchmarks</h4>
         <p style="color: rgba(255,255,255,0.85); margin: 0.25rem 0 0 0; font-size: 0.9rem;">
@@ -1058,7 +1058,7 @@ def get_status_color(status: str) -> str:
     """Get color for status indicator."""
     colors = {
         "elite": TEAL_PRIMARY,      # Teal
-        "good": "#009688",          # Light teal
+        "good": "#2A6A50",          # Light teal
         "average": GOLD_ACCENT,     # Gold/warning
         "below_average": "#dc3545", # Red
         "unknown": "#6c757d"        # Gray

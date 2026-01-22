@@ -44,16 +44,16 @@ except ImportError:
     VALD_NORMS = {}
 
 # Team Saudi Brand Colors
-TEAL_PRIMARY = '#007167'
+TEAL_PRIMARY = '#1D4D3B'
 GOLD_ACCENT = '#a08e66'
-TEAL_DARK = '#005a51'
-TEAL_LIGHT = '#009688'
+TEAL_DARK = '#153829'
+TEAL_LIGHT = '#2A6A50'
 GRAY_BLUE = '#78909C'
 CORAL_ACCENT = '#FF6B6B'
 
 # Chart colors for multiple athletes/lines
 MULTI_LINE_COLORS = [
-    '#007167',  # Teal
+    '#1D4D3B',  # Teal
     '#FF6B6B',  # Coral
     '#0077B6',  # Blue
     '#a08e66',  # Gold
@@ -508,15 +508,15 @@ def create_asymmetry_table(
 
 # Stacked bar colors for quadrant tests (4 directions)
 QUADRANT_COLORS = {
-    'Supine': '#007167',      # Teal
+    'Supine': '#1D4D3B',      # Teal
     'Prone': '#FF9800',       # Orange
     'Lateral_Left': '#0077B6', # Blue
     'Lateral_Right': '#a08e66', # Gold
-    'Flexion': '#007167',
+    'Flexion': '#1D4D3B',
     'Extension': '#FF9800',
     'Left': '#0077B6',
     'Right': '#a08e66',
-    'IR': '#007167',          # Internal Rotation
+    'IR': '#1D4D3B',          # Internal Rotation
     'ER': '#FF9800',          # External Rotation
     'Adduction': '#0077B6',
     'Abduction': '#a08e66',
@@ -974,7 +974,7 @@ def create_multi_line_strength_chart(
 
     # Color palette for exercises
     exercise_colors = {
-        'Back Squat': '#007167',      # Teal
+        'Back Squat': '#1D4D3B',      # Teal
         'Bench Press': '#FF9800',      # Orange
         'Deadlift': '#0077B6',         # Blue
         'Chin-Up': '#a08e66',          # Gold (dashed)
@@ -1072,7 +1072,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
     Main function to render the S&C Diagnostics Canvas tab.
     """
     st.markdown("""
-    <div style="background: linear-gradient(135deg, #007167 0%, #005a51 100%); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+    <div style="background: linear-gradient(135deg, #1D4D3B 0%, #153829 100%); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
         <h2 style="color: white; margin: 0;">S&C Diagnostics Canvas</h2>
         <p style="color: rgba(255,255,255,0.9); margin: 0.5rem 0 0 0;">Comprehensive strength & conditioning testing analysis</p>
     </div>

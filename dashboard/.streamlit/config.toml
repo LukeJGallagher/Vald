@@ -1,9 +1,10 @@
 # Team Saudi Streamlit Theme Configuration
+# Professional theme matching Team Saudi banner green
 # Copy this .streamlit folder to any new Streamlit project for consistent branding
 
 [theme]
-# Primary accent color - Saudi Green
-primaryColor = "#1D4D3B"
+# Primary accent color - Saudi Green (matching banner)
+primaryColor = "#255035"
 
 # Background color for the main content area
 backgroundColor = "#FFFFFF"

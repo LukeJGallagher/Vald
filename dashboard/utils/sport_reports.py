@@ -50,23 +50,26 @@ except ImportError:
     TEST_CONFIG = {}
     QUADRANT_COLORS = {}
 
-# Team Saudi colors
-TEAL_PRIMARY = '#007167'
-GOLD_ACCENT = '#a08e66'
-TEAL_DARK = '#005a51'
+# Team Saudi colors (from THEME_GUIDE.md)
+TEAL_PRIMARY = '#255035'      # Saudi Green
+GOLD_ACCENT = '#a08e66'       # Gold accent
+TEAL_DARK = '#1C3D28'         # Dark green
+TEAL_LIGHT = '#2E6040'        # Light green
+GRAY_BLUE = '#78909C'         # Neutral gray
+INFO_BLUE = '#0077B6'         # Info/testing blue
 
-# Benchmark zone colors (with transparency) - teal palette
+# Benchmark zone colors (with transparency) - Team Saudi teal palette
 ZONE_COLORS = {
-    'excellent': 'rgba(0, 113, 103, 0.20)',      # Teal (excellent)
-    'good': 'rgba(0, 150, 136, 0.15)',           # Light teal (good)
-    'average': 'rgba(120, 144, 156, 0.15)',      # Gray-blue (needs work)
-    'border_excellent': 'rgba(0, 113, 103, 0.5)',
-    'border_good': 'rgba(0, 150, 136, 0.5)',
+    'excellent': 'rgba(37, 80, 53, 0.20)',        # Saudi Green (excellent)
+    'good': 'rgba(46, 96, 64, 0.15)',             # Light green (good)
+    'average': 'rgba(120, 144, 156, 0.15)',       # Gray-blue (needs work)
+    'border_excellent': 'rgba(37, 80, 53, 0.5)',
+    'border_good': 'rgba(46, 96, 64, 0.5)',
     'border_average': 'rgba(120, 144, 156, 0.5)',
 }
 
-# Secondary color for bilateral comparisons (coral instead of gold)
-CORAL_ACCENT = '#FF6B6B'
+# Secondary color for bilateral comparisons (blue instead of coral/red)
+SECONDARY_ACCENT = '#0077B6'  # Info blue for Right side in L/R comparisons
 
 # Default benchmarks if sport-specific not available (fallback values)
 DEFAULT_BENCHMARKS = {
@@ -558,7 +561,8 @@ def create_group_report(df: pd.DataFrame,
 
     # Filter data for the sport - use EXACT match for full sport name
     sport_df = df.copy()
-    if 'athlete_sport' in sport_df.columns:
+    # Handle "All Sports" or None - don't filter by sport
+    if sport and sport != "All Sports" and 'athlete_sport' in sport_df.columns:
         # Try exact match first
         exact_mask = sport_df['athlete_sport'] == sport
         if exact_mask.any():
@@ -739,7 +743,7 @@ def create_group_report(df: pd.DataFrame,
     with col1:
         if nordbord_df is not None and not nordbord_df.empty:
             nb_df = nordbord_df.copy()
-            if 'athlete_sport' in nb_df.columns:
+            if sport and sport != "All Sports" and 'athlete_sport' in nb_df.columns:
                 sport_mask = nb_df['athlete_sport'].str.contains(sport.split()[0], case=False, na=False)
                 if sport_mask.any():
                     nb_df = nb_df[sport_mask]
@@ -1353,7 +1357,7 @@ def create_group_report(df: pd.DataFrame,
 
                 with col1:
                     nb_df = nordbord_df.copy()
-                    if 'athlete_sport' in nb_df.columns:
+                    if sport and sport != "All Sports" and 'athlete_sport' in nb_df.columns:
                         sport_mask = nb_df['athlete_sport'].str.contains(sport.split()[0], case=False, na=False)
                         if sport_mask.any():
                             nb_df = nb_df[sport_mask]
@@ -1559,70 +1563,104 @@ def create_group_report_v2(df: pd.DataFrame,
                            nordbord_df: pd.DataFrame = None,
                            config: Dict = None):
     """
-    Alternative Group Report Layout (V2) - Summary table with RAG status.
+    Group Report V2 - Table format matching Strength Diagnostics layout.
 
-    This version focuses on:
-    - Summary table showing all athletes with status indicators
-    - Compact metric cards per athlete
-    - RAG (Red/Amber/Green) status indicators
-    - Sortable/filterable data view
+    Same sections as Strength Diagnostics but with tables:
+    - Lower Body Strength & Power
+    - Upper Body Strength (ForceFrame)
+    - Shoulder Health
+    - Hip Health
     """
-    benchmarks = get_sport_benchmarks(sport, config)
+    st.markdown(f"## {sport} - Table View")
 
-    st.markdown(f"## {sport} Group Report - Summary View")
-    st.markdown("*Alternative layout for staff feedback*")
-    st.markdown("---")
+    # =========================================================================
+    # FILTERS - Gender, Benchmark Source, and Athlete selection
+    # =========================================================================
+    filter_col1, filter_col2, filter_col3 = st.columns([1, 1, 2])
+
+    with filter_col1:
+        genders = ['All', 'Male', 'Female']
+        selected_gender = st.selectbox(
+            "Gender (for benchmarks):",
+            genders,
+            key="group_v2_gender_filter",
+            help="Benchmarks adjust based on gender selection"
+        )
+
+    with filter_col2:
+        benchmark_sources = ['VALD International', 'Saudi Population']
+        selected_source = st.selectbox(
+            "Benchmark Source:",
+            benchmark_sources,
+            key="group_v2_benchmark_source",
+            help="VALD = International norms, Saudi = Custom population benchmarks"
+        )
+
+    # Get dynamic benchmarks
+    gender_for_benchmarks = selected_gender.lower() if selected_gender != 'All' else 'male'
+    source_key = 'Saudi' if selected_source == 'Saudi Population' else 'VALD'
+    benchmarks = get_dynamic_benchmarks(gender_for_benchmarks, source_key)
+
+    sport_benchmarks = get_sport_benchmarks(sport, config)
+    for key, value in sport_benchmarks.items():
+        if key not in benchmarks:
+            benchmarks[key] = value
 
     # Filter data for the sport
     sport_df = df.copy()
-    if 'athlete_sport' in sport_df.columns:
-        sport_mask = sport_df['athlete_sport'].str.contains(sport.split()[0], case=False, na=False)
-        if sport_mask.any():
-            sport_df = sport_df[sport_mask]
+    if sport and sport != "All Sports" and 'athlete_sport' in sport_df.columns:
+        exact_mask = sport_df['athlete_sport'] == sport
+        if exact_mask.any():
+            sport_df = sport_df[exact_mask]
+        else:
+            sport_mask = sport_df['athlete_sport'].str.contains(sport.split()[0], case=False, na=False)
+            if sport_mask.any():
+                sport_df = sport_df[sport_mask]
+
+    if selected_gender != 'All' and 'athlete_sex' in sport_df.columns:
+        sport_df = sport_df[sport_df['athlete_sex'].str.lower() == selected_gender.lower()]
 
     if sport_df.empty:
-        st.warning(f"No data available for {sport}")
+        st.warning(f"No data available for {sport if sport else 'selected filters'} with current filters")
         return
 
-    # =========================================================================
-    # SECTION 1: Summary Table with RAG Status
-    # =========================================================================
-    st.markdown("### 📊 Team Summary Table")
+    # Athlete filter
+    if 'Name' in sport_df.columns:
+        available_athletes = sorted(sport_df['Name'].dropna().unique().tolist())
+        if available_athletes:
+            with filter_col3:
+                selected_athletes = st.multiselect(
+                    "Filter Athletes:",
+                    options=available_athletes,
+                    default=[],
+                    key="group_v2_athlete_filter",
+                    help="Leave empty to show all athletes"
+                )
+            if selected_athletes:
+                sport_df = sport_df[sport_df['Name'].isin(selected_athletes)]
+                if forceframe_df is not None and not forceframe_df.empty and 'Name' in forceframe_df.columns:
+                    forceframe_df = forceframe_df[forceframe_df['Name'].isin(selected_athletes)]
+                if nordbord_df is not None and not nordbord_df.empty and 'Name' in nordbord_df.columns:
+                    nordbord_df = nordbord_df[nordbord_df['Name'].isin(selected_athletes)]
 
-    # Get latest values per athlete
+    st.markdown("---")
+
     athletes = sport_df['Name'].dropna().unique() if 'Name' in sport_df.columns else []
-
     if len(athletes) == 0:
         st.warning("No athletes found in data")
         return
 
-    summary_data = []
+    # =========================================================================
+    # SECTION 1: Lower Body Strength & Power (Table)
+    # =========================================================================
+    st.markdown("### Lower Body Strength & Power")
 
+    lower_body_data = []
     for athlete in athletes:
         athlete_data = sport_df[sport_df['Name'] == athlete]
         row = {'Athlete': athlete}
 
-        # CMJ Jump Height
-        cmj_col = get_metric_column(athlete_data, 'cmj_height')
-        if cmj_col:
-            cmj_df = athlete_data[athlete_data['testType'].str.contains('CMJ|Counter', case=False, na=False)]
-            if not cmj_df.empty:
-                val = cmj_df[cmj_col].dropna().iloc[-1] if not cmj_df[cmj_col].dropna().empty else None
-                if val is not None:
-                    row['CMJ (cm)'] = round(val, 1)
-                    row['CMJ_status'] = _get_rag_status(val, benchmarks.get('cmj_height', {}))
-
-        # Peak Power
-        power_col = get_metric_column(athlete_data, 'relative_power')
-        if power_col:
-            cmj_df = athlete_data[athlete_data['testType'].str.contains('CMJ|Counter', case=False, na=False)]
-            if not cmj_df.empty:
-                val = cmj_df[power_col].dropna().iloc[-1] if not cmj_df[power_col].dropna().empty else None
-                if val is not None:
-                    row['Power (W/kg)'] = round(val, 1)
-                    row['Power_status'] = _get_rag_status(val, benchmarks.get('peak_power', {}))
-
-        # IMTP Peak Force
+        # IMTP - Relative Peak Force
         force_col = get_metric_column(athlete_data, 'peak_force')
         if force_col:
             imtp_df = athlete_data[athlete_data['testType'].str.contains('IMTP|ISOT|Isometric', case=False, na=False)]
@@ -1632,17 +1670,39 @@ def create_group_report_v2(df: pd.DataFrame,
                     row['IMTP (N/kg)'] = round(val, 1)
                     row['IMTP_status'] = _get_rag_status(val, benchmarks.get('peak_force', {}))
 
-        # RSI
+        # CMJ - Relative Peak Power
+        power_col = get_metric_column(athlete_data, 'relative_power')
+        if power_col:
+            cmj_df = athlete_data[athlete_data['testType'].str.contains('CMJ|Counter', case=False, na=False)]
+            if not cmj_df.empty:
+                val = cmj_df[power_col].dropna().iloc[-1] if not cmj_df[power_col].dropna().empty else None
+                if val is not None:
+                    row['CMJ Power (W/kg)'] = round(val, 1)
+                    row['CMJPower_status'] = _get_rag_status(val, benchmarks.get('peak_power', {}))
+
+        # CMJ - Jump Height
+        height_col = get_metric_column(athlete_data, 'cmj_height')
+        if height_col:
+            cmj_df = athlete_data[athlete_data['testType'].str.contains('CMJ|Counter', case=False, na=False)]
+            if not cmj_df.empty:
+                val = cmj_df[height_col].dropna().iloc[-1] if not cmj_df[height_col].dropna().empty else None
+                if val is not None:
+                    if val < 1:  # Convert m to cm
+                        val = val * 100
+                    row['CMJ Height (cm)'] = round(val, 1)
+                    row['CMJHeight_status'] = _get_rag_status(val, benchmarks.get('cmj_height', {}))
+
+        # 10:5 Hop - RSI
         rsi_col = get_metric_column(athlete_data, 'rsi')
         if rsi_col:
-            hop_df = athlete_data[athlete_data['testType'].str.contains('Hop|DJ|Drop|CMJ', case=False, na=False)]
+            hop_df = athlete_data[athlete_data['testType'].str.contains('RSHIP|DJ|SLDJ|Hop|Drop', case=False, na=False)]
             if not hop_df.empty:
                 val = hop_df[rsi_col].dropna().iloc[-1] if not hop_df[rsi_col].dropna().empty else None
                 if val is not None:
                     row['RSI'] = round(val, 2)
                     row['RSI_status'] = _get_rag_status(val, benchmarks.get('rsi', {}))
 
-        # NordBord (if available)
+        # NordBord - L/R Hamstring
         if nordbord_df is not None and not nordbord_df.empty and 'Name' in nordbord_df.columns:
             nb_athlete = nordbord_df[nordbord_df['Name'] == athlete]
             if not nb_athlete.empty:
@@ -1651,166 +1711,230 @@ def create_group_report_v2(df: pd.DataFrame,
                     left = nb_athlete[left_col].dropna().iloc[-1] if not nb_athlete[left_col].dropna().empty else None
                     right = nb_athlete[right_col].dropna().iloc[-1] if not nb_athlete[right_col].dropna().empty else None
                     if left is not None and right is not None:
+                        row['Ham L (N)'] = round(left, 0)
+                        row['Ham R (N)'] = round(right, 0)
                         avg = (left + right) / 2
                         asym = abs((left - right) / avg * 100)
-                        row['Hamstring (N)'] = round(avg, 0)
-                        row['Ham_status'] = _get_rag_status(avg, benchmarks.get('nordbord_force', {}))
                         row['Ham Asym (%)'] = round(asym, 1)
-                        row['HamAsym_status'] = _get_rag_status_inverse(asym, benchmarks.get('asymmetry', {}))
+                        row['Ham_status'] = _get_rag_status(avg, benchmarks.get('nordbord_force', {}))
+                        row['HamAsym_status'] = _get_rag_status_inverse(asym, {'excellent': 5, 'good': 10})
 
-        summary_data.append(row)
+        lower_body_data.append(row)
 
-    # Create DataFrame for display
-    summary_df = pd.DataFrame(summary_data)
-
-    # Display with colored status indicators
-    if not summary_df.empty:
-        # Create styled HTML table
-        _display_rag_table(summary_df)
+    if lower_body_data:
+        _display_section_table(lower_body_data, 'Lower Body')
 
     st.markdown("---")
 
     # =========================================================================
-    # SECTION 2: Metric Distribution Charts
+    # SECTION 2: Upper Body Strength (ForceFrame)
     # =========================================================================
-    st.markdown("### 📈 Metric Distributions")
+    st.markdown("### Upper Body Strength")
 
-    col1, col2 = st.columns(2)
+    if forceframe_df is not None and not forceframe_df.empty:
+        ff_df = forceframe_df.copy()
+        if sport and sport != "All Sports" and 'athlete_sport' in ff_df.columns:
+            sport_mask = ff_df['athlete_sport'].str.contains(sport.split()[0], case=False, na=False)
+            if sport_mask.any():
+                ff_df = ff_df[sport_mask]
 
-    with col1:
-        # CMJ Distribution
-        cmj_col = get_metric_column(sport_df, 'cmj_height')
-        if cmj_col:
-            cmj_df = sport_df[sport_df['testType'].str.contains('CMJ|Counter', case=False, na=False)]
-            if not cmj_df.empty:
-                # Get latest per athlete
-                latest_cmj = cmj_df.groupby('Name')[cmj_col].last().reset_index()
-                latest_cmj = latest_cmj.dropna()
+        if not ff_df.empty and 'Name' in ff_df.columns:
+            upper_body_data = []
+            ff_athletes = ff_df['Name'].dropna().unique()
 
-                if not latest_cmj.empty:
-                    fig = go.Figure()
+            for athlete in ff_athletes:
+                athlete_ff = ff_df[ff_df['Name'] == athlete]
+                row = {'Athlete': athlete}
 
-                    # Add histogram
-                    fig.add_trace(go.Histogram(
-                        x=latest_cmj[cmj_col],
-                        nbinsx=10,
-                        marker_color=TEAL_PRIMARY,
-                        opacity=0.7,
-                        name='Athletes'
-                    ))
+                # Get latest test by body region
+                for region in ['Shoulder', 'Hip', 'Trunk', 'Knee']:
+                    region_df = athlete_ff[athlete_ff['testType'].str.contains(region, case=False, na=False)]
+                    if not region_df.empty:
+                        # Find force columns
+                        for col in region_df.columns:
+                            if 'Peak' in col and 'Force' in col and 'Left' not in col and 'Right' not in col:
+                                val = region_df[col].dropna().iloc[-1] if not region_df[col].dropna().empty else None
+                                if val is not None:
+                                    row[f'{region} (N)'] = round(val, 0)
+                                break
 
-                    # Add benchmark lines
-                    bench = benchmarks.get('cmj_height', {})
-                    if bench:
-                        for level, color in [('excellent', 'green'), ('good', 'orange'), ('average', 'red')]:
-                            if level in bench:
-                                fig.add_vline(x=bench[level], line_dash="dash",
-                                             line_color=color, annotation_text=level.title())
+                upper_body_data.append(row)
 
-                    fig.update_layout(
-                        title="CMJ Jump Height Distribution",
-                        xaxis_title="Jump Height (cm)",
-                        yaxis_title="Number of Athletes",
-                        height=300,
-                        showlegend=False
-                    )
-                    st.plotly_chart(fig, use_container_width=True)
-
-    with col2:
-        # NordBord Distribution
-        if nordbord_df is not None and not nordbord_df.empty:
-            left_col, right_col = get_nordbord_force_columns(nordbord_df)
-            if left_col and right_col:
-                # Filter for sport
-                nb_sport = nordbord_df.copy()
-                if 'athlete_sport' in nb_sport.columns:
-                    sport_mask = nb_sport['athlete_sport'].str.contains(sport.split()[0], case=False, na=False)
-                    if sport_mask.any():
-                        nb_sport = nb_sport[sport_mask]
-
-                if not nb_sport.empty and 'Name' in nb_sport.columns:
-                    nb_sport['avg_force'] = (nb_sport[left_col] + nb_sport[right_col]) / 2
-                    latest_nb = nb_sport.groupby('Name')['avg_force'].last().reset_index()
-                    latest_nb = latest_nb.dropna()
-
-                    if not latest_nb.empty:
-                        fig = go.Figure()
-
-                        fig.add_trace(go.Histogram(
-                            x=latest_nb['avg_force'],
-                            nbinsx=10,
-                            marker_color=TEAL_PRIMARY,
-                            opacity=0.7,
-                            name='Athletes'
-                        ))
-
-                        # Add injury threshold line
-                        fig.add_vline(x=337, line_dash="dash", line_color="red",
-                                     annotation_text="Injury Risk (337N)")
-
-                        bench = benchmarks.get('nordbord_force', {})
-                        if bench and 'excellent' in bench:
-                            fig.add_vline(x=bench['excellent'], line_dash="dash",
-                                         line_color="green", annotation_text="Excellent")
-
-                        fig.update_layout(
-                            title="NordBord Hamstring Force Distribution",
-                            xaxis_title="Average Force (N)",
-                            yaxis_title="Number of Athletes",
-                            height=300,
-                            showlegend=False
-                        )
-                        st.plotly_chart(fig, use_container_width=True)
-
-    st.markdown("---")
-
-    # =========================================================================
-    # SECTION 3: Risk Flags
-    # =========================================================================
-    st.markdown("### ⚠️ Athletes Requiring Attention")
-
-    risk_athletes = []
-
-    for athlete in athletes:
-        risks = []
-
-        # Check NordBord < 337N
-        if nordbord_df is not None and not nordbord_df.empty and 'Name' in nordbord_df.columns:
-            nb_athlete = nordbord_df[nordbord_df['Name'] == athlete]
-            if not nb_athlete.empty:
-                left_col, right_col = get_nordbord_force_columns(nb_athlete)
-                if left_col and right_col:
-                    left = nb_athlete[left_col].dropna().iloc[-1] if not nb_athlete[left_col].dropna().empty else None
-                    right = nb_athlete[right_col].dropna().iloc[-1] if not nb_athlete[right_col].dropna().empty else None
-                    if left is not None and right is not None:
-                        avg = (left + right) / 2
-                        if avg < 337:
-                            risks.append(f"🔴 Hamstring strength below injury threshold ({avg:.0f}N < 337N)")
-                        asym = abs((left - right) / avg * 100)
-                        if asym > 15:
-                            risks.append(f"🟠 High hamstring asymmetry ({asym:.1f}%)")
-
-        # Check poor CMJ
-        athlete_data = sport_df[sport_df['Name'] == athlete]
-        cmj_col = get_metric_column(athlete_data, 'cmj_height')
-        if cmj_col:
-            cmj_df = athlete_data[athlete_data['testType'].str.contains('CMJ|Counter', case=False, na=False)]
-            if not cmj_df.empty:
-                val = cmj_df[cmj_col].dropna().iloc[-1] if not cmj_df[cmj_col].dropna().empty else None
-                avg_bench = benchmarks.get('cmj_height', {}).get('average', 30)
-                if val is not None and val < avg_bench:
-                    risks.append(f"🟠 CMJ below average ({val:.1f}cm < {avg_bench}cm)")
-
-        if risks:
-            risk_athletes.append({'Athlete': athlete, 'Risks': risks})
-
-    if risk_athletes:
-        for item in risk_athletes:
-            with st.expander(f"**{item['Athlete']}** - {len(item['Risks'])} flag(s)"):
-                for risk in item['Risks']:
-                    st.markdown(f"- {risk}")
+            if upper_body_data:
+                upper_df = pd.DataFrame(upper_body_data)
+                st.dataframe(upper_df, use_container_width=True, hide_index=True)
+        else:
+            st.info("No ForceFrame data for this sport")
     else:
-        st.success("✅ No athletes currently flagged for attention")
+        st.info("ForceFrame data not available")
+
+    st.markdown("---")
+
+    # =========================================================================
+    # SECTION 3: Shoulder Health (ForceFrame data - testTypeName column)
+    # =========================================================================
+    st.markdown("### Shoulder Health")
+
+    shoulder_data = []
+
+    # Shoulder data comes from ForceFrame (testTypeName: 'Shoulder IR/ER', 'ASH')
+    if forceframe_df is not None and not forceframe_df.empty and 'Name' in forceframe_df.columns:
+        ff_df = forceframe_df.copy()
+        # Filter for sport if possible
+        if sport and sport != "All Sports" and 'athlete_sport' in ff_df.columns:
+            sport_mask = ff_df['athlete_sport'].str.contains(sport.split()[0], case=False, na=False)
+            if sport_mask.any():
+                ff_df = ff_df[sport_mask]
+
+        # Find shoulder tests using testTypeName (ForceFrame column)
+        test_col = 'testTypeName' if 'testTypeName' in ff_df.columns else 'testType'
+        if test_col in ff_df.columns:
+            shoulder_ff = ff_df[ff_df[test_col].str.contains('Shoulder|IR.*ER|ASH|Abduct', case=False, na=False)]
+
+            if not shoulder_ff.empty:
+                for athlete in shoulder_ff['Name'].dropna().unique():
+                    athlete_shoulder = shoulder_ff[shoulder_ff['Name'] == athlete]
+                    row = {'Athlete': athlete}
+
+                    # Look for Left/Right peak force columns
+                    for col in athlete_shoulder.columns:
+                        col_lower = col.lower()
+                        if ('left' in col_lower or 'l ' in col_lower) and ('peak' in col_lower or 'force' in col_lower):
+                            val = athlete_shoulder[col].dropna().iloc[-1] if not athlete_shoulder[col].dropna().empty else None
+                            if val is not None and pd.notna(val):
+                                row['L Shoulder (N)'] = round(float(val), 0)
+                        elif ('right' in col_lower or 'r ' in col_lower) and ('peak' in col_lower or 'force' in col_lower):
+                            val = athlete_shoulder[col].dropna().iloc[-1] if not athlete_shoulder[col].dropna().empty else None
+                            if val is not None and pd.notna(val):
+                                row['R Shoulder (N)'] = round(float(val), 0)
+
+                    # Calculate asymmetry if both sides available
+                    if 'L Shoulder (N)' in row and 'R Shoulder (N)' in row:
+                        avg = (row['L Shoulder (N)'] + row['R Shoulder (N)']) / 2
+                        if avg > 0:
+                            asym = abs((row['L Shoulder (N)'] - row['R Shoulder (N)']) / avg * 100)
+                            row['Asym (%)'] = round(asym, 1)
+
+                    if len(row) > 1:
+                        shoulder_data.append(row)
+
+    if shoulder_data:
+        shoulder_df = pd.DataFrame(shoulder_data)
+        st.dataframe(shoulder_df, use_container_width=True, hide_index=True)
+    else:
+        st.info("No shoulder health data available (ForceFrame Shoulder IR/ER tests)")
+
+    st.markdown("---")
+
+    # =========================================================================
+    # SECTION 4: Hip Health (ForceFrame data - testTypeName column)
+    # =========================================================================
+    st.markdown("### Hip Health")
+
+    hip_data = []
+
+    # Hip data comes from ForceFrame (testTypeName: 'Hip AD/AB', 'Hip IR/ER')
+    if forceframe_df is not None and not forceframe_df.empty and 'Name' in forceframe_df.columns:
+        ff_df = forceframe_df.copy()
+        # Filter for sport if possible
+        if sport and sport != "All Sports" and 'athlete_sport' in ff_df.columns:
+            sport_mask = ff_df['athlete_sport'].str.contains(sport.split()[0], case=False, na=False)
+            if sport_mask.any():
+                ff_df = ff_df[sport_mask]
+
+        # Find hip tests using testTypeName (ForceFrame column)
+        test_col = 'testTypeName' if 'testTypeName' in ff_df.columns else 'testType'
+        if test_col in ff_df.columns:
+            hip_ff = ff_df[ff_df[test_col].str.contains('Hip|AD.*AB|Adduct|Groin', case=False, na=False)]
+
+            if not hip_ff.empty:
+                for athlete in hip_ff['Name'].dropna().unique():
+                    athlete_hip = hip_ff[hip_ff['Name'] == athlete]
+                    row = {'Athlete': athlete}
+
+                    # Look for Left/Right peak force columns
+                    for col in athlete_hip.columns:
+                        col_lower = col.lower()
+                        if ('left' in col_lower or 'l ' in col_lower) and ('peak' in col_lower or 'force' in col_lower):
+                            val = athlete_hip[col].dropna().iloc[-1] if not athlete_hip[col].dropna().empty else None
+                            if val is not None and pd.notna(val):
+                                row['L Hip (N)'] = round(float(val), 0)
+                        elif ('right' in col_lower or 'r ' in col_lower) and ('peak' in col_lower or 'force' in col_lower):
+                            val = athlete_hip[col].dropna().iloc[-1] if not athlete_hip[col].dropna().empty else None
+                            if val is not None and pd.notna(val):
+                                row['R Hip (N)'] = round(float(val), 0)
+
+                    # Calculate asymmetry if both sides available
+                    if 'L Hip (N)' in row and 'R Hip (N)' in row:
+                        avg = (row['L Hip (N)'] + row['R Hip (N)']) / 2
+                        if avg > 0:
+                            asym = abs((row['L Hip (N)'] - row['R Hip (N)']) / avg * 100)
+                            row['Asym (%)'] = round(asym, 1)
+
+                    if len(row) > 1:
+                        hip_data.append(row)
+
+    if hip_data:
+        hip_df = pd.DataFrame(hip_data)
+        st.dataframe(hip_df, use_container_width=True, hide_index=True)
+    else:
+        st.info("No hip health data available (ForceFrame Hip AD/AB tests)")
+
+
+def _display_section_table(data: list, section_name: str):
+    """Display a section table with RAG status indicators."""
+    if not data:
+        return
+
+    df = pd.DataFrame(data)
+
+    # Define status colors
+    status_colors = {
+        'green': '🟢',
+        'amber': '🟠',
+        'red': '🔴',
+        'grey': '⚪'
+    }
+
+    # Create display data with status indicators
+    display_data = []
+    for _, row in df.iterrows():
+        display_row = {'Athlete': row.get('Athlete', '')}
+
+        for col in row.index:
+            if col == 'Athlete' or col.endswith('_status'):
+                continue
+
+            val = row[col]
+            if pd.notna(val):
+                # Find corresponding status column
+                status_key = col.replace(' (N/kg)', '').replace(' (W/kg)', '').replace(' (cm)', '').replace(' (N)', '').replace(' (%)', '').replace(' ', '')
+                status_col = f"{status_key}_status"
+
+                # Try different status column names
+                status = row.get(status_col, 'grey')
+                if status == 'grey':
+                    # Try without spaces
+                    for key in row.index:
+                        if key.endswith('_status') and status_key.lower() in key.lower():
+                            status = row[key]
+                            break
+
+                indicator = status_colors.get(status, '⚪')
+                display_row[col] = f"{indicator} {val}"
+            else:
+                display_row[col] = "—"
+
+        display_data.append(display_row)
+
+    display_df = pd.DataFrame(display_data)
+    st.dataframe(display_df, use_container_width=True, hide_index=True)
+
+    st.markdown("""
+    <div style="font-size: 12px; color: #666; margin-top: 5px;">
+        🟢 Excellent/Good | 🟠 Average | 🔴 Below Average | ⚪ No Data
+    </div>
+    """, unsafe_allow_html=True)
 
 
 def _get_rag_status(value: float, benchmark: Dict) -> str:
@@ -2221,13 +2345,13 @@ def create_group_report_v3(df: pd.DataFrame,
 
     # Filter data for the sport
     sport_df = df.copy()
-    if 'athlete_sport' in sport_df.columns:
+    if sport and sport != "All Sports" and 'athlete_sport' in sport_df.columns:
         sport_mask = sport_df['athlete_sport'].str.contains(sport.split()[0], case=False, na=False)
         if sport_mask.any():
             sport_df = sport_df[sport_mask]
 
     if sport_df.empty:
-        st.warning(f"No data available for {sport}")
+        st.warning(f"No data available for {sport if sport else 'selected filters'}")
         return
 
     athletes = sport_df['Name'].dropna().unique() if 'Name' in sport_df.columns else []
@@ -2449,7 +2573,7 @@ def create_group_report_v3(df: pd.DataFrame,
 
     if nordbord_df is not None and not nordbord_df.empty:
         nb_df = nordbord_df.copy()
-        if 'athlete_sport' in nb_df.columns:
+        if sport and sport != "All Sports" and 'athlete_sport' in nb_df.columns:
             sport_mask = nb_df['athlete_sport'].str.contains(sport.split()[0], case=False, na=False)
             if sport_mask.any():
                 nb_df = nb_df[sport_mask]
@@ -2492,13 +2616,13 @@ def create_group_report_v3(df: pd.DataFrame,
                     y=latest['Name'],
                     x=latest[right_col],
                     orientation='h',
-                    marker_color=CORAL_ACCENT,
+                    marker_color=SECONDARY_ACCENT,
                     text=[f"{v:.0f}N" for v in latest[right_col]],
                     textposition='auto'
                 ))
 
-                # Add injury threshold line
-                fig.add_vline(x=337, line_dash="dash", line_color="red",
+                # Add injury threshold line (using gray-blue for warning)
+                fig.add_vline(x=337, line_dash="dash", line_color=GRAY_BLUE,
                               annotation_text="337N Injury Risk", annotation_position="top")
 
                 fig.update_layout(
@@ -2739,7 +2863,7 @@ def create_group_report_v3(df: pd.DataFrame,
         st.markdown("### 💪 ForceFrame - Isometric Strength (Left & Right)")
 
         ff_df = forceframe_df.copy()
-        if 'athlete_sport' in ff_df.columns:
+        if sport and sport != "All Sports" and 'athlete_sport' in ff_df.columns:
             sport_mask = ff_df['athlete_sport'].str.contains(sport.split()[0], case=False, na=False)
             if sport_mask.any():
                 ff_df = ff_df[sport_mask]
@@ -2784,7 +2908,7 @@ def create_group_report_v3(df: pd.DataFrame,
                         y=latest_shoulder['Name'],
                         x=latest_shoulder[inner_right],
                         orientation='h',
-                        marker_color=CORAL_ACCENT,
+                        marker_color=SECONDARY_ACCENT,
                         text=[f"{v:.0f}N" for v in latest_shoulder[inner_right]],
                         textposition='auto'
                     ))
@@ -2861,7 +2985,7 @@ def create_group_report_v3(df: pd.DataFrame,
                         y=latest_hip['Name'],
                         x=latest_hip[inner_right],
                         orientation='h',
-                        marker_color=CORAL_ACCENT,
+                        marker_color=SECONDARY_ACCENT,
                         text=[f"{v:.0f}N" for v in latest_hip[inner_right]],
                         textposition='auto'
                     ))
@@ -2986,18 +3110,32 @@ def create_shooting_group_report(df: pd.DataFrame, sport: str = "Shooting"):
     """
     st.markdown("### 🎯 10m Pistol - Quiet Standing Balance")
     st.markdown("""
-    <div style="background: linear-gradient(135deg, #007167 0%, #005a51 100%); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+    <div style="background: linear-gradient(135deg, #1D4D3B 0%, #153829 100%); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
         <p style="color: white; margin: 0; font-size: 0.95rem;">
             <strong>Balance Assessment</strong> • 30-second quiet standing • Eyes open • Lower values = better stability
         </p>
     </div>
     """, unsafe_allow_html=True)
 
-    # Filter for QSB (Quiet Standing Balance) tests
-    qsb_df = df[df['testType'] == 'QSB'].copy() if 'testType' in df.columns else pd.DataFrame()
+    # Filter for QSB (Quiet Standing Balance) tests - flexible matching
+    qsb_df = pd.DataFrame()
+    if 'testType' in df.columns:
+        qsb_mask = df['testType'].str.contains('QSB|Quiet|Standing|Balance', case=False, na=False)
+        qsb_df = df[qsb_mask].copy()
 
     if qsb_df.empty:
-        st.warning("No Quiet Standing Balance (QSB) test data available. Ensure athletes have completed QSB tests on ForceDecks.")
+        st.warning("No Quiet Standing Balance (QSB) test data available.")
+
+        # Show what test types exist to help with debugging
+        if 'testType' in df.columns:
+            available_tests = df['testType'].dropna().unique().tolist()
+            with st.expander("📋 Available test types in data"):
+                st.write("The following test types are available in your data:")
+                for t in sorted(available_tests)[:20]:
+                    st.write(f"• {t}")
+                if len(available_tests) > 20:
+                    st.write(f"... and {len(available_tests) - 20} more")
+                st.info("QSB tests should include 'QSB', 'Quiet', 'Standing', or 'Balance' in the test type name.")
         return
 
     # Enrich athlete names from API if needed (handles API data without pre-enriched names)
@@ -3025,11 +3163,22 @@ def create_shooting_group_report(df: pd.DataFrame, sport: str = "Shooting"):
         if orig_col in qsb_df.columns:
             qsb_df[new_col] = qsb_df[orig_col] * factor
 
-    # Get latest test per athlete
+    # Get latest test per athlete - filter out NaN names first
+    qsb_df = qsb_df[qsb_df['Name'].notna()].copy()
+
+    if qsb_df.empty:
+        st.warning("No valid athlete data available.")
+        return
+
     if 'recordedDateUtc' in qsb_df.columns:
         qsb_df['recordedDateUtc'] = pd.to_datetime(qsb_df['recordedDateUtc'])
-        latest_idx = qsb_df.groupby('Name')['recordedDateUtc'].idxmax()
-        latest_df = qsb_df.loc[latest_idx].copy()
+        # Filter out NaN dates before groupby
+        valid_dates = qsb_df[qsb_df['recordedDateUtc'].notna()]
+        if not valid_dates.empty:
+            latest_idx = valid_dates.groupby('Name')['recordedDateUtc'].idxmax()
+            latest_df = qsb_df.loc[latest_idx].copy()
+        else:
+            latest_df = qsb_df.drop_duplicates(subset='Name', keep='last')
     else:
         latest_df = qsb_df.drop_duplicates(subset='Name', keep='last')
 
@@ -3086,7 +3235,7 @@ def create_shooting_group_report(df: pd.DataFrame, sport: str = "Shooting"):
                 if val <= benchmarks['excellent']:
                     colors.append(TEAL_PRIMARY)
                 elif val <= benchmarks['good']:
-                    colors.append('#009688')
+                    colors.append('#2A6A50')
                 else:
                     colors.append('#78909C')
 
@@ -3134,7 +3283,7 @@ def create_shooting_group_report(df: pd.DataFrame, sport: str = "Shooting"):
                 if val <= benchmarks['excellent']:
                     colors.append(TEAL_PRIMARY)
                 elif val <= benchmarks['good']:
-                    colors.append('#009688')
+                    colors.append('#2A6A50')
                 else:
                     colors.append('#78909C')
 
@@ -3181,7 +3330,7 @@ def create_shooting_group_report(df: pd.DataFrame, sport: str = "Shooting"):
             if val <= benchmarks['excellent']:
                 colors.append(TEAL_PRIMARY)
             elif val <= benchmarks['good']:
-                colors.append('#009688')
+                colors.append('#2A6A50')
             else:
                 colors.append('#78909C')
 
@@ -3255,10 +3404,16 @@ def create_shooting_individual_report(df: pd.DataFrame, athlete_name: str, sport
             st.error("No athlete name column found")
             return
 
-    athlete_df = df[(df['Name'] == athlete_name) & (df['testType'] == 'QSB')].copy()
+    # Filter for athlete and QSB tests - flexible matching
+    qsb_mask = df['testType'].str.contains('QSB|Quiet|Standing|Balance', case=False, na=False) if 'testType' in df.columns else pd.Series([False] * len(df))
+    athlete_df = df[(df['Name'] == athlete_name) & qsb_mask].copy()
+
+    # If no QSB tests, show all athlete data
+    if athlete_df.empty:
+        athlete_df = df[df['Name'] == athlete_name].copy()
 
     if athlete_df.empty:
-        st.warning(f"No Quiet Standing Balance data found for {athlete_name}")
+        st.warning(f"No data found for {athlete_name}")
         return
 
     # Convert units
