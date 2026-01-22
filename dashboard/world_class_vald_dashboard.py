@@ -1784,12 +1784,8 @@ if df.empty:
 try:
     import base64
     import os
-    # Use the animated Team Saudi logo GIF first, then fallback to static
-    sidebar_logo_path = os.path.join(os.path.dirname(__file__), 'logo.gif')
-    if not os.path.exists(sidebar_logo_path):
-        sidebar_logo_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'logo.gif')
-    if not os.path.exists(sidebar_logo_path):
-        sidebar_logo_path = os.path.join(os.path.dirname(__file__), 'assets', 'logos', 'team_saudi_logo.jpg')
+    # Use Team Saudi static logo
+    sidebar_logo_path = os.path.join(os.path.dirname(__file__), 'assets', 'logos', 'team_saudi_logo.jpg')
     if not os.path.exists(sidebar_logo_path):
         sidebar_logo_path = os.path.join(os.path.dirname(__file__), 'Saudi logo.png')
     if not os.path.exists(sidebar_logo_path):
