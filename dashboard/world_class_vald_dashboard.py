@@ -1784,8 +1784,12 @@ if df.empty:
 try:
     import base64
     import os
-    # Use the new Team Saudi logo (cover-banner-5.jpg)
-    sidebar_logo_path = os.path.join(os.path.dirname(__file__), 'assets', 'logos', 'team_saudi_logo.jpg')
+    # Use the animated Team Saudi logo GIF first, then fallback to static
+    sidebar_logo_path = os.path.join(os.path.dirname(__file__), 'logo.gif')
+    if not os.path.exists(sidebar_logo_path):
+        sidebar_logo_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'logo.gif')
+    if not os.path.exists(sidebar_logo_path):
+        sidebar_logo_path = os.path.join(os.path.dirname(__file__), 'assets', 'logos', 'team_saudi_logo.jpg')
     if not os.path.exists(sidebar_logo_path):
         sidebar_logo_path = os.path.join(os.path.dirname(__file__), 'Saudi logo.png')
     if not os.path.exists(sidebar_logo_path):
@@ -1795,7 +1799,12 @@ try:
         with open(sidebar_logo_path, "rb") as f:
             sidebar_logo_data = base64.b64encode(f.read()).decode()
         # Determine image format from extension
-        img_format = "jpeg" if sidebar_logo_path.endswith('.jpg') else "png"
+        if sidebar_logo_path.endswith('.gif'):
+            img_format = "gif"
+        elif sidebar_logo_path.endswith('.jpg'):
+            img_format = "jpeg"
+        else:
+            img_format = "png"
         st.sidebar.markdown(f"""
         <div style="text-align: center; padding: 1rem; border-bottom: 3px solid #a08e66; margin-bottom: 1.5rem;">
             <img src="data:image/{img_format};base64,{sidebar_logo_data}"
