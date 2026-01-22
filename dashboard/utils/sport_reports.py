@@ -1175,59 +1175,67 @@ def create_group_report(df: pd.DataFrame,
             pass
 
     if not sc_df.empty and 'athlete' in sc_df.columns and SNC_CHARTS_AVAILABLE:
-        # Athlete selector
-        sc_athletes = sorted(sc_df['athlete'].dropna().unique().tolist())
+        # Filter S&C data to athletes in the current sport group
+        sport_athletes = sport_df['Name'].dropna().unique().tolist() if 'Name' in sport_df.columns else []
+        if sport_athletes:
+            sc_df = sc_df[sc_df['athlete'].isin(sport_athletes)]
 
-        col1, col2, col3 = st.columns([1, 2, 1])
-        with col1:
-            selected_sc_athlete = st.selectbox(
-                "Select Athlete:",
-                sc_athletes,
-                key="group_v1_strength_athlete"
-            )
+        # Athlete selector (filtered to sport)
+        sc_athletes = sorted(sc_df['athlete'].dropna().unique().tolist()) if not sc_df.empty else []
 
-        with col2:
-            # Exercise multiselect
-            if 'exercise' in sc_df.columns:
-                available_exercises = sorted(sc_df['exercise'].dropna().unique().tolist())
-                default_exercises = [e for e in ['Back Squat', 'Bench Press', 'Deadlift'] if e in available_exercises]
-                if not default_exercises and available_exercises:
-                    default_exercises = available_exercises[:3]
-
-                selected_exercises = st.multiselect(
-                    "Select Exercises:",
-                    available_exercises,
-                    default=default_exercises,
-                    key="group_v1_strength_exercises"
-                )
-            else:
-                selected_exercises = []
-
-        with col3:
-            # Bodyweight input for relative strength
-            bodyweight = st.number_input(
-                "Bodyweight (kg):",
-                min_value=40.0,
-                max_value=200.0,
-                value=80.0,
-                step=1.0,
-                key="group_v1_bodyweight"
-            )
-
-        if selected_sc_athlete and selected_exercises:
-            fig = create_multi_line_strength_chart(
-                sc_df,
-                selected_sc_athlete,
-                selected_exercises,
-                bodyweight=bodyweight,
-                title=f"{selected_sc_athlete} - Strength RM Progression"
-            )
-            if fig:
-                st.plotly_chart(fig, use_container_width=True)
-            else:
-                st.info(f"No strength data found for {selected_sc_athlete}")
+        if not sc_athletes:
+            st.info(f"No S&C data available for {sport} athletes")
         else:
-            st.info("Select athlete and exercises to view strength progression")
+            col1, col2, col3 = st.columns([1, 2, 1])
+            with col1:
+                selected_sc_athlete = st.selectbox(
+                    "Select Athlete:",
+                    sc_athletes,
+                    key="group_v1_strength_athlete"
+                )
+
+            with col2:
+                # Exercise multiselect
+                if 'exercise' in sc_df.columns:
+                    available_exercises = sorted(sc_df['exercise'].dropna().unique().tolist())
+                    default_exercises = [e for e in ['Back Squat', 'Bench Press', 'Deadlift'] if e in available_exercises]
+                    if not default_exercises and available_exercises:
+                        default_exercises = available_exercises[:3]
+
+                    selected_exercises = st.multiselect(
+                        "Select Exercises:",
+                        available_exercises,
+                        default=default_exercises,
+                        key="group_v1_strength_exercises"
+                    )
+                else:
+                    selected_exercises = []
+
+            with col3:
+                # Bodyweight input for relative strength
+                bodyweight = st.number_input(
+                    "Bodyweight (kg):",
+                    min_value=40.0,
+                    max_value=200.0,
+                    value=80.0,
+                    step=1.0,
+                    key="group_v1_bodyweight"
+                )
+
+            if selected_sc_athlete and selected_exercises:
+                fig = create_multi_line_strength_chart(
+                    sc_df,
+                    selected_sc_athlete,
+                    selected_exercises,
+                    bodyweight=bodyweight,
+                    title=f"{selected_sc_athlete} - Strength RM Progression"
+                )
+                if fig:
+                    st.plotly_chart(fig, use_container_width=True)
+                else:
+                    st.info(f"No strength data found for {selected_sc_athlete}")
+            else:
+                st.info("Select athlete and exercises to view strength progression")
     else:
         st.info("No S&C manual entry data available. Use ✏️ Data Entry tab to add strength records.")
 
