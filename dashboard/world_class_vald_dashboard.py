@@ -2062,7 +2062,7 @@ with tabs[4]:  # Data Entry
         st.session_state.sc_lower_body = load_sc_lower_body()
 
     # Create sub-tabs for different entry types
-    entry_tabs = st.tabs(["🥏 Throws Distance", "💪 S&C Upper Body", "🦵 S&C Lower Body", "📊 View Data", "📈 Charts"])
+    entry_tabs = st.tabs(["🥏 Throws Distance", "💪 S&C Upper Body", "🦵 S&C Lower Body", "🏋️ Trunk Endurance", "📊 View Data", "📈 Charts"])
 
     # -------------------------------------------------------------------------
     # SUB-TAB: Throws Distance Entry Form
@@ -2788,9 +2788,250 @@ with tabs[4]:  # Data Entry
             st.info("📭 No S&C Lower Body data recorded yet. Use the form above to add entries.")
 
     # -------------------------------------------------------------------------
-    # SUB-TAB: View Data (with Edit/Delete) - Now with sub-tabs
+    # SUB-TAB: Trunk Endurance (Quadrant Test - Manual Entry)
     # -------------------------------------------------------------------------
     with entry_tabs[3]:
+        st.markdown("### 🏋️ Trunk Endurance (Quadrant Test)")
+
+        st.markdown("""
+        <div style="
+            background: linear-gradient(135deg, #255035 0%, #1C3D28 100%);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            color: white;
+        ">
+            <p style="margin: 0; font-size: 0.95rem;">
+                📝 Record trunk endurance times for 4 positions: Supine, Prone, Lateral-Left, and Lateral-Right.
+                Duration is measured in seconds until failure.
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # Initialize trunk endurance session state
+        if 'trunk_endurance' not in st.session_state:
+            trunk_csv_path = os.path.join(os.path.dirname(__file__), 'data', 'trunk_endurance.csv')
+            if os.path.exists(trunk_csv_path):
+                try:
+                    st.session_state.trunk_endurance = pd.read_csv(trunk_csv_path)
+                    if 'date' in st.session_state.trunk_endurance.columns:
+                        st.session_state.trunk_endurance['date'] = pd.to_datetime(st.session_state.trunk_endurance['date'])
+                except Exception:
+                    st.session_state.trunk_endurance = pd.DataFrame()
+            else:
+                st.session_state.trunk_endurance = pd.DataFrame()
+
+        # Entry Form
+        with st.form("trunk_endurance_form", clear_on_submit=True):
+            te_col1, te_col2 = st.columns(2)
+
+            with te_col1:
+                # Get athlete list
+                te_athletes_list = []
+                if 'Name' in filtered_df.columns:
+                    te_athletes_list = sorted([a for a in filtered_df['Name'].unique() if pd.notna(a)])
+
+                te_athlete = st.selectbox(
+                    "Athlete *",
+                    options=te_athletes_list if te_athletes_list else ["No athletes loaded"],
+                    key="te_athlete"
+                )
+
+                te_date = st.date_input(
+                    "Test Date *",
+                    value=datetime.now().date(),
+                    key="te_date"
+                )
+
+            with te_col2:
+                te_session_type = st.selectbox(
+                    "Session Type",
+                    options=["Testing", "Training", "Competition"],
+                    key="te_session_type"
+                )
+
+                te_notes = st.text_input(
+                    "Notes",
+                    placeholder="Any relevant notes...",
+                    key="te_notes"
+                )
+
+            st.markdown("#### ⏱️ Duration (seconds) for each position")
+
+            te_col3, te_col4, te_col5, te_col6 = st.columns(4)
+
+            with te_col3:
+                te_supine = st.number_input(
+                    "Supine (Back)",
+                    min_value=0,
+                    max_value=600,
+                    value=0,
+                    step=1,
+                    key="te_supine",
+                    help="Lying on back, bridge position"
+                )
+
+            with te_col4:
+                te_prone = st.number_input(
+                    "Prone (Front)",
+                    min_value=0,
+                    max_value=600,
+                    value=0,
+                    step=1,
+                    key="te_prone",
+                    help="Lying face down, plank position"
+                )
+
+            with te_col5:
+                te_lateral_left = st.number_input(
+                    "Lateral Left",
+                    min_value=0,
+                    max_value=600,
+                    value=0,
+                    step=1,
+                    key="te_lateral_left",
+                    help="Side plank on left arm"
+                )
+
+            with te_col6:
+                te_lateral_right = st.number_input(
+                    "Lateral Right",
+                    min_value=0,
+                    max_value=600,
+                    value=0,
+                    step=1,
+                    key="te_lateral_right",
+                    help="Side plank on right arm"
+                )
+
+            te_submitted = st.form_submit_button("💾 Save Trunk Endurance Test", type="primary", use_container_width=True)
+
+            if te_submitted:
+                if te_athlete and te_athlete != "No athletes loaded":
+                    if te_supine > 0 or te_prone > 0 or te_lateral_left > 0 or te_lateral_right > 0:
+                        # Calculate total
+                        te_total = te_supine + te_prone + te_lateral_left + te_lateral_right
+
+                        # Create new entry
+                        new_te_entry = {
+                            'date': pd.Timestamp(te_date),
+                            'athlete': te_athlete,
+                            'supine_sec': te_supine,
+                            'prone_sec': te_prone,
+                            'lateral_left_sec': te_lateral_left,
+                            'lateral_right_sec': te_lateral_right,
+                            'total_sec': te_total,
+                            'session_type': te_session_type,
+                            'notes': te_notes
+                        }
+
+                        # Add to dataframe
+                        if st.session_state.trunk_endurance.empty:
+                            st.session_state.trunk_endurance = pd.DataFrame([new_te_entry])
+                        else:
+                            st.session_state.trunk_endurance = pd.concat([
+                                st.session_state.trunk_endurance,
+                                pd.DataFrame([new_te_entry])
+                            ], ignore_index=True)
+
+                        # Save to CSV
+                        trunk_csv_path = os.path.join(os.path.dirname(__file__), 'data', 'trunk_endurance.csv')
+                        st.session_state.trunk_endurance.to_csv(trunk_csv_path, index=False)
+
+                        st.success(f"✅ Saved trunk endurance test for {te_athlete}. Total: {te_total} seconds")
+                    else:
+                        st.error("❌ Please enter at least one duration value.")
+                else:
+                    st.error("❌ Please select an athlete.")
+
+        # Display existing data and chart
+        te_df = st.session_state.trunk_endurance
+
+        if not te_df.empty:
+            st.markdown("---")
+            st.markdown("#### 📊 Trunk Endurance Comparison Chart")
+
+            # Get latest test per athlete for chart
+            if 'date' in te_df.columns:
+                latest_te = te_df.sort_values('date').groupby('athlete').last().reset_index()
+            else:
+                latest_te = te_df.groupby('athlete').last().reset_index()
+
+            if not latest_te.empty:
+                import plotly.graph_objects as go
+
+                # Create stacked bar chart - Team Saudi colors
+                fig_te = go.Figure()
+
+                # Position colors - Team Saudi palette
+                position_colors = {
+                    'Supine': '#255035',      # Saudi Green
+                    'Prone': '#a08e66',       # Gold Accent
+                    'Lateral - Left': '#0077B6',   # Info Blue
+                    'Lateral - Right': '#2E6040'   # Light Green
+                }
+
+                # Add bars for each position
+                fig_te.add_trace(go.Bar(
+                    name='Supine',
+                    x=latest_te['athlete'],
+                    y=latest_te['supine_sec'],
+                    marker_color=position_colors['Supine']
+                ))
+                fig_te.add_trace(go.Bar(
+                    name='Prone',
+                    x=latest_te['athlete'],
+                    y=latest_te['prone_sec'],
+                    marker_color=position_colors['Prone']
+                ))
+                fig_te.add_trace(go.Bar(
+                    name='Lateral - Left',
+                    x=latest_te['athlete'],
+                    y=latest_te['lateral_left_sec'],
+                    marker_color=position_colors['Lateral - Left']
+                ))
+                fig_te.add_trace(go.Bar(
+                    name='Lateral Right',
+                    x=latest_te['athlete'],
+                    y=latest_te['lateral_right_sec'],
+                    marker_color=position_colors['Lateral - Right']
+                ))
+
+                fig_te.update_layout(
+                    barmode='stack',
+                    title='Trunk Endurance by Position (seconds)',
+                    xaxis_title='Athlete',
+                    yaxis_title='Duration (seconds)',
+                    plot_bgcolor='white',
+                    paper_bgcolor='white',
+                    font=dict(family='Poppins, Inter, sans-serif', color='#1a1a1a'),
+                    legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='center', x=0.5),
+                    margin=dict(l=10, r=10, t=80, b=30)
+                )
+                fig_te.update_xaxes(showgrid=False)
+                fig_te.update_yaxes(showgrid=True, gridwidth=1, gridcolor='#e9ecef')
+
+                st.plotly_chart(fig_te, use_container_width=True)
+
+            # Recent entries table
+            st.markdown("#### 📋 Recent Test Entries")
+            recent_te = te_df.sort_values('date', ascending=False).head(10) if 'date' in te_df.columns else te_df.head(10)
+
+            display_cols_te = ['date', 'athlete', 'supine_sec', 'prone_sec', 'lateral_left_sec', 'lateral_right_sec', 'total_sec', 'session_type']
+            available_cols_te = [c for c in display_cols_te if c in recent_te.columns]
+
+            st.dataframe(
+                recent_te[available_cols_te],
+                use_container_width=True,
+                hide_index=True
+            )
+        else:
+            st.info("📭 No trunk endurance data recorded yet. Use the form above to add entries.")
+
+    # -------------------------------------------------------------------------
+    # SUB-TAB: View Data (with Edit/Delete) - Now with sub-tabs
+    # -------------------------------------------------------------------------
+    with entry_tabs[4]:
         st.markdown("### 📊 Recorded Training Data")
 
         # Create sub-tabs for different data types
@@ -3228,7 +3469,7 @@ with tabs[4]:  # Data Entry
     # -------------------------------------------------------------------------
     # SUB-TAB: Charts - Now with sub-tabs
     # -------------------------------------------------------------------------
-    with entry_tabs[4]:
+    with entry_tabs[5]:
         st.markdown("### 📈 Training Charts")
 
         # Create sub-tabs for different chart types

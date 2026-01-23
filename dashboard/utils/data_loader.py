@@ -45,13 +45,13 @@ def _get_vald_credentials():
 def _get_oauth_token(client_id: str, client_secret: str) -> Optional[str]:
     """Get OAuth token from VALD security endpoint."""
     try:
+        # Use empty scope - VALD API requires no scope for client credentials
         response = requests.post(
             'https://security.valdperformance.com/connect/token',
             data={
                 'grant_type': 'client_credentials',
                 'client_id': client_id,
                 'client_secret': client_secret,
-                'scope': 'forcedecks forceframe nordbord athletes'
             },
             timeout=30
         )
@@ -65,20 +65,28 @@ def _get_oauth_token(client_id: str, client_secret: str) -> Optional[str]:
 @st.cache_data(ttl=3600, show_spinner="Fetching athlete profiles...")
 def _fetch_athlete_profiles(token: str, region: str, tenant_id: str) -> Dict[str, dict]:
     """Fetch athlete profiles from VALD API. Returns {profileId: {name, sport, etc}}"""
-    profiles_url = f'https://prd-{region}-api-externalprofile.valdperformance.com/api/v1/profiles'
+    # Correct endpoint URL (without /api/v1/ prefix)
+    profiles_url = f'https://prd-{region}-api-externalprofile.valdperformance.com/profiles'
     headers = {'Authorization': f'Bearer {token}', 'Accept': 'application/json'}
     params = {'TenantId': tenant_id}
 
     try:
         response = requests.get(profiles_url, headers=headers, params=params, timeout=60)
         if response.status_code == 200:
-            profiles = response.json()
+            data = response.json()
+            # API returns {'profiles': [...]}
+            profiles = data.get('profiles', []) if isinstance(data, dict) else data
             profile_map = {}
             for p in profiles:
-                pid = p.get('id') or p.get('profileId')
+                pid = p.get('profileId') or p.get('id')
                 if pid:
+                    # Build full name from given and family names
+                    given = p.get('givenName', '')
+                    family = p.get('familyName', '')
+                    full_name = f"{given} {family}".strip() or p.get('fullName') or p.get('name') or 'Unknown'
+
                     profile_map[pid] = {
-                        'Name': p.get('fullName') or p.get('name') or p.get('displayName', 'Unknown'),
+                        'Name': full_name,
                         'athlete_sport': p.get('sport') or p.get('primarySport') or 'Unknown',
                         'Groups': p.get('groups', []),
                     }
