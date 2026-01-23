@@ -24,9 +24,17 @@ python vald_production_system.py --update-all
 # Verify API credentials
 python vald_production_system.py --verify
 
+# Enrich ForceFrame/NordBord with athlete names
+python enrich_from_forcedecks.py
+
 # Push to both GitHub repos (main and master branches)
 git push origin main && git push origin main:master
 ```
+
+## GitHub Actions
+
+Automated data sync runs daily at 6 AM UTC via `.github/workflows/sync-vald-data.yml`.
+Required GitHub secrets: `VALD_CLIENT_ID`, `VALD_CLIENT_SECRET`, `VALD_TENANT_ID`, `DATA_REPO_TOKEN`, `DATA_REPO`
 
 ## Architecture
 
@@ -63,7 +71,7 @@ VALD_REGION = "euw"
 ## API Endpoints
 
 ```
-OAuth: https://security.valdperformance.com/connect/token
+OAuth: https://security.valdperformance.com/connect/token (use empty scope!)
 ForceDecks: https://prd-{REGION}-api-extforcedecks.valdperformance.com/
 ForceFrame: https://prd-{REGION}-api-externalforceframe.valdperformance.com/
 NordBord: https://prd-{REGION}-api-externalnordbord.valdperformance.com/
@@ -71,6 +79,8 @@ Profiles: https://prd-{REGION}-api-externalprofile.valdperformance.com/
 Tenants: https://prd-{REGION}-api-externaltenants.valdperformance.com/
 ```
 Regions: `euw` (Europe), `use` (US East), `aue` (Australia)
+
+**OAuth Note**: Use empty scope for client credentials grant. DO NOT include scope parameter.
 
 ### API Key Methods (from Kenny's vald-aspire)
 - **Get Profiles**: `/profiles?TenantId={tenant_id}` - Returns all athlete profiles with names
@@ -81,15 +91,26 @@ Regions: `euw` (Europe), `use` (US East), `aue` (Australia)
 ### API Limitation
 VALD API can only pull **6 months of data maximum** per API call. Use staggered date ranges for historical data.
 
-## Athlete Name Mapping
+## Athlete Name & Sport Mapping
 
 ForceFrame/NordBord use `athleteId` which equals `profileId` in the Profiles API.
 
+**Important**: The bulk `/profiles` endpoint returns names but **NOT** sport or groupIds. To get sports:
+1. Fetch groups from Tenants API: `/groups?TenantId=...` → `{id: name}` mapping
+2. Fetch individual profile: `/profiles/{profileId}?TenantId=...` → returns `groupIds` array
+3. Map groupIds to group names (e.g., "Athletics", "Fencing", "SOTC Swimming")
+
+The `Groups` column in ForceDecks data IS the sport. Sports like "Swimming" come from VALD group membership.
+
 **Enrichment script**: `enrich_from_forcedecks.py`
-1. Fetches all profiles from Profiles API (606+ athletes)
+1. Fetches all profiles from Profiles API (637+ athletes)
 2. Creates `full_name` from `givenName` + `familyName`
 3. Enriches ForceFrame/NordBord CSVs with real names
 4. Dashboard creates `Name` column from `full_name`
+
+**GitHub sync script**: `scripts/github_sync.py`
+- Fetches individual profiles to get groupIds for sport assignment
+- Used by GitHub Actions for automated daily updates
 
 Run after API data updates:
 ```bash
@@ -124,10 +145,15 @@ except AttributeError:
 
 ## Branding
 
-Team Saudi colors:
-- Primary Teal: `#007167`
-- Gold Accent: `#a08e66`
-- Dark Teal: `#005a51`
+Team Saudi colors (Official Saudi Flag Green - PMS 3425 C):
+- Primary Green: `#005430` - Main brand, headers, buttons
+- Gold Accent: `#a08e66` - Highlights, PB markers
+- Dark Green: `#003d1f` - Hover states, gradients
+- Light Green: `#2A8F5C` - Secondary positive
+
+Header gradient: `linear-gradient(135deg, #005430 0%, #003d1f 100%)`
+
+Theme files: `dashboard/theme/colors.py`, `C:\Users\l.gallagher\.claude\branding\team_saudi\THEME_GUIDE.md`
 
 ## Credentials Location
 
