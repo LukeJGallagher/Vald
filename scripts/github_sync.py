@@ -1,11 +1,15 @@
 """
 GitHub Actions script to fetch VALD data and export to CSV.
 Used by .github/workflows/sync-vald-data.yml
+
+Sports are derived from VALD Groups - each athlete belongs to sport-specific groups
+like "Athletics", "Fencing", "Swimming", etc.
 """
 import os
 import requests
 import pandas as pd
 from datetime import datetime, timedelta, timezone
+import time
 
 
 def get_token():
@@ -31,6 +35,54 @@ def get_token():
     return response.json()['access_token']
 
 
+def fetch_groups(token, region, tenant_id):
+    """Fetch group names from VALD Tenants API.
+    Returns {group_id: group_name} mapping.
+    """
+    # Try Tenants API first (newer API)
+    url = f'https://prd-{region}-api-externaltenants.valdperformance.com/groups'
+    headers = {'Authorization': f'Bearer {token}'}
+    response = requests.get(url, headers=headers, params={'TenantId': tenant_id}, timeout=60)
+
+    if response.status_code == 200:
+        data = response.json()
+        groups = data.get('groups', data) if isinstance(data, dict) else data
+        result = {g['id']: g['name'] for g in groups if 'id' in g and 'name' in g}
+        print(f"Fetched {len(result)} groups from Tenants API")
+        return result
+
+    # Fallback to legacy groupnames endpoint
+    url = f'https://prd-{region}-api-extforcedecks.valdperformance.com/groupnames'
+    response = requests.get(url, headers=headers, params={'TenantId': tenant_id}, timeout=60)
+
+    if response.status_code == 200:
+        data = response.json()
+        groups = data.get('groups', data) if isinstance(data, dict) else data
+        result = {g['id']: g['name'] for g in groups if 'id' in g and 'name' in g}
+        print(f"Fetched {len(result)} groups from legacy API")
+        return result
+
+    print(f"Groups fetch error: {response.status_code}")
+    return {}
+
+
+def fetch_individual_profile(token, region, tenant_id, profile_id, rate_limit_delay=0.1):
+    """Fetch individual profile to get groupIds.
+    Individual profile endpoint returns groupIds, bulk endpoint does not.
+    """
+    url = f'https://prd-{region}-api-externalprofile.valdperformance.com/profiles/{profile_id}'
+    headers = {'Authorization': f'Bearer {token}'}
+
+    try:
+        time.sleep(rate_limit_delay)  # Rate limiting
+        response = requests.get(url, headers=headers, params={'TenantId': tenant_id}, timeout=30)
+        if response.status_code == 200:
+            return response.json()
+    except Exception as e:
+        print(f"Error fetching profile {profile_id}: {e}")
+    return None
+
+
 def fetch_profiles(token, region, tenant_id):
     """Fetch athlete profiles from VALD Profiles API."""
     url = f'https://prd-{region}-api-externalprofile.valdperformance.com/profiles'
@@ -45,10 +97,94 @@ def fetch_profiles(token, region, tenant_id):
             given = p.get('givenName', '') or ''
             family = p.get('familyName', '') or ''
             full_name = f"{given} {family}".strip() or p.get('fullName') or 'Unknown'
-            result[pid] = {'full_name': full_name, 'athlete_sport': p.get('sport', 'Unknown')}
-        return result
+            # Note: bulk profiles endpoint does NOT return sport
+            # Sport is derived from group membership in enrich_with_groups()
+            result[pid] = {
+                'full_name': full_name,
+                'athlete_sport': 'Unknown',  # Will be enriched later from groups
+                'groupIds': []  # Will be populated if available
+            }
+        return result, profiles  # Return raw profiles too for group lookup
     print(f"Profiles error: {response.status_code}")
-    return {}
+    return {}, []
+
+
+def enrich_with_groups(profiles_dict, raw_profiles, groups_map, token, region, tenant_id, fetch_individual=True):
+    """Enrich profiles with sport from group membership.
+
+    Priority sport groups (in order):
+    1. Sports like 'Athletics', 'Fencing', 'Swimming', etc.
+    2. Exclude generic groups like 'All Athletes', 'VALD HQ'
+
+    If fetch_individual=True, fetches individual profiles to get groupIds
+    (the bulk endpoint doesn't return groupIds).
+    """
+    # Generic groups to skip when determining sport
+    generic_groups = {
+        'All Athletes', 'All athletes', 'VALD HQ', 'Test Group',
+        'SOTC Performance', 'Saudi Sports', 'Performance Staff',
+        'Coaches', 'Medical', 'Admin'
+    }
+
+    profiles_with_groups = 0
+    profiles_needing_fetch = []
+
+    # First pass: check which profiles already have groupIds
+    for profile in raw_profiles:
+        pid = profile.get('profileId') or profile.get('id')
+        if not pid or pid not in profiles_dict:
+            continue
+
+        group_ids = profile.get('groupIds', [])
+
+        if group_ids:
+            profiles_with_groups += 1
+            group_names = [groups_map.get(gid, 'Unknown') for gid in group_ids]
+
+            sport = 'Unknown'
+            for name in group_names:
+                if name not in generic_groups and name != 'Unknown':
+                    sport = name
+                    break
+
+            profiles_dict[pid]['athlete_sport'] = sport
+            profiles_dict[pid]['groups'] = '|'.join(group_names)
+        else:
+            profiles_needing_fetch.append(pid)
+
+    print(f"Found {profiles_with_groups} profiles with group info from bulk endpoint")
+    print(f"Need to fetch individual profiles for {len(profiles_needing_fetch)} athletes")
+
+    # Second pass: fetch individual profiles to get groupIds
+    if fetch_individual and profiles_needing_fetch:
+        print(f"Fetching individual profiles for group membership...")
+        fetched = 0
+        for i, pid in enumerate(profiles_needing_fetch):
+            if (i + 1) % 50 == 0:
+                print(f"  Progress: {i + 1}/{len(profiles_needing_fetch)}")
+
+            profile_data = fetch_individual_profile(token, region, tenant_id, pid)
+
+            if profile_data:
+                group_ids = profile_data.get('groupIds', [])
+                if group_ids:
+                    fetched += 1
+                    group_names = [groups_map.get(gid, 'Unknown') for gid in group_ids]
+
+                    sport = 'Unknown'
+                    for name in group_names:
+                        if name not in generic_groups and name != 'Unknown':
+                            sport = name
+                            break
+
+                    profiles_dict[pid]['athlete_sport'] = sport
+                    profiles_dict[pid]['groups'] = '|'.join(group_names)
+
+        print(f"Fetched group info for {fetched} additional profiles")
+        profiles_with_groups += fetched
+
+    print(f"Total: Enriched {profiles_with_groups} profiles with group/sport info")
+    return profiles_dict
 
 
 def fetch_device_data(token, region, tenant_id, device):
@@ -173,14 +309,45 @@ def main():
     token = get_token()
     print("Token obtained successfully!")
 
+    print("Fetching groups (for sport mapping)...")
+    groups_map = fetch_groups(token, region, tenant_id)
+    print(f"Found {len(groups_map)} groups")
+
     print("Fetching athlete profiles...")
-    profiles = fetch_profiles(token, region, tenant_id)
+    profiles, raw_profiles = fetch_profiles(token, region, tenant_id)
     print(f"Found {len(profiles)} profiles")
+
+    # Enrich profiles with sport from groups
+    # fetch_individual=True will query each profile individually to get groupIds
+    # This is slower but ensures all athletes get their sport assigned correctly
+    profiles = enrich_with_groups(profiles, raw_profiles, groups_map, token, region, tenant_id, fetch_individual=True)
+
+    # Also try to load existing sport data from ForceDecks (for historical context)
+    existing_sports = {}
+    forcedecks_path = 'private_data_repo/data/forcedecks_allsports_with_athletes.csv'
+    if os.path.exists(forcedecks_path):
+        try:
+            existing_df = pd.read_csv(forcedecks_path)
+            if 'profileId' in existing_df.columns and 'athlete_sport' in existing_df.columns:
+                sport_mapping = existing_df[['profileId', 'athlete_sport']].dropna().drop_duplicates()
+                for _, row in sport_mapping.iterrows():
+                    pid = str(row['profileId'])
+                    sport = row['athlete_sport']
+                    if pid and sport and sport not in ['Unknown', '', 'nan']:
+                        existing_sports[pid] = sport
+                print(f"Loaded {len(existing_sports)} existing sport mappings from ForceDecks")
+        except Exception as e:
+            print(f"Could not load existing sports: {e}")
+
+    # Apply existing sports as fallback
+    for pid, sport in existing_sports.items():
+        if pid in profiles and profiles[pid].get('athlete_sport') == 'Unknown':
+            profiles[pid]['athlete_sport'] = sport
 
     os.makedirs('data_export', exist_ok=True)
 
     for device in ['forcedecks', 'forceframe', 'nordbord']:
-        print(f"Fetching {device} data...")
+        print(f"\nFetching {device} data...")
         tests = fetch_device_data(token, region, tenant_id, device)
         print(f"Found {len(tests)} {device} tests from API")
 
@@ -191,11 +358,21 @@ def main():
             df = pd.DataFrame(tests)
             id_col = 'athleteId' if 'athleteId' in df.columns else 'profileId'
             if id_col in df.columns:
-                df['full_name'] = df[id_col].map(lambda pid: profiles.get(pid, {}).get('full_name', f'Athlete_{str(pid)[:8]}'))
-                df['athlete_sport'] = df[id_col].map(lambda pid: profiles.get(pid, {}).get('athlete_sport', 'Unknown'))
+                df['full_name'] = df[id_col].map(
+                    lambda pid: profiles.get(pid, {}).get('full_name', f'Athlete_{str(pid)[:8]}')
+                )
+                df['athlete_sport'] = df[id_col].map(
+                    lambda pid: profiles.get(pid, {}).get('athlete_sport', 'Unknown')
+                )
 
             # Merge with existing data
             df = merge_with_existing(df, existing_path)
+
+            # Report sport distribution
+            if 'athlete_sport' in df.columns:
+                sports = df['athlete_sport'].value_counts()
+                print(f"Sport distribution: {dict(sports.head(10))}")
+
             df.to_csv(filename, index=False)
             print(f"Saved {filename} ({len(df)} total rows)")
         elif os.path.exists(existing_path):
@@ -204,7 +381,7 @@ def main():
             shutil.copy(existing_path, filename)
             print(f"No new {device} data, kept existing file")
 
-    print("Data export complete!")
+    print("\nData export complete!")
 
 
 if __name__ == '__main__':
