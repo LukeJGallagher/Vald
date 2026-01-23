@@ -2,14 +2,62 @@
 GitHub Actions script to fetch VALD data and export to CSV.
 Used by .github/workflows/sync-vald-data.yml
 
-Sports are derived from VALD Groups - each athlete belongs to sport-specific groups
-like "Athletics", "Fencing", "Swimming", etc.
+Sports are derived from VALD Groups mapped to Categories.
+Group names (Epee, Foil, Sabre) -> Category (Fencing)
 """
 import os
 import requests
 import pandas as pd
 from datetime import datetime, timedelta, timezone
 import time
+
+# ============================================================================
+# VALD Group to Category (Sport) Mapping
+# Categories are the actual sports. Groups are sub-divisions within sports.
+# ============================================================================
+
+GROUP_TO_CATEGORY = {
+    # Fencing (3 groups)
+    'Epee': 'Fencing', 'Epee ': 'Fencing', 'Foil': 'Fencing', 'Sabre': 'Fencing',
+    # Athletics (5 groups)
+    'Athletics - Horizontal Jumps': 'Athletics', 'Athletics - Middle distance': 'Athletics',
+    'Short Sprints': 'Athletics', 'Throwers': 'Athletics', 'Decathlon': 'Athletics',
+    # Wrestling (4 groups)
+    'Freestyle': 'Wrestling', 'Greco Roman': 'Wrestling', 'GS': 'Wrestling', 'RUS': 'Wrestling',
+    # Taekwondo (4 groups)
+    'TKD Junior Female': 'Taekwondo', 'TKD Junior Male': 'Taekwondo',
+    'TKD Senior Female': 'Taekwondo', 'TKD Senior Male': 'Taekwondo',
+    # Swimming
+    'SOTC Swimming': 'Swimming',
+    # Para Sports
+    'Para Swimming': 'Para Swimming', 'Para Sprints': 'Para Athletics',
+    'Para TKD': 'Para Taekwondo', 'Para Cycling': 'Para Cycling', 'Wheel Chair': 'Wheelchair Sports',
+    # Individual Sports (group = category)
+    'Karate': 'Karate', 'Coastal': 'Rowing', 'Pistol 10m': 'Shooting',
+    'Snow Sports': 'Snow Sports', 'Equestrian': 'Equestrian',
+    'Judo': 'Judo', 'Jiu-Jitsu': 'Jiu-Jitsu', 'Weightlifting': 'Weightlifting',
+    # Excluded groups
+    'ARCHIVED': None, 'Staff': None, 'TBC': None, 'All Athletes': None,
+}
+
+SKIP_GROUPS = {
+    'ARCHIVED', 'Staff', 'TBC', 'All Athletes', 'All athletes',
+    'VALD HQ', 'Test Group', 'Performance Staff', 'Coaches', 'Medical', 'Admin'
+}
+
+
+def get_sport_from_groups(group_names):
+    """Get sport (category) from group names using centralized mapping."""
+    for name in group_names:
+        if name in SKIP_GROUPS:
+            continue
+        if name in GROUP_TO_CATEGORY:
+            category = GROUP_TO_CATEGORY[name]
+            if category:
+                return category
+        if name and name not in SKIP_GROUPS:
+            return name
+    return 'Unknown'
 
 
 def get_token():
@@ -140,13 +188,7 @@ def enrich_with_groups(profiles_dict, raw_profiles, groups_map, token, region, t
         if group_ids:
             profiles_with_groups += 1
             group_names = [groups_map.get(gid, 'Unknown') for gid in group_ids]
-
-            sport = 'Unknown'
-            for name in group_names:
-                if name not in generic_groups and name != 'Unknown':
-                    sport = name
-                    break
-
+            sport = get_sport_from_groups(group_names)
             profiles_dict[pid]['athlete_sport'] = sport
             profiles_dict[pid]['groups'] = '|'.join(group_names)
         else:
@@ -170,13 +212,7 @@ def enrich_with_groups(profiles_dict, raw_profiles, groups_map, token, region, t
                 if group_ids:
                     fetched += 1
                     group_names = [groups_map.get(gid, 'Unknown') for gid in group_ids]
-
-                    sport = 'Unknown'
-                    for name in group_names:
-                        if name not in generic_groups and name != 'Unknown':
-                            sport = name
-                            break
-
+                    sport = get_sport_from_groups(group_names)
                     profiles_dict[pid]['athlete_sport'] = sport
                     profiles_dict[pid]['groups'] = '|'.join(group_names)
 

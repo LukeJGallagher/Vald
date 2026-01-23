@@ -20,6 +20,21 @@ from dotenv import load_dotenv
 # Add config directory to path
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, SCRIPT_DIR)
+sys.path.insert(0, os.path.join(SCRIPT_DIR, 'config'))
+
+# Import centralized category mapping
+try:
+    from vald_categories import get_sport_from_groups, SKIP_GROUPS, ALL_SPORTS
+    print("Using centralized category mapping from config/vald_categories.py")
+except ImportError:
+    print("WARNING: Could not import vald_categories, using inline fallback")
+    SKIP_GROUPS = {'ARCHIVED', 'Staff', 'TBC', 'All Athletes'}
+    ALL_SPORTS = ['Athletics', 'Fencing', 'Swimming', 'Taekwondo', 'Wrestling']
+    def get_sport_from_groups(group_names):
+        for name in group_names:
+            if name and name not in SKIP_GROUPS:
+                return name
+        return 'Unknown'
 
 # Try multiple .env locations (same as vald_config.py)
 ENV_LOCATIONS = [
@@ -73,6 +88,45 @@ def get_oauth_token():
         return None
 
 
+def fetch_groups_mapping(token):
+    """Fetch group ID to name mapping from VALD Tenants API (Kenny's approach)."""
+    url = f'https://prd-{REGION}-api-externaltenants.valdperformance.com/groups'
+    headers = {'Authorization': f'Bearer {token}'}
+    params = {'TenantId': TENANT_ID}
+
+    try:
+        response = requests.get(url, headers=headers, params=params, timeout=60)
+        if response.status_code == 200:
+            data = response.json()
+            groups = data.get('groups', data) if isinstance(data, dict) else data
+            return {g['id']: g['name'] for g in groups if 'id' in g and 'name' in g}
+    except Exception as e:
+        print(f"    Groups fetch error: {e}")
+    return {}
+
+
+def fetch_individual_profile(token, profile_id):
+    """Fetch individual profile to get groupIds (Kenny's approach).
+    The bulk /profiles endpoint does NOT return groupIds.
+    The individual /profiles/{id} endpoint DOES return groupIds.
+    """
+    url = f'https://prd-{REGION}-api-externalprofile.valdperformance.com/profiles/{profile_id}'
+    headers = {'Authorization': f'Bearer {token}'}
+    params = {'TenantId': TENANT_ID}
+
+    try:
+        response = requests.get(url, headers=headers, params=params, timeout=30)
+        if response.status_code == 200:
+            return response.json()
+    except Exception:
+        pass
+    return None
+
+
+# NOTE: derive_sport_from_groups is now imported from config/vald_categories.py
+# as get_sport_from_groups() - provides centralized mapping
+
+
 def fetch_profiles_from_api():
     """Fetch all athlete profiles from VALD External Profiles API."""
     print("\n[1] Fetching profiles from VALD Profiles API...")
@@ -120,12 +174,20 @@ def load_cached_profiles():
     return None
 
 
-def build_athlete_lookup(profiles=None, forcedecks_df=None):
-    """Build athlete lookup dictionary from profiles and/or ForceDecks data."""
+def build_athlete_lookup(profiles=None, forcedecks_df=None, token=None, groups_map=None):
+    """Build athlete lookup dictionary from profiles and/or ForceDecks data.
+
+    Uses Kenny's approach: fetch individual profiles to get groupIds,
+    then map groups to sports.
+    """
+    import time
     athlete_lookup = {}
 
-    # Priority 1: Use Profiles API data
+    # Priority 1: Use Profiles API data with group enrichment
     if profiles:
+        print(f"    Processing {len(profiles)} profiles...")
+
+        # First pass: build basic lookup
         for profile in profiles:
             pid = str(profile.get('profileId', ''))
             if pid:
@@ -139,12 +201,37 @@ def build_athlete_lookup(profiles=None, forcedecks_df=None):
                     'familyName': family_name,
                     'dateOfBirth': profile.get('dateOfBirth', ''),
                     'externalId': profile.get('externalId', ''),
-                    'athlete_sport': '',  # Not in Profiles API
-                    'athlete_sex': '',    # Not in Profiles API
+                    'athlete_sport': 'Unknown',
+                    'groups': [],
+                    'athlete_sex': '',
                     'athlete_weight_kg': None,
                     'athlete_height_cm': None,
                 }
+
         print(f"    Built lookup with {len(athlete_lookup)} profiles from API")
+
+        # Second pass: fetch individual profiles to get groupIds (Kenny's approach)
+        if token and groups_map:
+            print(f"    Fetching individual profiles for group membership (Kenny's approach)...")
+            enriched = 0
+            for i, pid in enumerate(athlete_lookup.keys()):
+                if (i + 1) % 50 == 0:
+                    print(f"      Progress: {i + 1}/{len(athlete_lookup)}")
+
+                # Rate limiting
+                time.sleep(0.1)
+
+                individual_profile = fetch_individual_profile(token, pid)
+                if individual_profile:
+                    group_ids = individual_profile.get('groupIds', [])
+                    if group_ids:
+                        group_names = [groups_map.get(gid, 'Unknown') for gid in group_ids]
+                        sport = get_sport_from_groups(group_names)
+                        athlete_lookup[pid]['groups'] = group_names
+                        athlete_lookup[pid]['athlete_sport'] = sport
+                        enriched += 1
+
+            print(f"    Enriched {enriched} profiles with group/sport info")
 
     # Priority 2: Enrich/fallback with ForceDecks data (has sport, sex, biometrics)
     if forcedecks_df is not None and len(forcedecks_df) > 0:
@@ -164,8 +251,11 @@ def build_athlete_lookup(profiles=None, forcedecks_df=None):
 
                 if pid in athlete_lookup:
                     # Enrich existing profile with ForceDecks data
-                    if row.get('athlete_sport'):
-                        athlete_lookup[pid]['athlete_sport'] = row.get('athlete_sport', '')
+                    # Only use ForceDecks sport if API didn't provide one (Unknown)
+                    existing_sport = athlete_lookup[pid].get('athlete_sport', 'Unknown')
+                    fd_sport = row.get('athlete_sport', '')
+                    if existing_sport == 'Unknown' and fd_sport and fd_sport != 'Unknown':
+                        athlete_lookup[pid]['athlete_sport'] = fd_sport
                     if row.get('athlete_sex'):
                         athlete_lookup[pid]['athlete_sex'] = row.get('athlete_sex', '')
                     if pd.notna(row.get('athlete_weight_kg')):
@@ -221,9 +311,24 @@ def enrich_dataframe(df, athlete_lookup, device_name):
 
 def main():
     print("=" * 70)
-    print("ATHLETE ENRICHMENT (v2 - Profiles API)")
+    print("ATHLETE ENRICHMENT (v3 - Kenny's Approach)")
     print(f"Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print("=" * 70)
+
+    # Step 0: Get OAuth token (needed for group/profile enrichment)
+    print("\n[0] Getting OAuth token...")
+    token = get_oauth_token()
+    if not token:
+        print("    WARNING: Failed to get token - will skip group enrichment")
+
+    # Step 0b: Fetch groups mapping (Kenny's approach)
+    groups_map = {}
+    if token:
+        print("\n[0b] Fetching groups mapping (Kenny's approach)...")
+        groups_map = fetch_groups_mapping(token)
+        print(f"    Found {len(groups_map)} groups")
+        for gid, gname in groups_map.items():
+            print(f"      - {gname}")
 
     # Step 1: Try to fetch profiles from API
     profiles = fetch_profiles_from_api()
@@ -242,14 +347,23 @@ def main():
     else:
         print(f"    ForceDecks file not found (optional)")
 
-    # Step 3: Build combined athlete lookup
-    print("\n[3] Building athlete lookup...")
+    # Step 3: Build combined athlete lookup with group enrichment
+    print("\n[3] Building athlete lookup with group enrichment (Kenny's approach)...")
     if profiles is None and forcedecks_df is None:
         print("ERROR: No athlete data available (API failed and no ForceDecks file)")
         return
 
-    athlete_lookup = build_athlete_lookup(profiles, forcedecks_df)
+    athlete_lookup = build_athlete_lookup(profiles, forcedecks_df, token=token, groups_map=groups_map)
     print(f"    Total athletes in lookup: {len(athlete_lookup)}")
+
+    # Print sport distribution from lookup
+    sports_count = {}
+    for pid, info in athlete_lookup.items():
+        sport = info.get('athlete_sport', 'Unknown')
+        sports_count[sport] = sports_count.get(sport, 0) + 1
+    print("\n    Sport distribution from profiles:")
+    for sport, count in sorted(sports_count.items(), key=lambda x: -x[1]):
+        print(f"      {sport}: {count}")
 
     # Step 4: Process ForceDecks (add names to ForceDecks itself)
     print("\n[4] Processing ForceDecks...")
