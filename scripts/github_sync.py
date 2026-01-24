@@ -233,29 +233,35 @@ def fetch_device_data(token, region, tenant_id, device):
 
     url = base_urls[device]
     headers = {'Authorization': f'Bearer {token}'}
-    from_date = (datetime.now(timezone.utc) - timedelta(days=365)).strftime('%Y-%m-%dT00:00:00.000Z')
+    # Fetch ALL historical data from 2020 to get complete dataset
+    from_date = '2020-01-01T00:00:00.000Z'
 
     all_tests = []
 
     if device == 'forcedecks':
         # ForceDecks uses cursor-based pagination with modifiedFromUtc
+        # API returns {'tests': [...]} not just a list
         modified_from = from_date
         while True:
+            time.sleep(0.5)  # Rate limit
             params = {'tenantId': tenant_id, 'modifiedFromUtc': modified_from}
-            response = requests.get(url, headers=headers, params=params, timeout=60)
+            response = requests.get(url, headers=headers, params=params, timeout=120)
             if response.status_code == 204:
                 print(f"{device}: No more data (204)")
                 break
             if response.status_code != 200:
                 print(f"{device} API error: {response.status_code} - {response.text[:200]}")
                 break
-            tests = response.json()
-            if not tests:
+            data = response.json()
+            # Handle both {'tests': [...]} and [...] response formats
+            tests = data.get('tests', data) if isinstance(data, dict) else data
+            if not tests or not isinstance(tests, list):
+                print(f"{device}: Empty or invalid response")
                 break
             all_tests.extend(tests)
             print(f"{device}: Fetched {len(tests)} tests (total: {len(all_tests)})")
             # Get the last modified date for next page
-            if len(tests) < 100:
+            if len(tests) < 50:
                 break
             last_modified = tests[-1].get('modifiedDateUtc')
             if not last_modified or last_modified == modified_from:
@@ -264,22 +270,26 @@ def fetch_device_data(token, region, tenant_id, device):
 
     elif device == 'forceframe':
         # ForceFrame uses cursor-based pagination
+        # API may return {'tests': [...]} or [...]
         modified_from = from_date
         while True:
+            time.sleep(0.5)  # Rate limit
             params = {'TenantId': tenant_id, 'ModifiedFromUtc': modified_from}
-            response = requests.get(url, headers=headers, params=params, timeout=60)
+            response = requests.get(url, headers=headers, params=params, timeout=120)
             if response.status_code == 204:
                 print(f"{device}: No more data (204)")
                 break
             if response.status_code != 200:
                 print(f"{device} API error: {response.status_code} - {response.text[:200]}")
                 break
-            tests = response.json()
-            if not tests:
+            data = response.json()
+            tests = data.get('tests', data) if isinstance(data, dict) else data
+            if not tests or not isinstance(tests, list):
+                print(f"{device}: Empty or invalid response")
                 break
             all_tests.extend(tests)
             print(f"{device}: Fetched {len(tests)} tests (total: {len(all_tests)})")
-            if len(tests) < 100:
+            if len(tests) < 50:
                 break
             last_modified = tests[-1].get('modifiedDateUtc')
             if not last_modified or last_modified == modified_from:
@@ -288,22 +298,26 @@ def fetch_device_data(token, region, tenant_id, device):
 
     elif device == 'nordbord':
         # NordBord uses page-based pagination
+        # API may return {'tests': [...]} or [...]
         page = 1
         while page < 100:
+            time.sleep(0.5)  # Rate limit
             params = {'TenantId': tenant_id, 'Page': page}
-            response = requests.get(url, headers=headers, params=params, timeout=60)
+            response = requests.get(url, headers=headers, params=params, timeout=120)
             if response.status_code == 204:
                 print(f"{device}: No more data (204)")
                 break
             if response.status_code != 200:
                 print(f"{device} API error: {response.status_code} - {response.text[:200]}")
                 break
-            tests = response.json()
-            if not tests:
+            data = response.json()
+            tests = data.get('tests', data) if isinstance(data, dict) else data
+            if not tests or not isinstance(tests, list):
+                print(f"{device}: Empty or invalid response")
                 break
             all_tests.extend(tests)
             print(f"{device}: Fetched {len(tests)} tests (total: {len(all_tests)})")
-            if len(tests) < 100:
+            if len(tests) < 50:
                 break
             page += 1
 
