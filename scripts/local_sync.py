@@ -162,8 +162,99 @@ def enrich_profiles_with_groups(profiles_dict, raw_profiles, groups_map, token, 
     return profiles_dict
 
 
-def fetch_forcedecks(token, region, tenant_id):
-    """Fetch ALL ForceDecks tests from 2020."""
+def fetch_trial_data(token, region, tenant_id, test_id, device='forcedecks'):
+    """Fetch detailed trial data for a single test."""
+    device_urls = {
+        'forcedecks': f'https://prd-{region}-api-extforcedecks.valdperformance.com',
+        'forceframe': f'https://prd-{region}-api-externalforceframe.valdperformance.com',
+        'nordbord': f'https://prd-{region}-api-externalnordbord.valdperformance.com'
+    }
+
+    base_url = device_urls.get(device, device_urls['forcedecks'])
+    url = f'{base_url}/v2019q3/teams/{tenant_id}/tests/{test_id}/trials'
+    headers = {'Authorization': f'Bearer {token}'}
+
+    try:
+        time.sleep(0.15)  # Rate limiting
+        response = requests.get(url, headers=headers, timeout=30)
+        if response.status_code == 200:
+            data = response.json()
+            trials = data.get('trials', data) if isinstance(data, dict) else data
+            return trials if isinstance(trials, list) else []
+    except Exception as e:
+        pass
+    return []
+
+
+def flatten_trial_metrics(trials):
+    """Flatten trial metrics into a single dict of aggregated values.
+
+    VALD trial data format:
+    [{'id': '...', 'results': [{'resultId': 123, 'value': 0.5, 'definition': {'result': 'JUMP_HEIGHT'}}]}]
+    """
+    if not trials:
+        return {}
+
+    # Collect all metrics from all trials
+    all_metrics = {}
+
+    for trial in trials:
+        # Get results from trial - VALD uses a list of result objects
+        results = trial.get('results', [])
+
+        if isinstance(results, list):
+            # VALD format: list of {'value': X, 'definition': {'result': 'METRIC_NAME'}}
+            for result in results:
+                if not isinstance(result, dict):
+                    continue
+
+                value = result.get('value')
+                if not isinstance(value, (int, float)) or value is None:
+                    continue
+
+                # Get metric name from definition
+                definition = result.get('definition', {})
+                metric_name = definition.get('result', '') if isinstance(definition, dict) else ''
+
+                if not metric_name:
+                    # Fallback to resultId
+                    metric_name = f"metric_{result.get('resultId', 'unknown')}"
+
+                # Track limb if available
+                limb = result.get('limb', 'Trial')
+                if limb and limb != 'Trial':
+                    metric_key = f"{metric_name}_{limb}"
+                else:
+                    metric_key = metric_name
+
+                if metric_key not in all_metrics:
+                    all_metrics[metric_key] = []
+                all_metrics[metric_key].append(value)
+
+        elif isinstance(results, dict):
+            # Older format: dict of metric_name: value
+            for key, value in results.items():
+                if isinstance(value, (int, float)) and value is not None:
+                    if key not in all_metrics:
+                        all_metrics[key] = []
+                    all_metrics[key].append(value)
+
+    # Average the metrics (or take best for performance metrics)
+    flattened = {}
+    for key, values in all_metrics.items():
+        if values:
+            key_lower = key.lower()
+            # For jump height/power/velocity, use max (best performance)
+            if any(x in key_lower for x in ['height', 'power', 'velocity', 'peak', 'max']):
+                flattened[key] = max(values)
+            else:
+                flattened[key] = sum(values) / len(values)
+
+    return flattened
+
+
+def fetch_forcedecks(token, region, tenant_id, fetch_trials=True):
+    """Fetch ALL ForceDecks tests from 2020 with optional trial data."""
     url = f'https://prd-{region}-api-extforcedecks.valdperformance.com/tests'
     headers = {'Authorization': f'Bearer {token}'}
     from_date = '2020-01-01T00:00:00.000Z'
@@ -198,6 +289,22 @@ def fetch_forcedecks(token, region, tenant_id):
         if not last_modified or last_modified == modified_from:
             break
         modified_from = last_modified
+
+    # Fetch trial data for detailed metrics
+    if fetch_trials and all_tests:
+        print(f"\n    Fetching trial data for {len(all_tests)} tests...")
+        for i, test in enumerate(all_tests):
+            test_id = test.get('id') or test.get('testId')
+            if test_id:
+                trials = fetch_trial_data(token, region, tenant_id, test_id, 'forcedecks')
+                if trials:
+                    metrics = flatten_trial_metrics(trials)
+                    test.update(metrics)
+
+            if (i + 1) % 100 == 0:
+                print(f"      Trial progress: {i + 1}/{len(all_tests)}")
+
+        print(f"    Trial fetching complete!")
 
     return all_tests
 

@@ -17,3 +17,16 @@ date,athlete,exercise,weight_kg,reps,sets,rpe,test_type,equipment,estimated_1rm,
 2025-11-01,Luke Gallagher,Front Squat,85.0,5,3,8,Working Set,Barbell,97.7,SAOC Gym,,2025-11-01T09:45:00
 2025-11-15,Luke Gallagher,Front Squat,87.5,4,3,8,Working Set,Barbell,97.2,SAOC Gym,,2025-11-15T09:45:00
 2025-12-01,Luke Gallagher,Front Squat,90.0,5,3,9,Working Set,Barbell,103.5,SAOC Gym,,2025-12-01T09:45:00
+2025-09-15,Paul Stretch,Back Squat,85.0,5,3,7,Working Set,Barbell,97.7,SAOC Gym,Good depth,2025-09-15T09:00:00
+2025-10-01,Paul Stretch,Back Squat,90.0,5,3,7,Working Set,Barbell,103.5,SAOC Gym,,2025-10-01T09:00:00
+2025-10-15,Paul Stretch,Back Squat,95.0,5,3,8,Working Set,Barbell,109.2,SAOC Gym,Strong,2025-10-15T09:00:00
+2025-11-01,Paul Stretch,Back Squat,100.0,5,3,8,Working Set,Barbell,115.0,SAOC Gym,,2025-11-01T09:00:00
+2025-11-15,Paul Stretch,Back Squat,105.0,4,3,8,Working Set,Barbell,116.7,SAOC Gym,,2025-11-15T09:00:00
+2025-12-01,Paul Stretch,Back Squat,110.0,5,3,9,Working Set,Barbell,126.5,SAOC Gym,New PB,2025-12-01T09:00:00
+2025-09-15,Paul Stretch,Deadlift,100.0,5,3,7,Working Set,Barbell,115.0,SAOC Gym,,2025-09-15T09:30:00
+2025-10-01,Paul Stretch,Deadlift,105.0,5,3,7,Working Set,Barbell,120.7,SAOC Gym,,2025-10-01T09:30:00
+2025-11-01,Paul Stretch,Deadlift,115.0,5,3,8,Working Set,Barbell,132.2,SAOC Gym,,2025-11-01T09:30:00
+2025-12-01,Paul Stretch,Deadlift,125.0,5,3,9,Working Set,Barbell,143.7,SAOC Gym,New PB,2025-12-01T09:30:00
+2025-09-15,Paul Stretch,Front Squat,60.0,5,3,7,Working Set,Barbell,69.0,SAOC Gym,,2025-09-15T09:45:00
+2025-10-15,Paul Stretch,Front Squat,70.0,5,3,8,Working Set,Barbell,80.5,SAOC Gym,Good rack,2025-10-15T09:45:00
+2025-12-01,Paul Stretch,Front Squat,80.0,5,3,8,Working Set,Barbell,92.0,SAOC Gym,,2025-12-01T09:45:00

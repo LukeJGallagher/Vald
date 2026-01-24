@@ -18,14 +18,17 @@ Team Saudi VALD Performance Analysis System - A Python/Streamlit analytics platf
 # Run dashboard locally
 cd dashboard && streamlit run world_class_vald_dashboard.py
 
-# Full data update from VALD API
+# Local sync with detailed trial metrics (preferred for full data with all metrics)
+python scripts/local_sync.py
+
+# Copy synced data to dashboard directory (dashboard loads from here FIRST)
+cp ../vald-data/data/forcedecks_allsports_with_athletes.csv dashboard/data/
+
+# Full data update from VALD API (legacy - metadata only, no trial metrics)
 python vald_production_system.py --update-all
 
 # Verify API credentials
 python vald_production_system.py --verify
-
-# Enrich ForceFrame/NordBord with athlete names
-python enrich_from_forcedecks.py
 
 # Push to both GitHub repos (main and master branches)
 git push origin main && git push origin main:master
@@ -39,9 +42,12 @@ Required GitHub secrets: `VALD_CLIENT_ID`, `VALD_CLIENT_SECRET`, `VALD_TENANT_ID
 ## Architecture
 
 ### Data Loading Priority (data_loader.py)
-1. Local CSV files (development)
-2. Private GitHub repo via token (Streamlit Cloud - has full history)
-3. VALD API direct fetch (fallback - last 90 days only)
+1. `dashboard/data/*.csv` - Local dashboard directory (checked FIRST)
+2. `../vald-data/data/*.csv` - Private vald-data repo directory
+3. Private GitHub repo via token (Streamlit Cloud)
+4. VALD API direct fetch (fallback - last 90 days only)
+
+**Important**: After syncing data with `local_sync.py`, copy files to `dashboard/data/` for local testing.
 
 ### Key Functions
 - `load_vald_data(device)` - Main loader with fallback chain
@@ -85,8 +91,35 @@ Regions: `euw` (Europe), `use` (US East), `aue` (Australia)
 ### API Key Methods (from Kenny's vald-aspire)
 - **Get Profiles**: `/profiles?TenantId={tenant_id}` - Returns all athlete profiles with names
 - **Get Tests**: `/v2019q3/teams/{tenant_id}/tests?modifiedFromUtc={date}` - Test data with pagination
-- **Get Trials**: `/v2019q3/teams/{tenant_id}/tests/{test_id}/trials` - Individual trial data
+- **Get Trials**: `/v2019q3/teams/{tenant_id}/tests/{test_id}/trials` - Individual trial data with all metrics
 - **Get Groups**: Tenants API `/groups?TenantId={tenant_id}` - Team/group information
+
+### Trial Data Format
+The `/tests` endpoint returns metadata only (19 columns). To get detailed metrics (700+ columns like jump height, power, force), fetch trials:
+```python
+# Trial response format
+[{
+    'id': '...',
+    'results': [{
+        'resultId': 123,
+        'value': 0.45,  # The actual metric value
+        'limb': 'Trial',  # or 'Left', 'Right' for bilateral
+        'definition': {'result': 'JUMP_HEIGHT'}  # Metric name
+    }]
+}]
+```
+
+### API Differences by Device
+
+**ForceDecks** - Uses cursor pagination:
+```python
+params = {'tenantId': tenant_id, 'modifiedFromUtc': '2020-01-01T00:00:00.000Z'}
+```
+
+**ForceFrame/NordBord** - Requires date range parameters:
+```python
+params = {'TenantId': tenant_id, 'TestFromUtc': '...', 'TestToUtc': '...'}
+```
 
 ### API Limitation
 VALD API can only pull **6 months of data maximum** per API call. Use staggered date ranges for historical data.
@@ -102,23 +135,31 @@ ForceFrame/NordBord use `athleteId` which equals `profileId` in the Profiles API
 
 The `Groups` column in ForceDecks data IS the sport. Sports like "Swimming" come from VALD group membership.
 
-**Enrichment script**: `enrich_from_forcedecks.py`
-1. Fetches all profiles from Profiles API (637+ athletes)
-2. Creates `full_name` from `givenName` + `familyName`
-3. Enriches ForceFrame/NordBord CSVs with real names
-4. Dashboard creates `Name` column from `full_name`
+### Data Sync Scripts
 
-**GitHub sync script**: `scripts/github_sync.py`
-- Fetches individual profiles to get groupIds for sport assignment
+**`scripts/local_sync.py`** (Recommended for local development):
+- Fetches all historical ForceDecks tests from 2020
+- Fetches trial data for detailed metrics (700+ columns)
+- Enriches with athlete names and sports via Kenny's approach
+- Outputs to `vald-data/data/forcedecks_allsports_with_athletes.csv`
+
+**`scripts/github_sync.py`**:
 - Used by GitHub Actions for automated daily updates
+- Fetches individual profiles to get groupIds for sport assignment
 
-Run after API data updates:
+**`enrich_from_forcedecks.py`** (Legacy):
+- Enriches existing data with athlete names from Profiles API
+
+Local sync workflow:
 ```bash
-python enrich_from_forcedecks.py
+# 1. Sync all data with trial metrics
+python scripts/local_sync.py
 
-# Then push enriched files to vald-data repo for Streamlit Cloud
-cd ../vald-data
-git add data/*_with_athletes.csv && git commit -m "Update enriched data" && git push
+# 2. Copy to dashboard directory
+cp ../vald-data/data/forcedecks_allsports_with_athletes.csv dashboard/data/
+
+# 3. Run dashboard
+cd dashboard && streamlit run world_class_vald_dashboard.py
 ```
 
 ## Important Compatibility Notes
@@ -162,15 +203,30 @@ Production: Streamlit Cloud Secrets dashboard
 
 ## Troubleshooting
 
+**Metrics/charts blank (only athlete names showing):**
+1. The `/tests` API only returns metadata (19 columns). Need trial data for metrics.
+2. Run `python scripts/local_sync.py` to fetch trial data with all metrics
+3. Copy to dashboard: `cp ../vald-data/data/forcedecks_allsports_with_athletes.csv dashboard/data/`
+4. Restart dashboard
+
 **Athlete names not showing (shows "Athlete_XXXXXX"):**
-1. Run `python enrich_from_forcedecks.py` to fetch profiles and enrich data
-2. Push `*_with_athletes.csv` files to `vald-data` repo
-3. Click "🔄 Refresh" button in dashboard or restart Streamlit (cache is 1 hour)
+1. Run `python scripts/local_sync.py` (includes athlete enrichment)
+2. Copy data to `dashboard/data/` directory
+3. Restart Streamlit (cache is 1 hour)
+
+**Sport filter showing no athletes (e.g., Swimming = 0):**
+1. Bulk profiles API doesn't return groupIds - need Kenny's approach
+2. Run `python scripts/local_sync.py` which fetches individual profiles for groups
+3. Group mapping: "SOTC Swimming" → "Swimming", "Epee/Foil/Sabre" → "Fencing"
 
 **API Authentication Errors (401):**
 1. Check `.env` credentials in `config/local_secrets/`
 2. Verify region setting matches your VALD account (euw/use/aue)
 3. Test with: `python vald_production_system.py --verify`
+
+**ForceFrame/NordBord API 400 errors:**
+- These APIs require `TestFromUtc` and `TestToUtc` parameters (unlike ForceDecks)
+- Check parameter casing: some use `TenantId`, others `tenantId`
 
 **Rate Limiting (429):**
 - System auto-handles with 12 calls per 5 seconds

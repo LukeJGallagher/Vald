@@ -152,14 +152,48 @@ def get_dynamic_benchmarks(gender: str = "male", source: str = "VALD") -> Dict:
 
 # Metric column mappings
 # Note: Jump Height (Imp-Mom) is preferred over Flight Time method for accuracy
+# Supports both legacy API format (with _Trial suffix) and local_sync format (UPPERCASE)
 METRIC_COLUMNS = {
-    'cmj_height': ['Jump Height (Imp-Mom)_Trial', 'Jump Height (Flight Time)_Trial'],
-    'peak_power': ['Peak Power / BM_Trial', 'Peak Power_Trial'],
-    'relative_power': ['Peak Power / BM_Trial'],
-    'peak_force': ['Peak Force / BM_Trial', 'Peak Vertical Force / BM_Trial'],
-    'rsi': ['RSI-modified_Trial', 'RSI (Flight/Contact Time)_Trial', 'RSI-modified (Imp-Mom)_Trial'],
-    'contraction_time': ['Contraction Time_Trial'],
-    'countermovement_depth': ['Countermovement Depth_Trial'],
+    'cmj_height': [
+        'JUMP_HEIGHT_IMP_MOM',  # local_sync format (meters)
+        'JUMP_HEIGHT',  # local_sync format (meters)
+        'Jump Height (Imp-Mom)_Trial',  # legacy API format
+        'Jump Height (Flight Time)_Trial',
+    ],
+    'peak_power': [
+        'BODYMASS_RELATIVE_TAKEOFF_POWER',  # local_sync format (W/kg)
+        'PEAK_TAKEOFF_POWER',  # local_sync format (W) - needs BM division
+        'Peak Power / BM_Trial',  # legacy API format
+        'Peak Power_Trial',
+    ],
+    'relative_power': [
+        'BODYMASS_RELATIVE_TAKEOFF_POWER',  # local_sync format
+        'BODYMASS_RELATIVE_MEAN_CONCENTRIC_POWER',
+        'Peak Power / BM_Trial',  # legacy API format
+    ],
+    'peak_force': [
+        'ISO_BM_REL_FORCE_PEAK',  # IMTP body-mass relative (local_sync)
+        'RELATIVE_PEAK_TAKEOFF_FORCE',  # CMJ relative force (local_sync)
+        'PEAK_VERTICAL_FORCE',  # IMTP absolute force (local_sync)
+        'Peak Force / BM_Trial',  # legacy API format
+        'Peak Vertical Force / BM_Trial',
+    ],
+    'rsi': [
+        'RSI_MODIFIED',  # local_sync format
+        'RSI_MODIFIED_IMP_MOM',
+        'RSI',  # local_sync format
+        'RSI-modified_Trial',  # legacy API format
+        'RSI (Flight/Contact Time)_Trial',
+        'RSI-modified (Imp-Mom)_Trial',
+    ],
+    'contraction_time': [
+        'CONTRACTION_TIME',  # local_sync format
+        'Contraction Time_Trial',  # legacy API format
+    ],
+    'countermovement_depth': [
+        'COUNTERMOVEMENT_DEPTH',  # local_sync format
+        'Countermovement Depth_Trial',  # legacy API format
+    ],
     # NordBord columns - actual CSV column names: leftMaxForce, rightMaxForce
     'nordbord_left': ['leftMaxForce', 'maxForceLeftN', 'leftMax', 'left_max_force'],
     'nordbord_right': ['rightMaxForce', 'maxForceRightN', 'rightMax', 'right_max_force'],
@@ -195,6 +229,58 @@ def get_metric_column(df: pd.DataFrame, metric_key: str) -> Optional[str]:
         if col in df.columns:
             return col
     return None
+
+
+# Metric conversion factors - applied when values need unit adjustment
+# RSI values from VALD API are often reported as percentages (e.g., 45.0 instead of 0.45)
+METRIC_CONVERSIONS = {
+    'rsi': {
+        # Columns that need /100 conversion
+        'RSI_MODIFIED': 0.01,
+        'RSI_MODIFIED_IMP_MOM': 0.01,
+        'RSI': 0.01,
+        # Legacy columns already in correct units
+        'RSI-modified_Trial': 1.0,
+        'RSI (Flight/Contact Time)_Trial': 1.0,
+        'RSI-modified (Imp-Mom)_Trial': 1.0,
+    }
+}
+
+
+def apply_metric_conversion(df: pd.DataFrame, metric_key: str, col_name: str) -> pd.DataFrame:
+    """
+    Apply unit conversion to a metric column if needed.
+
+    Args:
+        df: DataFrame to modify (makes a copy)
+        metric_key: The metric key (e.g., 'rsi')
+        col_name: The actual column name in the dataframe
+
+    Returns:
+        DataFrame with converted values
+    """
+    if metric_key not in METRIC_CONVERSIONS:
+        return df
+
+    conversions = METRIC_CONVERSIONS[metric_key]
+    if col_name not in conversions:
+        return df
+
+    factor = conversions[col_name]
+    if factor == 1.0:
+        return df
+
+    # Make a copy to avoid modifying original
+    df = df.copy()
+
+    # Check if values need conversion (RSI should be < 3.0 typically)
+    if col_name in df.columns and df[col_name].notna().any():
+        median_val = df[col_name].median()
+        # If median is > 10, values likely need conversion
+        if median_val > 10:
+            df[col_name] = df[col_name] * factor
+
+    return df
 
 
 def enrich_athlete_names(df: pd.DataFrame) -> pd.DataFrame:
@@ -716,6 +802,8 @@ def create_group_report(df: pd.DataFrame,
         if metric_col:
             # RSHIP = 10:5 Repeat Single Hop In Place
             hop_df = sport_df[sport_df['testType'].str.contains('RSHIP|DJ|SLDJ|Hop|Drop', case=False, na=False)]
+            # Apply RSI unit conversion if needed
+            hop_df = apply_metric_conversion(hop_df, 'rsi', metric_col)
             if not hop_df.empty and SNC_CHARTS_AVAILABLE:
                 latest_hop = hop_df.groupby('Name')[metric_col].last().reset_index()
                 fig = create_ranked_bar_chart(
@@ -1179,12 +1267,16 @@ def create_group_report(df: pd.DataFrame,
             pass
 
     if not sc_df.empty and 'athlete' in sc_df.columns and SNC_CHARTS_AVAILABLE:
-        # Filter S&C data to athletes in the current sport group
-        sport_athletes = sport_df['Name'].dropna().unique().tolist() if 'Name' in sport_df.columns else []
-        if sport_athletes:
-            sc_df = sc_df[sc_df['athlete'].isin(sport_athletes)]
+        # Filter S&C data to athletes in the current sport group (skip for "All Sports")
+        if sport != "All Sports":
+            sport_athletes = sport_df['Name'].dropna().unique().tolist() if 'Name' in sport_df.columns else []
+            if sport_athletes:
+                sc_df_filtered = sc_df[sc_df['athlete'].isin(sport_athletes)]
+                # If no matches, keep all S&C data
+                if not sc_df_filtered.empty:
+                    sc_df = sc_df_filtered
 
-        # Athlete selector (filtered to sport)
+        # Athlete selector (filtered to sport, or all if "All Sports")
         sc_athletes = sorted(sc_df['athlete'].dropna().unique().tolist()) if not sc_df.empty else []
 
         if not sc_athletes:
@@ -1339,6 +1431,8 @@ def create_group_report(df: pd.DataFrame,
                 metric_col = get_metric_column(sport_df, 'rsi')
                 if metric_col:
                     hop_df = sport_df[sport_df['testType'].str.contains('RSHIP|DJ|SLDJ|Hop|Drop', case=False, na=False)]
+                    # Apply RSI unit conversion if needed
+                    hop_df = apply_metric_conversion(hop_df, 'rsi', metric_col)
                     if not hop_df.empty:
                         fig = create_individual_line_chart(
                             hop_df, selected_athletes, metric_col,
@@ -1446,7 +1540,11 @@ def create_individual_report(df: pd.DataFrame,
         with col4:
             metric_col = get_metric_column(athlete_df, 'rsi')
             if metric_col and pd.notna(latest.get(metric_col)):
-                st.metric("RSI", f"{latest[metric_col]:.2f}")
+                rsi_val = latest[metric_col]
+                # Apply RSI conversion if value is too high (likely *100)
+                if rsi_val > 10:
+                    rsi_val = rsi_val * 0.01
+                st.metric("RSI", f"{rsi_val:.2f}")
 
     st.markdown("---")
 
@@ -1493,6 +1591,8 @@ def create_individual_report(df: pd.DataFrame,
         metric_col = get_metric_column(athlete_df, 'rsi')
         if metric_col:
             hop_df = athlete_df[athlete_df['testType'].str.contains('Hop|DJ|Drop|CMJ', case=False, na=False)]
+            # Apply RSI unit conversion if needed
+            hop_df = apply_metric_conversion(hop_df, 'rsi', metric_col)
             if not hop_df.empty:
                 fig = create_trend_chart(
                     hop_df, metric_col, date_col, benchmarks,
@@ -1699,6 +1799,9 @@ def create_group_report_v2(df: pd.DataFrame,
             if not hop_df.empty:
                 val = hop_df[rsi_col].dropna().iloc[-1] if not hop_df[rsi_col].dropna().empty else None
                 if val is not None:
+                    # Apply RSI conversion if value is too high (likely *100)
+                    if val > 10:
+                        val = val * 0.01
                     row['RSI'] = round(val, 2)
                     row['RSI_status'] = _get_rag_status(val, benchmarks.get('rsi', {}))
 
@@ -2400,7 +2503,11 @@ def create_group_report_v3(df: pd.DataFrame,
             if rsi_col:
                 hop_df = athlete_data[athlete_data['testType'].str.contains('Hop|DJ|Drop|CMJ', case=False, na=False)]
                 if not hop_df.empty and not hop_df[rsi_col].dropna().empty:
-                    metrics['RSI'] = hop_df[rsi_col].dropna().iloc[-1]
+                    rsi_val = hop_df[rsi_col].dropna().iloc[-1]
+                    # Apply RSI conversion if value is too high (likely *100)
+                    if rsi_val > 10:
+                        rsi_val = rsi_val * 0.01
+                    metrics['RSI'] = rsi_val
 
             with cols[i]:
                 if len(metrics) >= 3:
@@ -2487,6 +2594,8 @@ def create_group_report_v3(df: pd.DataFrame,
         if rsi_col:
             # RSHIP = Repeat Single Hop In Place (10-5), DJ = Drop Jump
             hop_df = sport_df[sport_df['testType'].str.contains('RSHIP|DJ|SLDJ|Hop|Drop', case=False, na=False)]
+            # Apply RSI unit conversion if needed
+            hop_df = apply_metric_conversion(hop_df, 'rsi', rsi_col)
             if not hop_df.empty:
                 fig = _create_lollipop_chart(
                     hop_df, rsi_col, 'Name', benchmarks,
@@ -3153,14 +3262,20 @@ def create_shooting_group_report(df: pd.DataFrame, sport: str = "Shooting"):
 
     # Convert units from meters to millimeters
     # VALD stores: Total Excursion in m, Mean Velocity in m/s, Area in m²
+    # Check both local_sync format (BAL_COP_*) and legacy format (*_Trial)
     metric_conversions = {
-        'Total Excursion_Trial': ('total_excursion_mm', 1000),      # m to mm
-        'Mean Velocity_Trial': ('mean_velocity_mm_s', 1000),        # m/s to mm/s
-        'Area of CoP Ellipse_Trial': ('cop_ellipse_area_mm2', 1000000)  # m² to mm²
+        # local_sync format columns
+        'BAL_COP_TOTAL_EXCURSION': ('total_excursion_mm', 1000),      # m to mm
+        'BAL_COP_MEAN_VELOCITY': ('mean_velocity_mm_s', 1000),        # m/s to mm/s
+        'BAL_COP_ELLIPSE_AREA': ('cop_ellipse_area_mm2', 1000000),    # m² to mm²
+        # legacy API format columns
+        'Total Excursion_Trial': ('total_excursion_mm', 1000),
+        'Mean Velocity_Trial': ('mean_velocity_mm_s', 1000),
+        'Area of CoP Ellipse_Trial': ('cop_ellipse_area_mm2', 1000000),
     }
 
     for orig_col, (new_col, factor) in metric_conversions.items():
-        if orig_col in qsb_df.columns:
+        if orig_col in qsb_df.columns and new_col not in qsb_df.columns:
             qsb_df[new_col] = qsb_df[orig_col] * factor
 
     # Get latest test per athlete - filter out NaN names first
@@ -3416,13 +3531,21 @@ def create_shooting_individual_report(df: pd.DataFrame, athlete_name: str, sport
         st.warning(f"No data found for {athlete_name}")
         return
 
-    # Convert units
-    if 'Total Excursion_Trial' in athlete_df.columns:
-        athlete_df['total_excursion_mm'] = athlete_df['Total Excursion_Trial'] * 1000
-    if 'Mean Velocity_Trial' in athlete_df.columns:
-        athlete_df['mean_velocity_mm_s'] = athlete_df['Mean Velocity_Trial'] * 1000
-    if 'Area of CoP Ellipse_Trial' in athlete_df.columns:
-        athlete_df['cop_ellipse_area_mm2'] = athlete_df['Area of CoP Ellipse_Trial'] * 1000000
+    # Convert units - check both local_sync format (BAL_COP_*) and legacy format (*_Trial)
+    metric_conversions = {
+        # local_sync format columns
+        'BAL_COP_TOTAL_EXCURSION': ('total_excursion_mm', 1000),      # m to mm
+        'BAL_COP_MEAN_VELOCITY': ('mean_velocity_mm_s', 1000),        # m/s to mm/s
+        'BAL_COP_ELLIPSE_AREA': ('cop_ellipse_area_mm2', 1000000),    # m² to mm²
+        # legacy API format columns
+        'Total Excursion_Trial': ('total_excursion_mm', 1000),
+        'Mean Velocity_Trial': ('mean_velocity_mm_s', 1000),
+        'Area of CoP Ellipse_Trial': ('cop_ellipse_area_mm2', 1000000),
+    }
+
+    for orig_col, (new_col, factor) in metric_conversions.items():
+        if orig_col in athlete_df.columns and new_col not in athlete_df.columns:
+            athlete_df[new_col] = athlete_df[orig_col] * factor
 
     # Sort by date
     if 'recordedDateUtc' in athlete_df.columns:

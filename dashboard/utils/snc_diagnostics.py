@@ -62,89 +62,161 @@ MULTI_LINE_COLORS = [
 ]
 
 # Squad average styling
-SQUAD_AVG_COLOR = '#FF9800'  # Orange dashed
+SQUAD_AVG_COLOR = '#005430'  # Saudi Green
 BENCHMARK_COLOR = '#0077B6'  # Blue dashed
 
 # Test configurations
+# Supports both legacy API format and local_sync format column names
 TEST_CONFIG = {
     'IMTP': {
         'tier': 1,
         'group_chart': 'ranked_bar',
         'individual_chart': 'line_squad_avg',
-        'metric1': 'Peak Force / BM_Trial',
+        'metric1': ['ISO_BM_REL_FORCE_PEAK', 'Peak Force / BM_Trial'],  # local_sync, legacy
         'metric1_name': 'Relative Peak Force',
-        'unit1': 'N/Kg',
+        'unit1': 'N/kg',
         'metric2': None,
         'source': 'VALD',
-        'test_type': 'IMTP'
+        'test_type_filter': ['IMTP', 'ISOT']
     },
     'CMJ': {
         'tier': 1,
         'group_chart': 'ranked_bar',
         'individual_chart': 'line_squad_avg',
-        'metric1': 'Peak Power / BM_Trial',
+        'metric1': ['BODYMASS_RELATIVE_TAKEOFF_POWER', 'Peak Power / BM_Trial'],
         'metric1_name': 'Relative Peak Power',
-        'unit1': 'W/Kg',
-        'metric2': 'Jump Height (Imp-Mom)_Trial',
+        'unit1': 'W/kg',
+        'metric2': ['JUMP_HEIGHT_IMP_MOM', 'Jump Height (Imp-Mom)_Trial'],
         'metric2_name': 'Height (Impulse-Mom)',
         'unit2': 'cm',
-        'metric2_multiplier': 100,  # m to cm
+        'metric2_multiplier': 1,  # Already in cm from local_sync
         'source': 'VALD',
-        'test_type': 'CMJ'
+        'test_type_filter': ['CMJ']
+    },
+    '6_Min_Aerobic': {
+        'tier': 1,
+        'group_chart': 'ranked_bar',
+        'individual_chart': 'line_squad_avg',
+        'metric1': 'avg_relative_wattage',
+        'metric1_name': 'Average Relative Wattage',
+        'unit1': 'W/kg',
+        'metric2': 'vo2max_estimated',
+        'metric2_name': 'VO2max Estimated',
+        'unit2': 'ml/kg/min',
+        'source': 'Manual',
+        'data_source': 'aerobic_tests'
     },
     'SL_ISO_Squat': {
         'tier': 2,
         'group_chart': 'ranked_side_by_side',
         'individual_chart': 'dual_line_diff',
-        'metric1_left': 'Peak Force / BM_Left',
-        'metric1_right': 'Peak Force / BM_Right',
-        'metric1_name': 'Relative Peak Force',
-        'unit1': 'N/Kg',
+        'metric1_left': ['PEAK_VERTICAL_FORCE_Left', 'Peak Force / BM_Left'],
+        'metric1_right': ['PEAK_VERTICAL_FORCE_Right', 'Peak Force / BM_Right'],
+        'metric1_name': 'Peak Force',
+        'unit1': 'N',
         'metric2': 'asymmetry',
         'metric2_name': '% Difference',
         'unit2': '%',
         'source': 'VALD',
-        'test_type': 'SL ISO Squat'
+        'test_type_filter': ['SLISOSQT', 'ISOSQT']
     },
     'SL_IMTP': {
         'tier': 2,
         'group_chart': 'ranked_side_by_side',
         'individual_chart': 'dual_line_diff',
-        'metric1_left': 'Peak Force / BM_Left',
-        'metric1_right': 'Peak Force / BM_Right',
-        'metric1_name': 'Relative Peak Force',
-        'unit1': 'N/Kg',
+        'metric1_left': ['PEAK_VERTICAL_FORCE_Left', 'Peak Force / BM_Left'],
+        'metric1_right': ['PEAK_VERTICAL_FORCE_Right', 'Peak Force / BM_Right'],
+        'metric1_name': 'Peak Force',
+        'unit1': 'N',
         'metric2': 'asymmetry',
         'metric2_name': '% Difference',
         'unit2': '%',
         'source': 'VALD',
-        'test_type': 'SL IMTP'
+        'test_type_filter': ['SLIMTP', 'SLISOT']
+    },
+    'Strength_RM': {
+        'tier': 2,
+        'group_chart': 'ranked_bar',
+        'individual_chart': 'multi_line',
+        'metric1': 'relative_1rm',  # estimated_1rm / body_mass
+        'metric1_name': 'Relative Strength',
+        'unit1': 'kg/BM',
+        'metric2': 'estimated_1rm',
+        'metric2_name': 'Absolute Strength',
+        'unit2': 'kg',
+        'source': 'Manual',
+        'data_source': 'sc_lower_body'
     },
     'SL_CMJ': {
         'tier': 2,
         'group_chart': 'ranked_side_by_side',
         'individual_chart': 'dual_line_diff',
-        'metric1_left': 'Peak Power / BM_Left',
-        'metric1_right': 'Peak Power / BM_Right',
+        'metric1_left': ['BODYMASS_RELATIVE_TAKEOFF_POWER_Left', 'Peak Power / BM_Left'],
+        'metric1_right': ['BODYMASS_RELATIVE_TAKEOFF_POWER_Right', 'Peak Power / BM_Right'],
         'metric1_name': 'Relative Peak Power',
-        'unit1': 'W/Kg',
-        'metric2': 'Jump Height (Imp-Mom)_Trial',
+        'unit1': 'W/kg',
+        'metric2': ['JUMP_HEIGHT_IMP_MOM', 'Jump Height (Imp-Mom)_Trial'],
         'metric2_name': 'Height (Impulse-Mom)',
         'unit2': 'cm',
-        'metric2_multiplier': 100,
         'source': 'VALD',
-        'test_type': 'SL CMJ'
+        'test_type_filter': ['SLJ', 'SLCMRJ']
+    },
+    'Broad_Jump': {
+        'tier': 2,
+        'group_chart': 'ranked_bar',
+        'individual_chart': 'line_squad_avg',
+        'metric1': 'distance_cm',
+        'metric1_name': 'Distance',
+        'unit1': 'cm',
+        'metric2': None,
+        'source': 'Manual',
+        'data_source': 'broad_jump'
     },
     '10_5_Hop': {
         'tier': 2,
         'group_chart': 'ranked_bar',
         'individual_chart': 'line_squad_avg',
-        'metric1': 'RSI-modified_Trial',
+        'metric1': ['HOP_BEST_RSI', 'RSI-modified_Trial'],  # Use HOP_BEST_RSI (already correct units)
         'metric1_name': 'RSI',
         'unit1': '',
         'metric2': None,
         'source': 'VALD',
-        'test_type': 'Hop Test'
+        'test_type_filter': ['RSHIP', 'RSKIP', 'RSAIP']
+    },
+    'Peak_Power_10s': {
+        'tier': 2,
+        'group_chart': 'ranked_bar',
+        'individual_chart': 'line_squad_avg',
+        'metric1': 'peak_relative_wattage',
+        'metric1_name': 'Peak Relative Wattage',
+        'unit1': 'W/kg',
+        'metric2': None,
+        'source': 'Manual',
+        'data_source': 'power_tests'
+    },
+    'Repeat_Power': {
+        'tier': 2,
+        'group_chart': 'ranked_bar',
+        'individual_chart': 'line_squad_avg',
+        'metric1': 'peak_relative_wattage',
+        'metric1_name': 'Peak Relative Wattage',
+        'unit1': 'W/kg',
+        'metric2': 'fade_percent',
+        'metric2_name': '% Fade (Rep 1-6)',
+        'unit2': '%',
+        'source': 'Manual',
+        'data_source': 'power_tests'
+    },
+    'Glycolytic_Power': {
+        'tier': 2,
+        'group_chart': 'ranked_bar',
+        'individual_chart': 'line_squad_avg',
+        'metric1': 'peak_relative_wattage',
+        'metric1_name': 'Peak Relative Wattage',
+        'unit1': 'W/kg',
+        'metric2': None,
+        'source': 'Manual',
+        'data_source': 'power_tests'
     },
     'NordBord': {
         'tier': 2,
@@ -162,18 +234,35 @@ TEST_CONFIG = {
     }
 }
 
+# Metric column resolver - finds actual column from list of possible names
+def resolve_metric_column(df: pd.DataFrame, metric_spec) -> Optional[str]:
+    """Find actual column name from a metric specification (string or list of possibilities)."""
+    if metric_spec is None:
+        return None
+    if isinstance(metric_spec, str):
+        return metric_spec if metric_spec in df.columns else None
+    if isinstance(metric_spec, list):
+        for col in metric_spec:
+            if col in df.columns:
+                return col
+    return None
+
 # Default benchmarks - These are fallbacks if benchmark database not available
 # Actual benchmarks are loaded from benchmark_database.py which uses VALD norms
 DEFAULT_BENCHMARKS = {
-    'IMTP': {'benchmark': 35.0, 'unit': 'N/Kg'},
-    'CMJ': {'benchmark': 50.0, 'unit': 'W/Kg'},
-    'SL_ISO_Squat': {'benchmark': 20.0, 'unit': 'N/Kg'},
-    'SL_IMTP': {'benchmark': 20.0, 'unit': 'N/Kg'},
-    'SL_CMJ': {'benchmark': 25.0, 'unit': 'W/Kg'},
-    '10_5_Hop': {'benchmark': 2.0, 'unit': 'RSI'},
-    'NordBord': {'benchmark': 337.0, 'unit': 'N'},  # Injury risk threshold
-    'Broad_Jump': {'benchmark': 250.0, 'unit': 'cm'},
+    'IMTP': {'benchmark': 35.0, 'unit': 'N/kg'},
+    'CMJ': {'benchmark': 50.0, 'unit': 'W/kg'},
+    '6_Min_Aerobic': {'benchmark': 3.0, 'unit': 'W/kg'},  # Typical recreational cyclist
+    'SL_ISO_Squat': {'benchmark': 1200.0, 'unit': 'N'},  # Typical bilateral target per leg
+    'SL_IMTP': {'benchmark': 1200.0, 'unit': 'N'},
     'Strength_RM': {'benchmark': 1.5, 'unit': 'kg/BM'},
+    'SL_CMJ': {'benchmark': 25.0, 'unit': 'W/kg'},
+    'Broad_Jump': {'benchmark': 250.0, 'unit': 'cm'},
+    '10_5_Hop': {'benchmark': 2.0, 'unit': ''},  # RSI (absolute)
+    'Peak_Power_10s': {'benchmark': 10.0, 'unit': 'W/kg'},
+    'Repeat_Power': {'benchmark': 8.0, 'unit': 'W/kg'},
+    'Glycolytic_Power': {'benchmark': 6.0, 'unit': 'W/kg'},
+    'NordBord': {'benchmark': 337.0, 'unit': 'N'},  # Injury risk threshold
 }
 
 
@@ -1484,18 +1573,33 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
             view_tabs = st.tabs(["👥 Group View", "🏃 Individual View"])
 
             with view_tabs[0]:
-                metric_col = 'RSI-modified_Trial'
+                metric_col = None
+                needs_conversion = False
 
-                # Try alternatives
-                if metric_col not in filtered_df.columns:
-                    for alt in ['RSI (Flight/Contact Time)_Trial', 'Best RSI (Flight/Contact Time)_Trial']:
-                        if alt in filtered_df.columns:
-                            metric_col = alt
-                            break
+                # Check for RSI columns - local_sync format first, then legacy
+                rsi_columns = [
+                    ('RSI_MODIFIED', True),       # local_sync format, needs /100 conversion
+                    ('RSI_MODIFIED_IMP_MOM', True),
+                    ('RSI', True),
+                    ('RSI-modified_Trial', False),  # legacy format, already correct
+                    ('RSI (Flight/Contact Time)_Trial', False),
+                    ('Best RSI (Flight/Contact Time)_Trial', False),
+                ]
 
-                if metric_col in filtered_df.columns:
+                for col, convert in rsi_columns:
+                    if col in filtered_df.columns:
+                        metric_col = col
+                        needs_conversion = convert
+                        break
+
+                if metric_col and metric_col in filtered_df.columns:
+                    # Apply conversion if needed (RSI should be ~0.3-0.6, not 30-60)
+                    display_df = filtered_df.copy()
+                    if needs_conversion and display_df[metric_col].median() > 10:
+                        display_df[metric_col] = display_df[metric_col] * 0.01
+
                     fig = create_ranked_bar_chart(
-                        filtered_df,
+                        display_df,
                         metric_col,
                         'RSI',
                         '',
@@ -1520,9 +1624,14 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
 
                     show_squad = st.checkbox("Show Squad Average", value=True, key="hop_show_squad")
 
-                    if selected_athletes and metric_col in hop_df.columns:
+                    if selected_athletes and metric_col and metric_col in hop_df.columns:
+                        # Apply conversion if needed
+                        ind_hop_df = hop_df.copy()
+                        if needs_conversion and ind_hop_df[metric_col].median() > 10:
+                            ind_hop_df[metric_col] = ind_hop_df[metric_col] * 0.01
+
                         fig = create_individual_line_chart(
-                            hop_df,
+                            ind_hop_df,
                             selected_athletes,
                             metric_col,
                             'RSI',

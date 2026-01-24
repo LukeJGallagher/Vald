@@ -209,26 +209,33 @@ class CMJAnalysisModule:
         """Relative Peak Power (W/kg) with bilateral comparison or progression."""
         st.markdown("#### Relative Peak Power (W/kg)")
 
-        # Find relative power columns - use exact match first for reliability
+        # Find relative power columns - check both local_sync and legacy formats
         left_col = None
         right_col = None
         trial_col = None
 
-        # Try exact match first
-        if 'Peak Power / BM_Trial' in cmj_df.columns:
-            trial_col = 'Peak Power / BM_Trial'
+        # Priority order: local_sync format first, then legacy API format
+        rel_power_options = [
+            'BODYMASS_RELATIVE_TAKEOFF_POWER',  # local_sync format
+            'Peak Power / BM_Trial',             # legacy API format
+        ]
 
-        # Fall back to search if exact match not found
+        for col_option in rel_power_options:
+            if col_option in cmj_df.columns:
+                trial_col = col_option
+                break
+
+        # Fall back to fuzzy search if exact match not found
         if not trial_col:
             for col in cmj_df.columns:
                 col_lower = col.lower()
                 # Check for relative power (includes Peak Power / BM which is relative power)
-                if 'power' in col_lower and ('/ bm' in col_lower or '/bm' in col_lower):
+                if 'power' in col_lower and ('/ bm' in col_lower or '/bm' in col_lower or 'bodymass_relative' in col_lower):
                     if 'left' in col_lower or '_l_' in col_lower:
                         left_col = col
                     elif 'right' in col_lower or '_r_' in col_lower:
                         right_col = col
-                    elif 'trial' in col_lower and 'peak' in col_lower:
+                    elif not trial_col:
                         trial_col = col
 
         if left_col and right_col:
@@ -492,25 +499,32 @@ class CMJAnalysisModule:
         """Countermovement Depth (cm) with bilateral comparison or progression."""
         st.markdown("#### Countermovement Depth [cm]")
 
-        # Find CMJ depth columns - use exact match first for reliability
+        # Find CMJ depth columns - check both local_sync and legacy formats
         left_col = None
         right_col = None
         trial_col = None
 
-        # Try exact match first
-        if 'Countermovement Depth_Trial' in cmj_df.columns:
-            trial_col = 'Countermovement Depth_Trial'
+        # Priority order: local_sync format first, then legacy API format
+        depth_options = [
+            'COUNTERMOVEMENT_DEPTH',           # local_sync format
+            'Countermovement Depth_Trial',     # legacy API format
+        ]
 
-        # Fall back to search if exact match not found
+        for col_option in depth_options:
+            if col_option in cmj_df.columns:
+                trial_col = col_option
+                break
+
+        # Fall back to fuzzy search if exact match not found
         if not trial_col:
             for col in cmj_df.columns:
                 col_lower = col.lower()
-                if ('countermovement' in col_lower or 'cmj') and 'depth' in col_lower:
+                if ('countermovement' in col_lower or 'cmj' in col_lower) and 'depth' in col_lower:
                     if 'left' in col_lower or '_l_' in col_lower:
                         left_col = col
                     elif 'right' in col_lower or '_r_' in col_lower:
                         right_col = col
-                    elif 'trial' in col_lower:
+                    elif not trial_col:
                         trial_col = col
 
         if left_col and right_col:
@@ -555,14 +569,17 @@ class CMJAnalysisModule:
             # Display progression over time using Trial-level data
             fig = go.Figure()
 
+            # Use absolute values since countermovement depth is stored as negative
+            depth_values = cmj_df[trial_col].abs()
+
             fig.add_trace(go.Scatter(
                 x=cmj_df[date_col],
-                y=cmj_df[trial_col],
+                y=depth_values,
                 mode='lines+markers',
                 line=dict(color='#90BE6D', width=3),
                 marker=dict(size=10, color='#90BE6D'),
                 name='Countermovement Depth',
-                text=cmj_df[trial_col].round(1),
+                text=depth_values.round(1),
                 hovertemplate='<b>%{x|%d %b %Y}</b><br>Depth: %{y:.1f} cm<extra></extra>'
             ))
 
@@ -613,26 +630,38 @@ class CMJAnalysisModule:
         # Get latest test values
         latest = cmj_df.iloc[-1]
 
-        # Find relevant columns - use exact matches first for reliability
+        # Find relevant columns - check both local_sync and legacy formats
         rel_power_col = None
         body_mass_col = None
         height_col = None
 
-        # Try exact matches first - prioritize Impulse-Momentum for jump height
-        if 'Peak Power / BM_Trial' in cmj_df.columns:
-            rel_power_col = 'Peak Power / BM_Trial'
-        if 'Jump Height (Imp-Mom)_Trial' in cmj_df.columns:
-            height_col = 'Jump Height (Imp-Mom)_Trial'
-        elif 'Jump Height (Imp-Dis)_Trial' in cmj_df.columns:
-            height_col = 'Jump Height (Imp-Dis)_Trial'
+        # Priority order: local_sync format first, then legacy API format
+        rel_power_options = ['BODYMASS_RELATIVE_TAKEOFF_POWER', 'Peak Power / BM_Trial']
+        height_options = ['JUMP_HEIGHT_IMP_MOM', 'JUMP_HEIGHT', 'Jump Height (Imp-Mom)_Trial', 'Jump Height (Imp-Dis)_Trial']
+        body_mass_options = ['BODY_WEIGHT', 'Weight_Trial', 'Body Mass_Trial']
 
-        # Fall back to search if exact matches not found
+        for col_option in rel_power_options:
+            if col_option in cmj_df.columns:
+                rel_power_col = col_option
+                break
+
+        for col_option in height_options:
+            if col_option in cmj_df.columns:
+                height_col = col_option
+                break
+
+        for col_option in body_mass_options:
+            if col_option in cmj_df.columns:
+                body_mass_col = col_option
+                break
+
+        # Fall back to fuzzy search if exact matches not found
         if not rel_power_col or not height_col or not body_mass_col:
             for col in cmj_df.columns:
                 col_lower = col.lower()
-                if not rel_power_col and ('/ bm' in col_lower or '/bm' in col_lower) and 'power' in col_lower:
+                if not rel_power_col and ('/ bm' in col_lower or '/bm' in col_lower or 'bodymass_relative' in col_lower) and 'power' in col_lower:
                     rel_power_col = col
-                elif not body_mass_col and ('body' in col_lower or 'mass' in col_lower) and ('weight' in col_lower or 'bm' in col_lower):
+                elif not body_mass_col and ('body' in col_lower or 'weight' in col_lower) and col_lower not in ['weight_relative', 'body_relative']:
                     body_mass_col = col
                 elif not height_col and 'jump' in col_lower and 'height' in col_lower:
                     height_col = col
@@ -657,7 +686,11 @@ class CMJAnalysisModule:
         with col3:
             st.markdown("**CMJ Height**")
             if height_col:
-                st.markdown(f"## {latest[height_col]:.2f} cm")
+                # Convert m to cm if local_sync format (values < 1 are likely in meters)
+                height_val = latest[height_col]
+                if height_val < 1:
+                    height_val = height_val * 100
+                st.markdown(f"## {height_val:.1f} cm")
             else:
                 st.markdown("## N/A")
 
@@ -667,14 +700,19 @@ class CMJAnalysisModule:
         if height_col and rel_power_col:
             fig = make_subplots(specs=[[{"secondary_y": True}]])
 
+            # Convert height to cm if stored in meters (local_sync format)
+            height_values = cmj_df[height_col].copy()
+            if height_values.max() < 1:
+                height_values = height_values * 100
+
             # Height bars (primary y-axis)
             fig.add_trace(
                 go.Bar(
                     x=cmj_df[date_col],
-                    y=cmj_df[height_col],
+                    y=height_values,
                     name='CMJ Height',
                     marker_color='#0000FF',
-                    text=cmj_df[height_col].round(2),
+                    text=height_values.round(1),
                     textposition='inside',
                     textfont=dict(color='white', size=12)
                 ),
@@ -1299,24 +1337,38 @@ class ThrowsTrainingModule:
         cmj_df[date_col] = pd.to_datetime(cmj_df[date_col])
         cmj_df_sorted = cmj_df.sort_values(date_col)
 
-        # Find power columns - use exact matches first
+        # Find power columns - check both local_sync and legacy formats
         abs_power_col = None
         rel_power_col = None
 
-        # Try exact matches first
-        if 'Peak Power_Trial' in cmj_df.columns:
-            abs_power_col = 'Peak Power_Trial'
-        if 'Peak Power / BM_Trial' in cmj_df.columns:
-            rel_power_col = 'Peak Power / BM_Trial'
+        # Priority order: local_sync format first, then legacy API format
+        abs_power_options = [
+            'PEAK_TAKEOFF_POWER',       # local_sync format
+            'Peak Power_Trial',          # legacy API format
+        ]
+        rel_power_options = [
+            'BODYMASS_RELATIVE_TAKEOFF_POWER',  # local_sync format
+            'Peak Power / BM_Trial',             # legacy API format
+        ]
 
-        # Fall back to search
+        for col_option in abs_power_options:
+            if col_option in cmj_df.columns:
+                abs_power_col = col_option
+                break
+
+        for col_option in rel_power_options:
+            if col_option in cmj_df.columns:
+                rel_power_col = col_option
+                break
+
+        # Fall back to fuzzy search if exact match not found
         if not abs_power_col or not rel_power_col:
             for col in cmj_df.columns:
                 col_lower = col.lower()
                 if 'peak' in col_lower and 'power' in col_lower:
-                    if ('/ bm' in col_lower or '/bm' in col_lower or 'relative' in col_lower) and not rel_power_col:
+                    if ('/ bm' in col_lower or '/bm' in col_lower or 'relative' in col_lower or 'bodymass' in col_lower) and not rel_power_col:
                         rel_power_col = col
-                    elif not abs_power_col and '/ bm' not in col_lower and '/bm' not in col_lower and 'relative' not in col_lower:
+                    elif not abs_power_col and '/ bm' not in col_lower and '/bm' not in col_lower and 'relative' not in col_lower and 'bodymass' not in col_lower:
                         abs_power_col = col
 
         if abs_power_col:
@@ -1416,12 +1468,22 @@ class ThrowsTrainingModule:
         cmj_df[date_col] = pd.to_datetime(cmj_df[date_col])
         cmj_df_sorted = cmj_df.sort_values(date_col)
 
-        # Find depth column - use exact match first
+        # Find depth column - check both local_sync and legacy formats
         depth_col = None
 
-        if 'Countermovement Depth_Trial' in cmj_df.columns:
-            depth_col = 'Countermovement Depth_Trial'
-        else:
+        # Priority order: local_sync format, then legacy API format
+        depth_column_options = [
+            'COUNTERMOVEMENT_DEPTH',           # local_sync format
+            'Countermovement Depth_Trial',     # legacy API format
+        ]
+
+        for col_option in depth_column_options:
+            if col_option in cmj_df.columns:
+                depth_col = col_option
+                break
+
+        # Fallback fuzzy search if exact match not found
+        if not depth_col:
             for col in cmj_df.columns:
                 col_lower = col.lower()
                 if ('countermovement' in col_lower or 'cmj' in col_lower) and 'depth' in col_lower:
@@ -1429,8 +1491,9 @@ class ThrowsTrainingModule:
                     break
 
         if depth_col:
-            latest_depth = cmj_df_sorted[depth_col].iloc[-1]
-            avg_depth = cmj_df_sorted[depth_col].mean()
+            # Take absolute values since countermovement depth is stored as negative
+            latest_depth = abs(cmj_df_sorted[depth_col].iloc[-1])
+            avg_depth = abs(cmj_df_sorted[depth_col].mean())
 
             # Consistency = low standard deviation (lower is better)
             std_dev = cmj_df_sorted[depth_col].tail(5).std()
@@ -1450,7 +1513,7 @@ class ThrowsTrainingModule:
 
             fig.add_trace(go.Scatter(
                 x=cmj_df_sorted[date_col],
-                y=cmj_df_sorted[depth_col],
+                y=cmj_df_sorted[depth_col].abs(),  # Use absolute values for display
                 mode='lines+markers',
                 line=dict(color='#0077B6', width=2),
                 marker=dict(size=8, color='#0077B6'),

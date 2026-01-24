@@ -1252,18 +1252,12 @@ def fetch_live_data_from_api(device='forcedecks'):
     if not client_id or not client_secret or not tenant_id:
         return None, "Missing API credentials (CLIENT_ID, CLIENT_SECRET, or TENANT_ID)"
 
-    # Get OAuth token - use correct identity URL based on region
-    region_token_urls = {
-        'euw': "https://identity-euw.vald.com/connect/token",
-        'use': "https://identity-use.vald.com/connect/token",
-        'aue': "https://identity-aue.vald.com/connect/token"
-    }
-    token_url = region_token_urls.get(region, "https://identity-euw.vald.com/connect/token")
+    # Get OAuth token - use VALD security endpoint (no scope required)
+    token_url = "https://security.valdperformance.com/connect/token"
     token_data = {
         'grant_type': 'client_credentials',
         'client_id': client_id,
         'client_secret': client_secret,
-        'scope': 'vald-api'
     }
 
     try:
@@ -1365,19 +1359,12 @@ def fetch_historical_data_from_api(device='forcedecks', progress_callback=None):
     if not client_id or not client_secret:
         return None, "Missing API credentials (CLIENT_ID, CLIENT_SECRET)"
 
-    # Get OAuth token - using correct valdR identity URL
-    region_token_urls = {
-        'euw': "https://identity-euw.vald.com/connect/token",
-        'use': "https://identity-use.vald.com/connect/token",
-        'aue': "https://identity-aue.vald.com/connect/token"
-    }
-    token_url = region_token_urls.get(region, "https://identity-euw.vald.com/connect/token")
-
+    # Get OAuth token - use VALD security endpoint (no scope required)
+    token_url = "https://security.valdperformance.com/connect/token"
     token_data = {
         'grant_type': 'client_credentials',
         'client_id': client_id,
         'client_secret': client_secret,
-        'scope': 'vald-api'
     }
 
     try:
@@ -1834,10 +1821,38 @@ except Exception as e:
 # SPORT FILTER - Simple dropdown selector in sidebar
 # ============================================================================
 
-# Get available sports from data
-available_sports = []
+# All known VALD groups/sports (show all regardless of test data)
+ALL_KNOWN_SPORTS = [
+    'Athletics',
+    'Athletics - Throws',
+    'Cycling',
+    'Equestrian',
+    'Fencing',
+    'FootballSoccer',
+    'Golf',
+    'Gymnastics',
+    'Judo',
+    'Karate',
+    'Other',
+    'Rowing',
+    'RugbyUnion',
+    'Shooting',
+    'Swimming',
+    'Taekwondo',
+    'Tennis',
+    'Triathlon',
+    'Volleyball',
+    'Weightlifting',
+    'Wrestling',
+]
+
+# Get available sports from data (to include any sports not in the predefined list)
+data_sports = []
 if 'athlete_sport' in df.columns:
-    available_sports = sorted(df['athlete_sport'].dropna().unique().tolist())
+    data_sports = [s for s in df['athlete_sport'].dropna().unique().tolist() if s and s != 'Unknown']
+
+# Merge predefined sports with data sports (unique, sorted)
+available_sports = sorted(set(ALL_KNOWN_SPORTS + data_sports))
 
 # Sport dropdown filter
 st.sidebar.markdown("---")
@@ -2062,7 +2077,11 @@ with tabs[4]:  # Data Entry
         st.session_state.sc_lower_body = load_sc_lower_body()
 
     # Create sub-tabs for different entry types
-    entry_tabs = st.tabs(["🥏 Throws Distance", "💪 S&C Upper Body", "🦵 S&C Lower Body", "🏋️ Trunk Endurance", "📊 View Data", "📈 Charts"])
+    entry_tabs = st.tabs([
+        "🥏 Throws Distance", "💪 S&C Upper Body", "🦵 S&C Lower Body",
+        "🏋️ Trunk Endurance", "🏃 Aerobic Tests", "🦘 Broad Jump",
+        "⚡ Power Tests", "📊 View Data", "📈 Charts"
+    ])
 
     # -------------------------------------------------------------------------
     # SUB-TAB: Throws Distance Entry Form
@@ -3029,9 +3048,439 @@ with tabs[4]:  # Data Entry
             st.info("📭 No trunk endurance data recorded yet. Use the form above to add entries.")
 
     # -------------------------------------------------------------------------
-    # SUB-TAB: View Data (with Edit/Delete) - Now with sub-tabs
+    # SUB-TAB: Aerobic Tests (6 Min Test - Manual Entry)
     # -------------------------------------------------------------------------
     with entry_tabs[4]:
+        st.markdown("### 🏃 Aerobic Tests (6 Minute Test)")
+
+        st.markdown("""
+        <div style="
+            background: linear-gradient(135deg, #255035 0%, #1C3D28 100%);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            color: white;
+        ">
+            <p style="margin: 0; font-size: 0.95rem;">
+                📝 Record 6-minute aerobic test results. Enter average wattage and calculate relative power (W/kg).
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # Initialize aerobic tests session state
+        if 'aerobic_tests' not in st.session_state:
+            aerobic_csv_path = os.path.join(os.path.dirname(__file__), 'data', 'aerobic_tests.csv')
+            if os.path.exists(aerobic_csv_path):
+                try:
+                    st.session_state.aerobic_tests = pd.read_csv(aerobic_csv_path)
+                    if 'date' in st.session_state.aerobic_tests.columns:
+                        st.session_state.aerobic_tests['date'] = pd.to_datetime(st.session_state.aerobic_tests['date'])
+                except Exception:
+                    st.session_state.aerobic_tests = pd.DataFrame()
+            else:
+                # Seed data for Luke Gallagher
+                st.session_state.aerobic_tests = pd.DataFrame([
+                    {'date': pd.Timestamp('2025-01-10'), 'athlete': 'Luke Gallagher', 'avg_wattage': 280, 'body_mass_kg': 85.0, 'avg_relative_wattage': 3.29, 'session_type': 'Testing', 'notes': 'Baseline test'},
+                    {'date': pd.Timestamp('2025-01-17'), 'athlete': 'Luke Gallagher', 'avg_wattage': 290, 'body_mass_kg': 84.5, 'avg_relative_wattage': 3.43, 'session_type': 'Testing', 'notes': 'Good improvement'}
+                ])
+
+        # Entry Form
+        with st.form("aerobic_test_form", clear_on_submit=True):
+            aero_col1, aero_col2 = st.columns(2)
+
+            with aero_col1:
+                aero_athletes_list = []
+                if 'Name' in filtered_df.columns:
+                    aero_athletes_list = sorted([a for a in filtered_df['Name'].unique() if pd.notna(a)])
+
+                aero_athlete = st.selectbox(
+                    "Athlete *",
+                    options=aero_athletes_list if aero_athletes_list else ["No athletes loaded"],
+                    key="aero_athlete"
+                )
+
+                aero_date = st.date_input(
+                    "Test Date *",
+                    value=datetime.now().date(),
+                    key="aero_date"
+                )
+
+                aero_avg_wattage = st.number_input(
+                    "Average Wattage (W) *",
+                    min_value=0,
+                    max_value=1000,
+                    value=0,
+                    step=5,
+                    key="aero_avg_wattage"
+                )
+
+            with aero_col2:
+                aero_body_mass = st.number_input(
+                    "Body Mass (kg) *",
+                    min_value=30.0,
+                    max_value=200.0,
+                    value=75.0,
+                    step=0.5,
+                    format="%.1f",
+                    key="aero_body_mass"
+                )
+
+                aero_session_type = st.selectbox(
+                    "Session Type",
+                    options=["Testing", "Training", "Competition"],
+                    key="aero_session_type"
+                )
+
+                aero_notes = st.text_input(
+                    "Notes",
+                    placeholder="Any relevant notes...",
+                    key="aero_notes"
+                )
+
+            aero_submitted = st.form_submit_button("💾 Save Aerobic Test", type="primary", use_container_width=True)
+
+            if aero_submitted:
+                if aero_athlete and aero_athlete != "No athletes loaded" and aero_avg_wattage > 0:
+                    # Calculate relative wattage
+                    aero_relative = round(aero_avg_wattage / aero_body_mass, 2)
+
+                    new_aero_entry = {
+                        'date': pd.Timestamp(aero_date),
+                        'athlete': aero_athlete,
+                        'avg_wattage': aero_avg_wattage,
+                        'body_mass_kg': aero_body_mass,
+                        'avg_relative_wattage': aero_relative,
+                        'session_type': aero_session_type,
+                        'notes': aero_notes
+                    }
+
+                    if st.session_state.aerobic_tests.empty:
+                        st.session_state.aerobic_tests = pd.DataFrame([new_aero_entry])
+                    else:
+                        st.session_state.aerobic_tests = pd.concat([
+                            st.session_state.aerobic_tests,
+                            pd.DataFrame([new_aero_entry])
+                        ], ignore_index=True)
+
+                    # Save to CSV
+                    aerobic_csv_path = os.path.join(os.path.dirname(__file__), 'data', 'aerobic_tests.csv')
+                    os.makedirs(os.path.dirname(aerobic_csv_path), exist_ok=True)
+                    st.session_state.aerobic_tests.to_csv(aerobic_csv_path, index=False)
+
+                    st.success(f"✅ Saved aerobic test for {aero_athlete}. Relative Power: {aero_relative} W/kg")
+                else:
+                    st.error("❌ Please fill in all required fields.")
+
+        # Display existing data
+        aero_df = st.session_state.aerobic_tests
+        if not aero_df.empty:
+            st.markdown("---")
+            st.markdown("#### 📋 Recent Aerobic Test Entries")
+            recent_aero = aero_df.sort_values('date', ascending=False).head(10) if 'date' in aero_df.columns else aero_df.head(10)
+            st.dataframe(recent_aero, use_container_width=True, hide_index=True)
+        else:
+            st.info("📭 No aerobic test data recorded yet. Use the form above to add entries.")
+
+    # -------------------------------------------------------------------------
+    # SUB-TAB: Broad Jump (Manual Entry)
+    # -------------------------------------------------------------------------
+    with entry_tabs[5]:
+        st.markdown("### 🦘 Broad Jump (Standing Long Jump)")
+
+        st.markdown("""
+        <div style="
+            background: linear-gradient(135deg, #255035 0%, #1C3D28 100%);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            color: white;
+        ">
+            <p style="margin: 0; font-size: 0.95rem;">
+                📝 Record standing broad jump distances. Measure from takeoff line to nearest heel landing point.
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # Initialize broad jump session state
+        if 'broad_jump' not in st.session_state:
+            bj_csv_path = os.path.join(os.path.dirname(__file__), 'data', 'broad_jump.csv')
+            if os.path.exists(bj_csv_path):
+                try:
+                    st.session_state.broad_jump = pd.read_csv(bj_csv_path)
+                    if 'date' in st.session_state.broad_jump.columns:
+                        st.session_state.broad_jump['date'] = pd.to_datetime(st.session_state.broad_jump['date'])
+                except Exception:
+                    st.session_state.broad_jump = pd.DataFrame()
+            else:
+                # Seed data for Luke Gallagher
+                st.session_state.broad_jump = pd.DataFrame([
+                    {'date': pd.Timestamp('2025-01-08'), 'athlete': 'Luke Gallagher', 'distance_cm': 245, 'attempt': 1, 'session_type': 'Testing', 'notes': 'First test'},
+                    {'date': pd.Timestamp('2025-01-08'), 'athlete': 'Luke Gallagher', 'distance_cm': 252, 'attempt': 2, 'session_type': 'Testing', 'notes': 'Best attempt'},
+                    {'date': pd.Timestamp('2025-01-08'), 'athlete': 'Luke Gallagher', 'distance_cm': 248, 'attempt': 3, 'session_type': 'Testing', 'notes': ''}
+                ])
+
+        # Entry Form
+        with st.form("broad_jump_form", clear_on_submit=True):
+            bj_col1, bj_col2 = st.columns(2)
+
+            with bj_col1:
+                bj_athletes_list = []
+                if 'Name' in filtered_df.columns:
+                    bj_athletes_list = sorted([a for a in filtered_df['Name'].unique() if pd.notna(a)])
+
+                bj_athlete = st.selectbox(
+                    "Athlete *",
+                    options=bj_athletes_list if bj_athletes_list else ["No athletes loaded"],
+                    key="bj_athlete"
+                )
+
+                bj_date = st.date_input(
+                    "Test Date *",
+                    value=datetime.now().date(),
+                    key="bj_date"
+                )
+
+                bj_distance = st.number_input(
+                    "Distance (cm) *",
+                    min_value=0,
+                    max_value=400,
+                    value=0,
+                    step=1,
+                    key="bj_distance"
+                )
+
+            with bj_col2:
+                bj_attempt = st.number_input(
+                    "Attempt #",
+                    min_value=1,
+                    max_value=10,
+                    value=1,
+                    key="bj_attempt"
+                )
+
+                bj_session_type = st.selectbox(
+                    "Session Type",
+                    options=["Testing", "Training", "Competition"],
+                    key="bj_session_type"
+                )
+
+                bj_notes = st.text_input(
+                    "Notes",
+                    placeholder="Any relevant notes...",
+                    key="bj_notes"
+                )
+
+            bj_submitted = st.form_submit_button("💾 Save Broad Jump", type="primary", use_container_width=True)
+
+            if bj_submitted:
+                if bj_athlete and bj_athlete != "No athletes loaded" and bj_distance > 0:
+                    new_bj_entry = {
+                        'date': pd.Timestamp(bj_date),
+                        'athlete': bj_athlete,
+                        'distance_cm': bj_distance,
+                        'attempt': bj_attempt,
+                        'session_type': bj_session_type,
+                        'notes': bj_notes
+                    }
+
+                    if st.session_state.broad_jump.empty:
+                        st.session_state.broad_jump = pd.DataFrame([new_bj_entry])
+                    else:
+                        st.session_state.broad_jump = pd.concat([
+                            st.session_state.broad_jump,
+                            pd.DataFrame([new_bj_entry])
+                        ], ignore_index=True)
+
+                    # Save to CSV
+                    bj_csv_path = os.path.join(os.path.dirname(__file__), 'data', 'broad_jump.csv')
+                    os.makedirs(os.path.dirname(bj_csv_path), exist_ok=True)
+                    st.session_state.broad_jump.to_csv(bj_csv_path, index=False)
+
+                    st.success(f"✅ Saved broad jump for {bj_athlete}: {bj_distance} cm")
+                else:
+                    st.error("❌ Please fill in all required fields.")
+
+        # Display existing data
+        bj_df = st.session_state.broad_jump
+        if not bj_df.empty:
+            st.markdown("---")
+            st.markdown("#### 📋 Recent Broad Jump Entries")
+            recent_bj = bj_df.sort_values('date', ascending=False).head(10) if 'date' in bj_df.columns else bj_df.head(10)
+            st.dataframe(recent_bj, use_container_width=True, hide_index=True)
+
+            # Best jumps per athlete
+            st.markdown("#### 🏆 Personal Bests")
+            pb_bj = bj_df.groupby('athlete')['distance_cm'].max().reset_index()
+            pb_bj.columns = ['Athlete', 'Best (cm)']
+            st.dataframe(pb_bj.sort_values('Best (cm)', ascending=False), use_container_width=True, hide_index=True)
+        else:
+            st.info("📭 No broad jump data recorded yet. Use the form above to add entries.")
+
+    # -------------------------------------------------------------------------
+    # SUB-TAB: Power Tests (Peak Power, Repeat Power, Glycolytic Power)
+    # -------------------------------------------------------------------------
+    with entry_tabs[6]:
+        st.markdown("### ⚡ Power Tests")
+
+        st.markdown("""
+        <div style="
+            background: linear-gradient(135deg, #255035 0%, #1C3D28 100%);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            color: white;
+        ">
+            <p style="margin: 0; font-size: 0.95rem;">
+                📝 Record power test results: Peak Power (10s), Repeat Power (10x6s), and Glycolytic Power (3min).
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # Initialize power tests session state
+        if 'power_tests' not in st.session_state:
+            power_csv_path = os.path.join(os.path.dirname(__file__), 'data', 'power_tests.csv')
+            if os.path.exists(power_csv_path):
+                try:
+                    st.session_state.power_tests = pd.read_csv(power_csv_path)
+                    if 'date' in st.session_state.power_tests.columns:
+                        st.session_state.power_tests['date'] = pd.to_datetime(st.session_state.power_tests['date'])
+                except Exception:
+                    st.session_state.power_tests = pd.DataFrame()
+            else:
+                # Seed data for Luke Gallagher
+                st.session_state.power_tests = pd.DataFrame([
+                    {'date': pd.Timestamp('2025-01-12'), 'athlete': 'Luke Gallagher', 'test_type': 'Peak Power (10s)', 'peak_wattage': 850, 'avg_wattage': 780, 'body_mass_kg': 85.0, 'peak_relative_wattage': 10.0, 'avg_relative_wattage': 9.18, 'session_type': 'Testing', 'notes': 'Good effort'},
+                    {'date': pd.Timestamp('2025-01-12'), 'athlete': 'Luke Gallagher', 'test_type': 'Repeat Power (10x6s)', 'peak_wattage': 720, 'avg_wattage': 650, 'body_mass_kg': 85.0, 'peak_relative_wattage': 8.47, 'avg_relative_wattage': 7.65, 'session_type': 'Testing', 'notes': 'Fatigue in last 3 reps'},
+                    {'date': pd.Timestamp('2025-01-12'), 'athlete': 'Luke Gallagher', 'test_type': 'Glycolytic Power (3min)', 'peak_wattage': 520, 'avg_wattage': 420, 'body_mass_kg': 85.0, 'peak_relative_wattage': 6.12, 'avg_relative_wattage': 4.94, 'session_type': 'Testing', 'notes': 'Tough finish'}
+                ])
+
+        # Entry Form
+        with st.form("power_test_form", clear_on_submit=True):
+            power_col1, power_col2 = st.columns(2)
+
+            with power_col1:
+                power_athletes_list = []
+                if 'Name' in filtered_df.columns:
+                    power_athletes_list = sorted([a for a in filtered_df['Name'].unique() if pd.notna(a)])
+
+                power_athlete = st.selectbox(
+                    "Athlete *",
+                    options=power_athletes_list if power_athletes_list else ["No athletes loaded"],
+                    key="power_athlete"
+                )
+
+                power_date = st.date_input(
+                    "Test Date *",
+                    value=datetime.now().date(),
+                    key="power_date"
+                )
+
+                power_test_type = st.selectbox(
+                    "Test Type *",
+                    options=["Peak Power (10s)", "Repeat Power (10x6s)", "Glycolytic Power (3min)"],
+                    key="power_test_type"
+                )
+
+                power_body_mass = st.number_input(
+                    "Body Mass (kg) *",
+                    min_value=30.0,
+                    max_value=200.0,
+                    value=75.0,
+                    step=0.5,
+                    format="%.1f",
+                    key="power_body_mass"
+                )
+
+            with power_col2:
+                power_peak_wattage = st.number_input(
+                    "Peak Wattage (W) *",
+                    min_value=0,
+                    max_value=2000,
+                    value=0,
+                    step=10,
+                    key="power_peak_wattage"
+                )
+
+                power_avg_wattage = st.number_input(
+                    "Average Wattage (W)",
+                    min_value=0,
+                    max_value=2000,
+                    value=0,
+                    step=10,
+                    key="power_avg_wattage"
+                )
+
+                power_session_type = st.selectbox(
+                    "Session Type",
+                    options=["Testing", "Training", "Competition"],
+                    key="power_session_type"
+                )
+
+                power_notes = st.text_input(
+                    "Notes",
+                    placeholder="Any relevant notes...",
+                    key="power_notes"
+                )
+
+            power_submitted = st.form_submit_button("💾 Save Power Test", type="primary", use_container_width=True)
+
+            if power_submitted:
+                if power_athlete and power_athlete != "No athletes loaded" and power_peak_wattage > 0:
+                    # Calculate relative values
+                    power_peak_relative = round(power_peak_wattage / power_body_mass, 2)
+                    power_avg_relative = round(power_avg_wattage / power_body_mass, 2) if power_avg_wattage > 0 else 0
+
+                    new_power_entry = {
+                        'date': pd.Timestamp(power_date),
+                        'athlete': power_athlete,
+                        'test_type': power_test_type,
+                        'peak_wattage': power_peak_wattage,
+                        'avg_wattage': power_avg_wattage,
+                        'body_mass_kg': power_body_mass,
+                        'peak_relative_wattage': power_peak_relative,
+                        'avg_relative_wattage': power_avg_relative,
+                        'session_type': power_session_type,
+                        'notes': power_notes
+                    }
+
+                    if st.session_state.power_tests.empty:
+                        st.session_state.power_tests = pd.DataFrame([new_power_entry])
+                    else:
+                        st.session_state.power_tests = pd.concat([
+                            st.session_state.power_tests,
+                            pd.DataFrame([new_power_entry])
+                        ], ignore_index=True)
+
+                    # Save to CSV
+                    power_csv_path = os.path.join(os.path.dirname(__file__), 'data', 'power_tests.csv')
+                    os.makedirs(os.path.dirname(power_csv_path), exist_ok=True)
+                    st.session_state.power_tests.to_csv(power_csv_path, index=False)
+
+                    st.success(f"✅ Saved {power_test_type} for {power_athlete}. Peak: {power_peak_relative} W/kg")
+                else:
+                    st.error("❌ Please fill in all required fields.")
+
+        # Display existing data
+        power_df = st.session_state.power_tests
+        if not power_df.empty:
+            st.markdown("---")
+            st.markdown("#### 📋 Recent Power Test Entries")
+            recent_power = power_df.sort_values('date', ascending=False).head(10) if 'date' in power_df.columns else power_df.head(10)
+            st.dataframe(recent_power, use_container_width=True, hide_index=True)
+
+            # Best results per athlete and test type
+            st.markdown("#### 🏆 Personal Bests (Peak Relative Power)")
+            if 'peak_relative_wattage' in power_df.columns:
+                pb_power = power_df.groupby(['athlete', 'test_type'])['peak_relative_wattage'].max().reset_index()
+                pb_power.columns = ['Athlete', 'Test Type', 'Best (W/kg)']
+                st.dataframe(pb_power.sort_values('Best (W/kg)', ascending=False), use_container_width=True, hide_index=True)
+        else:
+            st.info("📭 No power test data recorded yet. Use the form above to add entries.")
+
+    # -------------------------------------------------------------------------
+    # SUB-TAB: View Data (with Edit/Delete) - Now with sub-tabs
+    # -------------------------------------------------------------------------
+    with entry_tabs[7]:
         st.markdown("### 📊 Recorded Training Data")
 
         # Create sub-tabs for different data types
@@ -3469,7 +3918,7 @@ with tabs[4]:  # Data Entry
     # -------------------------------------------------------------------------
     # SUB-TAB: Charts - Now with sub-tabs
     # -------------------------------------------------------------------------
-    with entry_tabs[5]:
+    with entry_tabs[8]:
         st.markdown("### 📈 Training Charts")
 
         # Create sub-tabs for different chart types
@@ -5282,6 +5731,106 @@ with tabs[1]:
                     forceframe_df=sport_ff if not sport_ff.empty else None,
                     nordbord_df=sport_nb if not sport_nb.empty else None
                 )
+
+                # Trunk Endurance Quadrant Test Chart
+                st.markdown("---")
+                st.markdown("### 🏋️ Trunk Endurance (Quadrant Test)")
+                st.caption("Core stability assessment: Supine, Prone, Lateral-Left, Lateral-Right positions")
+
+                # Load trunk endurance data
+                trunk_csv_path = os.path.join(os.path.dirname(__file__), 'data', 'trunk_endurance.csv')
+                if os.path.exists(trunk_csv_path):
+                    try:
+                        trunk_df = pd.read_csv(trunk_csv_path)
+                        if 'date' in trunk_df.columns:
+                            trunk_df['date'] = pd.to_datetime(trunk_df['date'])
+
+                        # Filter by selected sport if filtering by athlete_sport
+                        if selected_report_sport and selected_report_sport != "All Sports":
+                            # Get athletes from the filtered sport data
+                            if 'Name' in sport_data.columns:
+                                sport_athletes = sport_data['Name'].dropna().unique()
+                                trunk_df = trunk_df[trunk_df['athlete'].isin(sport_athletes)]
+
+                        if not trunk_df.empty:
+                            # Get latest test per athlete
+                            if 'date' in trunk_df.columns:
+                                latest_trunk = trunk_df.sort_values('date').groupby('athlete').last().reset_index()
+                            else:
+                                latest_trunk = trunk_df.groupby('athlete').last().reset_index()
+
+                            if not latest_trunk.empty:
+                                import plotly.graph_objects as go
+
+                                # Stacked bar chart - Team Saudi colors
+                                fig_trunk = go.Figure()
+
+                                position_colors = {
+                                    'Supine': '#005430',       # Saudi Green
+                                    'Prone': '#a08e66',        # Gold Accent
+                                    'Lateral-Left': '#0077B6', # Info Blue
+                                    'Lateral-Right': '#2A8F5C' # Light Green
+                                }
+
+                                fig_trunk.add_trace(go.Bar(
+                                    name='Supine',
+                                    x=latest_trunk['athlete'],
+                                    y=latest_trunk['supine_sec'],
+                                    marker_color=position_colors['Supine']
+                                ))
+                                fig_trunk.add_trace(go.Bar(
+                                    name='Prone',
+                                    x=latest_trunk['athlete'],
+                                    y=latest_trunk['prone_sec'],
+                                    marker_color=position_colors['Prone']
+                                ))
+                                fig_trunk.add_trace(go.Bar(
+                                    name='Lateral-Left',
+                                    x=latest_trunk['athlete'],
+                                    y=latest_trunk['lateral_left_sec'],
+                                    marker_color=position_colors['Lateral-Left']
+                                ))
+                                fig_trunk.add_trace(go.Bar(
+                                    name='Lateral-Right',
+                                    x=latest_trunk['athlete'],
+                                    y=latest_trunk['lateral_right_sec'],
+                                    marker_color=position_colors['Lateral-Right']
+                                ))
+
+                                fig_trunk.update_layout(
+                                    barmode='stack',
+                                    title='Trunk Endurance by Position (seconds)',
+                                    xaxis_title='Athlete',
+                                    yaxis_title='Duration (seconds)',
+                                    plot_bgcolor='white',
+                                    paper_bgcolor='white',
+                                    font=dict(family='Inter, sans-serif', color='#333'),
+                                    legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='center', x=0.5),
+                                    margin=dict(l=10, r=10, t=80, b=30)
+                                )
+                                fig_trunk.update_xaxes(showgrid=False)
+                                fig_trunk.update_yaxes(showgrid=True, gridwidth=1, gridcolor='#e9ecef')
+
+                                st.plotly_chart(fig_trunk, use_container_width=True)
+
+                                # Summary stats
+                                col1, col2, col3 = st.columns(3)
+                                with col1:
+                                    st.metric("Athletes Tested", len(latest_trunk))
+                                with col2:
+                                    avg_total = latest_trunk['total_sec'].mean() if 'total_sec' in latest_trunk.columns else 0
+                                    st.metric("Avg Total Time", f"{avg_total:.0f}s")
+                                with col3:
+                                    max_total = latest_trunk['total_sec'].max() if 'total_sec' in latest_trunk.columns else 0
+                                    st.metric("Best Total Time", f"{max_total:.0f}s")
+                            else:
+                                st.info("No trunk endurance data for the selected sport.")
+                        else:
+                            st.info("No trunk endurance data for the selected sport.")
+                    except Exception as e:
+                        st.warning(f"Could not load trunk endurance data: {e}")
+                else:
+                    st.info("📭 No trunk endurance data recorded yet. Go to Data Entry → Trunk Endurance to add test data.")
 
             with report_tabs[1]:
                 # Group Report v2 - Summary table with RAG status
