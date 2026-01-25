@@ -1202,17 +1202,10 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
             view_tabs = st.tabs(["👥 Group View", "🏃 Individual View"])
 
             with view_tabs[0]:
-                # Group ranked bar chart
-                metric_col = 'Peak Force / BM_Trial'
-                if metric_col not in filtered_df.columns:
-                    # Try alternative column names
-                    alt_cols = ['Peak Vertical Force / BM_Trial', 'Takeoff Peak Force / BM_Trial']
-                    for alt in alt_cols:
-                        if alt in filtered_df.columns:
-                            metric_col = alt
-                            break
+                # Group ranked bar chart - use config for column resolution
+                metric_col = resolve_metric_column(filtered_df, TEST_CONFIG['IMTP']['metric1'])
 
-                if metric_col in filtered_df.columns:
+                if metric_col:
                     fig = create_ranked_bar_chart(
                         filtered_df,
                         metric_col,
@@ -1283,9 +1276,10 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
             view_tabs = st.tabs(["👥 Group View", "🏃 Individual View"])
 
             with view_tabs[0]:
-                metric_col = 'Peak Power / BM_Trial'
+                # Use config for column resolution
+                metric_col = resolve_metric_column(filtered_df, TEST_CONFIG['CMJ']['metric1'])
 
-                if metric_col in filtered_df.columns:
+                if metric_col:
                     fig = create_ranked_bar_chart(
                         filtered_df,
                         metric_col,
@@ -1298,11 +1292,13 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                         st.plotly_chart(fig, use_container_width=True, key="cmj_group_bar")
 
                     # Also show jump height if available
-                    height_col = 'Jump Height (Imp-Mom)_Trial'
-                    if height_col in filtered_df.columns:
+                    height_col = resolve_metric_column(filtered_df, TEST_CONFIG['CMJ']['metric2'])
+                    if height_col:
                         st.markdown("---")
                         height_df = filtered_df.copy()
-                        height_df[height_col] = height_df[height_col] * 100  # m to cm
+                        # Convert to cm if values look like meters (< 1)
+                        if height_df[height_col].median() < 1:
+                            height_df[height_col] = height_df[height_col] * 100  # m to cm
 
                         fig2 = create_ranked_bar_chart(
                             height_df,
@@ -1314,6 +1310,8 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                         )
                         if fig2:
                             st.plotly_chart(fig2, use_container_width=True, key="cmj_height_bar")
+                else:
+                    st.warning("CMJ Power metric not found in data.")
 
             with view_tabs[1]:
                 athletes = sorted(filtered_df['Name'].dropna().unique()) if 'Name' in filtered_df.columns else []
