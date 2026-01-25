@@ -1175,7 +1175,8 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
         "💪 NordBord",
         "🏃 10:5 Hop",
         "🔄 Quadrant Tests",
-        "🏋️ Strength RM"
+        "🏋️ Strength RM",
+        "✊ DynaMo"
     ])
 
     # =====================
@@ -1780,3 +1781,110 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
         - Absolute Strength (Kg)
         - Relative Strength (Kg/BM)
         """)
+
+    # =====================
+    # DynaMo Tab (Grip Strength)
+    # =====================
+    with test_tabs[7]:
+        st.markdown("### DynaMo (Grip Strength)")
+
+        # Load DynaMo data
+        dynamo_df = pd.DataFrame()
+
+        # Try to load from various sources
+        dynamo_paths = [
+            os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'dynamo_allsports_with_athletes.csv'),
+            os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'vald-data', 'data', 'dynamo_allsports_with_athletes.csv'),
+        ]
+
+        for path in dynamo_paths:
+            if os.path.exists(path):
+                try:
+                    dynamo_df = pd.read_csv(path)
+                    if 'recordedDateUtc' in dynamo_df.columns:
+                        dynamo_df['recordedDateUtc'] = pd.to_datetime(dynamo_df['recordedDateUtc'])
+                    break
+                except Exception as e:
+                    pass
+
+        if dynamo_df.empty:
+            st.warning("No DynaMo (grip strength) data available. Run local_sync.py to fetch data.")
+            st.info("""
+            **DynaMo measures:**
+            - Peak grip force (N)
+            - Average grip force (N)
+            - Left/Right comparison
+            - Grip strength asymmetry
+            """)
+        else:
+            # Filters
+            filtered_df, sport, gender = render_filters(dynamo_df, "dynamo")
+
+            if filtered_df.empty:
+                st.warning("No DynaMo data for selected filters.")
+            else:
+                # Find grip force columns
+                grip_cols = [c for c in filtered_df.columns if 'GRIP' in c.upper() or 'FORCE' in c.upper() or 'PEAK' in c.upper()]
+
+                # Show available metrics
+                st.markdown(f"**{len(filtered_df)} DynaMo tests found**")
+
+                if grip_cols:
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        metric_col = st.selectbox(
+                            "Select Metric:",
+                            options=grip_cols[:10],
+                            key="dynamo_metric"
+                        )
+
+                    with col2:
+                        benchmark = st.number_input(
+                            "Benchmark (N):",
+                            min_value=0.0,
+                            value=400.0,
+                            step=10.0,
+                            key="dynamo_benchmark"
+                        )
+
+                    if metric_col and metric_col in filtered_df.columns:
+                        view_tabs = st.tabs(["👥 Group View", "🏃 Individual View"])
+
+                        with view_tabs[0]:
+                            fig = create_ranked_bar_chart(
+                                filtered_df,
+                                metric_col,
+                                metric_col.replace('_', ' ').title(),
+                                'N',
+                                benchmark,
+                                f'DynaMo - {metric_col}'
+                            )
+                            if fig:
+                                st.plotly_chart(fig, use_container_width=True, key="dynamo_group_bar")
+
+                        with view_tabs[1]:
+                            athletes = sorted(filtered_df['Name'].dropna().unique()) if 'Name' in filtered_df.columns else []
+                            if athletes:
+                                selected_athletes = st.multiselect(
+                                    "Select Athletes:",
+                                    options=athletes,
+                                    default=[athletes[0]] if athletes else [],
+                                    key="dynamo_athlete_select"
+                                )
+
+                                show_squad = st.checkbox("Show Squad Average", value=True, key="dynamo_show_squad")
+
+                                if selected_athletes:
+                                    fig = create_individual_line_chart(
+                                        filtered_df,
+                                        selected_athletes,
+                                        metric_col,
+                                        metric_col.replace('_', ' ').title(),
+                                        'N',
+                                        show_squad,
+                                        f'DynaMo - Individual Trends'
+                                    )
+                                    if fig:
+                                        st.plotly_chart(fig, use_container_width=True, key="dynamo_ind_line")
+                else:
+                    st.info("DynaMo data loaded but no grip force metrics found. Check column names.")
