@@ -10,7 +10,7 @@ import os
 import sys
 import requests
 import pandas as pd
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import time
 import json
 import argparse
@@ -355,129 +355,148 @@ def fetch_forcedecks(token, region, tenant_id, from_date='2020-01-01T00:00:00.00
 
 
 def fetch_forceframe(token, region, tenant_id, from_date='2020-01-01T00:00:00.000Z'):
-    """Fetch ForceFrame tests."""
+    """Fetch ForceFrame tests (requires all date parameters)."""
     url = f'https://prd-{region}-api-externalforceframe.valdperformance.com/tests'
     headers = {'Authorization': f'Bearer {token}'}
 
     all_tests = []
-    modified_from = from_date
+    to_date = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.000Z')
 
-    while True:
-        time.sleep(0.5)
-        # Try lowercase first, then uppercase if that fails
-        params = {'tenantId': tenant_id, 'modifiedFromUtc': modified_from}
-        response = requests.get(url, headers=headers, params=params, timeout=120)
+    time.sleep(0.5)
+    # ForceFrame requires TenantId, TestFromUtc, TestToUtc, AND ModifiedFromUtc
+    params = {
+        'TenantId': tenant_id,
+        'TestFromUtc': from_date,
+        'TestToUtc': to_date,
+        'ModifiedFromUtc': from_date
+    }
+    response = requests.get(url, headers=headers, params=params, timeout=120)
 
-        if response.status_code == 400:
-            # Try uppercase parameters
-            params = {'TenantId': tenant_id, 'ModifiedFromUtc': modified_from}
-            response = requests.get(url, headers=headers, params=params, timeout=120)
+    if response.status_code == 204:
+        print("    No ForceFrame data found")
+        return all_tests
+    if response.status_code != 200:
+        print(f"    API error: {response.status_code} - {response.text[:200]}")
+        return all_tests
 
-        if response.status_code == 204:
-            break
-        if response.status_code != 200:
-            print(f"    API error: {response.status_code} - {response.text[:200]}")
-            break
+    data = response.json()
+    tests = data.get('tests', data) if isinstance(data, dict) else data
 
-        data = response.json()
-        tests = data.get('tests', data) if isinstance(data, dict) else data
-
-        if not tests or not isinstance(tests, list):
-            break
-
+    if tests and isinstance(tests, list):
         all_tests.extend(tests)
-        print(f"    Fetched {len(tests)} tests (total: {len(all_tests)})")
-
-        if len(tests) < 50:
-            break
-
-        last_modified = tests[-1].get('modifiedDateUtc')
-        if not last_modified or last_modified == modified_from:
-            break
-        modified_from = last_modified
+        print(f"    Fetched {len(tests)} tests")
 
     return all_tests
 
 
 def fetch_nordbord(token, region, tenant_id, from_date='2020-01-01T00:00:00.000Z'):
-    """Fetch NordBord tests from given date."""
+    """Fetch NordBord tests (requires all date parameters)."""
     url = f'https://prd-{region}-api-externalnordbord.valdperformance.com/tests'
     headers = {'Authorization': f'Bearer {token}'}
 
     all_tests = []
-    modified_from = from_date
+    to_date = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.000Z')
 
-    while True:
-        time.sleep(0.5)
-        # Try cursor-based pagination first
-        params = {'tenantId': tenant_id, 'modifiedFromUtc': modified_from}
-        response = requests.get(url, headers=headers, params=params, timeout=120)
+    time.sleep(0.5)
+    # NordBord requires TenantId, TestFromUtc, TestToUtc, AND ModifiedFromUtc
+    params = {
+        'TenantId': tenant_id,
+        'TestFromUtc': from_date,
+        'TestToUtc': to_date,
+        'ModifiedFromUtc': from_date
+    }
+    response = requests.get(url, headers=headers, params=params, timeout=120)
 
-        if response.status_code == 400:
-            params = {'TenantId': tenant_id, 'ModifiedFromUtc': modified_from}
-            response = requests.get(url, headers=headers, params=params, timeout=120)
+    if response.status_code == 204:
+        print("    No NordBord data found")
+        return all_tests
+    if response.status_code != 200:
+        print(f"    API error: {response.status_code} - {response.text[:200]}")
+        return all_tests
 
-        if response.status_code == 204:
-            break
-        if response.status_code != 200:
-            print(f"    API error: {response.status_code} - {response.text[:200]}")
-            break
+    data = response.json()
+    tests = data.get('tests', data) if isinstance(data, dict) else data
 
-        data = response.json()
-        tests = data.get('tests', data) if isinstance(data, dict) else data
-
-        if not tests or not isinstance(tests, list):
-            break
-
+    if tests and isinstance(tests, list):
         all_tests.extend(tests)
-        print(f"    Fetched {len(tests)} tests (total: {len(all_tests)})")
-
-        if len(tests) < 50:
-            break
-
-        last_modified = tests[-1].get('modifiedDateUtc')
-        if not last_modified or last_modified == modified_from:
-            break
-        modified_from = last_modified
+        print(f"    Fetched {len(tests)} tests")
 
     return all_tests
 
 
+def merge_with_existing(new_df, output_file, id_column='id'):
+    """Merge new data with existing CSV file, removing duplicates."""
+    if output_file.exists():
+        try:
+            existing_df = pd.read_csv(output_file)
+            print(f"    Existing data: {len(existing_df)} rows")
+
+            # Find a valid ID column
+            if id_column not in new_df.columns:
+                for col in ['id', 'testId', 'athleteId', 'profileId']:
+                    if col in new_df.columns:
+                        id_column = col
+                        break
+
+            if id_column in new_df.columns and id_column in existing_df.columns:
+                # Combine and remove duplicates, keeping the latest
+                combined = pd.concat([existing_df, new_df], ignore_index=True)
+                combined = combined.drop_duplicates(subset=[id_column], keep='last')
+                print(f"    After merge: {len(combined)} rows (added {len(combined) - len(existing_df)} new)")
+                return combined
+            else:
+                # No ID column - just append
+                combined = pd.concat([existing_df, new_df], ignore_index=True)
+                return combined
+        except Exception as e:
+            print(f"    Could not load existing file: {e}")
+
+    return new_df
+
+
 def fetch_dynamo(token, region, tenant_id, from_date='2020-01-01T00:00:00.000Z'):
-    """Fetch DynaMo (grip strength) tests from given date."""
+    """Fetch DynaMo (grip strength) tests from given date.
+
+    Note: DynaMo external API may not be available in all regions.
+    """
     url = f'https://prd-{region}-api-externaldynamo.valdperformance.com/tests'
     headers = {'Authorization': f'Bearer {token}'}
 
     all_tests = []
     modified_from = from_date
 
-    while True:
-        time.sleep(0.5)
-        params = {'TenantId': tenant_id, 'ModifiedFromUtc': modified_from}
-        response = requests.get(url, headers=headers, params=params, timeout=120)
+    try:
+        while True:
+            time.sleep(0.5)
+            params = {'TenantId': tenant_id, 'ModifiedFromUtc': modified_from}
+            response = requests.get(url, headers=headers, params=params, timeout=30)
 
-        if response.status_code == 204:
-            break
-        if response.status_code != 200:
-            print(f"    API error: {response.status_code} - {response.text[:200]}")
-            break
+            if response.status_code == 204:
+                break
+            if response.status_code != 200:
+                print(f"    API error: {response.status_code} - {response.text[:200]}")
+                break
 
-        data = response.json()
-        tests = data.get('tests', data) if isinstance(data, dict) else data
+            data = response.json()
+            tests = data.get('tests', data) if isinstance(data, dict) else data
 
-        if not tests or not isinstance(tests, list):
-            break
+            if not tests or not isinstance(tests, list):
+                break
 
-        all_tests.extend(tests)
-        print(f"    Fetched {len(tests)} tests (total: {len(all_tests)})")
+            all_tests.extend(tests)
+            print(f"    Fetched {len(tests)} tests (total: {len(all_tests)})")
 
-        if len(tests) < 50:
-            break
+            if len(tests) < 50:
+                break
 
-        last_modified = tests[-1].get('modifiedDateUtc')
-        if not last_modified or last_modified == modified_from:
-            break
-        modified_from = last_modified
+            last_modified = tests[-1].get('modifiedDateUtc')
+            if not last_modified or last_modified == modified_from:
+                break
+            modified_from = last_modified
+    except requests.exceptions.ConnectionError:
+        print("    DynaMo API not available (connection failed)")
+    except Exception as e:
+        print(f"    DynaMo fetch error: {e}")
 
     return all_tests
 
@@ -574,6 +593,8 @@ def main():
         df['athlete_sport'] = df[id_col].map(lambda pid: profiles.get(pid, {}).get('athlete_sport', 'Unknown'))
 
         output_file = OUTPUT_DIR / 'forcedecks_allsports_with_athletes.csv'
+        # Merge with existing data instead of overwriting
+        df = merge_with_existing(df, output_file, id_column='id')
         df.to_csv(output_file, index=False)
         print(f"    Saved: {output_file}")
 
@@ -596,6 +617,7 @@ def main():
         df['athlete_sport'] = df[id_col].map(lambda pid: profiles.get(pid, {}).get('athlete_sport', 'Unknown'))
 
         output_file = OUTPUT_DIR / 'forceframe_allsports_with_athletes.csv'
+        df = merge_with_existing(df, output_file, id_column='id')
         df.to_csv(output_file, index=False)
         print(f"    Saved: {output_file}")
 
@@ -611,6 +633,7 @@ def main():
         df['athlete_sport'] = df[id_col].map(lambda pid: profiles.get(pid, {}).get('athlete_sport', 'Unknown'))
 
         output_file = OUTPUT_DIR / 'nordbord_allsports_with_athletes.csv'
+        df = merge_with_existing(df, output_file, id_column='id')
         df.to_csv(output_file, index=False)
         print(f"    Saved: {output_file}")
 
@@ -626,6 +649,7 @@ def main():
         df['athlete_sport'] = df[id_col].map(lambda pid: profiles.get(pid, {}).get('athlete_sport', 'Unknown'))
 
         output_file = OUTPUT_DIR / 'dynamo_allsports_with_athletes.csv'
+        df = merge_with_existing(df, output_file, id_column='id')
         df.to_csv(output_file, index=False)
         print(f"    Saved: {output_file}")
 
