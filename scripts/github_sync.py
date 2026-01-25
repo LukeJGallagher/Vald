@@ -305,8 +305,15 @@ def flatten_trial_metrics(trials):
     return flattened
 
 
-def fetch_device_data(token, region, tenant_id, device, fetch_trials=True):
-    """Fetch test data from a VALD device API."""
+def fetch_device_data(token, region, tenant_id, device, fetch_trials=None):
+    """Fetch test data from a VALD device API.
+
+    Args:
+        fetch_trials: If None, reads from FETCH_TRIALS env var (default: false for GitHub Actions)
+    """
+    # For GitHub Actions, skip trial fetching by default (takes too long)
+    if fetch_trials is None:
+        fetch_trials = os.environ.get('FETCH_TRIALS', 'false').lower() == 'true'
     base_urls = {
         'forcedecks': f'https://prd-{region}-api-extforcedecks.valdperformance.com/tests',
         'forceframe': f'https://prd-{region}-api-externalforceframe.valdperformance.com/tests',

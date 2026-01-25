@@ -1,13 +1,19 @@
 """
 Local sync script to fetch fresh VALD data and save directly to vald-data location.
-This script fetches ALL historical data (back to 2020) to ensure no tests are missed.
+
+Usage:
+    python local_sync.py              # Incremental sync (new data only)
+    python local_sync.py --force-all  # Full sync from 2020
+    python local_sync.py --days 7     # Sync last 7 days
 """
 import os
 import sys
 import requests
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta
 import time
+import json
+import argparse
 from pathlib import Path
 
 # Add parent directory for imports
@@ -21,6 +27,9 @@ if env_path.exists():
     print(f"Loaded credentials from: {env_path}")
 else:
     print(f"WARNING: .env file not found at {env_path}")
+
+# Sync state file - tracks last sync date
+SYNC_STATE_FILE = Path(__file__).parent.parent / 'config' / 'sync_state.json'
 
 # Output directory - vald-data repo location
 OUTPUT_DIR = Path(r"c:\Users\l.gallagher\OneDrive - Team Saudi\Documents\Performance Analysis\vald-data\data")
@@ -42,6 +51,43 @@ GROUP_TO_CATEGORY = {
 }
 
 SKIP_GROUPS = {'ARCHIVED', 'Staff', 'TBC', 'All Athletes', 'All athletes', 'VALD HQ', 'Test Group'}
+
+
+def load_sync_state():
+    """Load last sync state from file."""
+    if SYNC_STATE_FILE.exists():
+        try:
+            with open(SYNC_STATE_FILE) as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {'last_sync': None, 'devices': {}}
+
+
+def save_sync_state(state):
+    """Save sync state to file."""
+    SYNC_STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
+    with open(SYNC_STATE_FILE, 'w') as f:
+        json.dump(state, f, indent=2, default=str)
+
+
+def get_sync_from_date(force_all=False, days=None):
+    """Get the date to sync from based on options."""
+    if force_all:
+        return '2020-01-01T00:00:00.000Z'
+
+    if days:
+        from_date = datetime.utcnow() - timedelta(days=days)
+        return from_date.strftime('%Y-%m-%dT00:00:00.000Z')
+
+    # Incremental: use last sync date or default to 30 days ago
+    state = load_sync_state()
+    if state.get('last_sync'):
+        return state['last_sync']
+
+    # Default: last 30 days for first run
+    from_date = datetime.utcnow() - timedelta(days=30)
+    return from_date.strftime('%Y-%m-%dT00:00:00.000Z')
 
 
 def get_sport_from_groups(group_names):
@@ -253,11 +299,10 @@ def flatten_trial_metrics(trials):
     return flattened
 
 
-def fetch_forcedecks(token, region, tenant_id, fetch_trials=True):
-    """Fetch ALL ForceDecks tests from 2020 with optional trial data."""
+def fetch_forcedecks(token, region, tenant_id, from_date='2020-01-01T00:00:00.000Z', fetch_trials=True):
+    """Fetch ForceDecks tests with optional trial data."""
     url = f'https://prd-{region}-api-extforcedecks.valdperformance.com/tests'
     headers = {'Authorization': f'Bearer {token}'}
-    from_date = '2020-01-01T00:00:00.000Z'
 
     all_tests = []
     modified_from = from_date
@@ -309,11 +354,10 @@ def fetch_forcedecks(token, region, tenant_id, fetch_trials=True):
     return all_tests
 
 
-def fetch_forceframe(token, region, tenant_id):
-    """Fetch ALL ForceFrame tests."""
+def fetch_forceframe(token, region, tenant_id, from_date='2020-01-01T00:00:00.000Z'):
+    """Fetch ForceFrame tests."""
     url = f'https://prd-{region}-api-externalforceframe.valdperformance.com/tests'
     headers = {'Authorization': f'Bearer {token}'}
-    from_date = '2020-01-01T00:00:00.000Z'
 
     all_tests = []
     modified_from = from_date
@@ -355,22 +399,22 @@ def fetch_forceframe(token, region, tenant_id):
     return all_tests
 
 
-def fetch_nordbord(token, region, tenant_id):
-    """Fetch ALL NordBord tests."""
+def fetch_nordbord(token, region, tenant_id, from_date='2020-01-01T00:00:00.000Z'):
+    """Fetch NordBord tests from given date."""
     url = f'https://prd-{region}-api-externalnordbord.valdperformance.com/tests'
     headers = {'Authorization': f'Bearer {token}'}
 
     all_tests = []
-    page = 1
+    modified_from = from_date
 
-    while page < 100:
+    while True:
         time.sleep(0.5)
-        # Try lowercase first, then uppercase
-        params = {'tenantId': tenant_id, 'page': page}
+        # Try cursor-based pagination first
+        params = {'tenantId': tenant_id, 'modifiedFromUtc': modified_from}
         response = requests.get(url, headers=headers, params=params, timeout=120)
 
         if response.status_code == 400:
-            params = {'TenantId': tenant_id, 'Page': page}
+            params = {'TenantId': tenant_id, 'ModifiedFromUtc': modified_from}
             response = requests.get(url, headers=headers, params=params, timeout=120)
 
         if response.status_code == 204:
@@ -390,16 +434,19 @@ def fetch_nordbord(token, region, tenant_id):
 
         if len(tests) < 50:
             break
-        page += 1
+
+        last_modified = tests[-1].get('modifiedDateUtc')
+        if not last_modified or last_modified == modified_from:
+            break
+        modified_from = last_modified
 
     return all_tests
 
 
-def fetch_dynamo(token, region, tenant_id):
-    """Fetch ALL DynaMo (grip strength) tests."""
+def fetch_dynamo(token, region, tenant_id, from_date='2020-01-01T00:00:00.000Z'):
+    """Fetch DynaMo (grip strength) tests from given date."""
     url = f'https://prd-{region}-api-externaldynamo.valdperformance.com/tests'
     headers = {'Authorization': f'Bearer {token}'}
-    from_date = '2020-01-01T00:00:00.000Z'
 
     all_tests = []
     modified_from = from_date
@@ -437,10 +484,27 @@ def fetch_dynamo(token, region, tenant_id):
 
 def main():
     """Main sync execution."""
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description='Sync VALD data locally')
+    parser.add_argument('--force-all', action='store_true', help='Fetch all data from 2020 (ignore last sync)')
+    parser.add_argument('--days', type=int, help='Fetch data from last N days')
+    args = parser.parse_args()
+
+    # Determine sync from date
+    from_date = get_sync_from_date(force_all=args.force_all, days=args.days)
+
     print("=" * 70)
     print("LOCAL VALD DATA SYNC")
     print(f"Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print("=" * 70)
+
+    if args.force_all:
+        print("\n    Mode: FULL SYNC (fetching all data from 2020)")
+    elif args.days:
+        print(f"\n    Mode: LAST {args.days} DAYS")
+    else:
+        print("\n    Mode: INCREMENTAL (new data only)")
+    print(f"    From date: {from_date}")
 
     region = os.environ.get('VALD_REGION', 'euw')
     tenant_id = os.environ.get('TENANT_ID', '') or os.environ.get('VALD_TENANT_ID', '')
@@ -482,8 +546,8 @@ def main():
     for pid, name in swimming_athletes:
         print(f"      - {name} ({pid})")
 
-    print(f"\n[5] Fetching ForceDecks data (all historical)...")
-    forcedecks_tests = fetch_forcedecks(token, region, tenant_id)
+    print(f"\n[5] Fetching ForceDecks data...")
+    forcedecks_tests = fetch_forcedecks(token, region, tenant_id, from_date=from_date)
     print(f"    Total ForceDecks tests: {len(forcedecks_tests)}")
 
     # Count unique athletes
@@ -521,7 +585,7 @@ def main():
                 print(f"      {sport}: {count}")
 
     print(f"\n[6] Fetching ForceFrame data...")
-    forceframe_tests = fetch_forceframe(token, region, tenant_id)
+    forceframe_tests = fetch_forceframe(token, region, tenant_id, from_date=from_date)
     print(f"    Total ForceFrame tests: {len(forceframe_tests)}")
 
     if forceframe_tests:
@@ -536,7 +600,7 @@ def main():
         print(f"    Saved: {output_file}")
 
     print(f"\n[7] Fetching NordBord data...")
-    nordbord_tests = fetch_nordbord(token, region, tenant_id)
+    nordbord_tests = fetch_nordbord(token, region, tenant_id, from_date=from_date)
     print(f"    Total NordBord tests: {len(nordbord_tests)}")
 
     if nordbord_tests:
@@ -551,7 +615,7 @@ def main():
         print(f"    Saved: {output_file}")
 
     print(f"\n[8] Fetching DynaMo data...")
-    dynamo_tests = fetch_dynamo(token, region, tenant_id)
+    dynamo_tests = fetch_dynamo(token, region, tenant_id, from_date=from_date)
     print(f"    Total DynaMo tests: {len(dynamo_tests)}")
 
     if dynamo_tests:
@@ -565,12 +629,30 @@ def main():
         df.to_csv(output_file, index=False)
         print(f"    Saved: {output_file}")
 
+    # Save sync state for future incremental syncs
+    sync_state = {
+        'last_sync': datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.000Z'),
+        'devices': {
+            'forcedecks': len(forcedecks_tests),
+            'forceframe': len(forceframe_tests),
+            'nordbord': len(nordbord_tests),
+            'dynamo': len(dynamo_tests)
+        }
+    }
+    save_sync_state(sync_state)
+    print(f"\n    Sync state saved to: {SYNC_STATE_FILE}")
+
     print("\n" + "=" * 70)
     print("SYNC COMPLETE!")
     print("=" * 70)
     print(f"\nData saved to: {OUTPUT_DIR}")
-    print("\nNext: Run the dashboard to verify Swimming athletes appear")
-    print("      streamlit run dashboard/world_class_vald_dashboard.py")
+    print(f"\nUsage:")
+    print("  python local_sync.py              # Incremental (new data only)")
+    print("  python local_sync.py --force-all  # Full sync from 2020")
+    print("  python local_sync.py --days 7     # Sync last 7 days")
+    print("\nNext: Copy to dashboard and run")
+    print("  cp ../vald-data/data/*.csv dashboard/data/")
+    print("  streamlit run dashboard/world_class_vald_dashboard.py")
 
 
 if __name__ == '__main__':

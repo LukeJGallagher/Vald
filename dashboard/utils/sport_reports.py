@@ -1081,6 +1081,90 @@ def create_group_report(df: pd.DataFrame,
         else:
             st.info("Plyo Push Up (PPU) data not available")
 
+    # Row 3: Grip Strength (DynaMo)
+    col1, col2 = st.columns(2)
+
+    # Try to load DynaMo data
+    dynamo_df = pd.DataFrame()
+    dynamo_paths = [
+        os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'dynamo_allsports_with_athletes.csv'),
+        os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'vald-data', 'data', 'dynamo_allsports_with_athletes.csv'),
+    ]
+    for path in dynamo_paths:
+        if os.path.exists(path):
+            try:
+                dynamo_df = pd.read_csv(path)
+                # Filter by sport if available
+                if not dynamo_df.empty and 'athlete_sport' in dynamo_df.columns:
+                    dynamo_df = dynamo_df[dynamo_df['athlete_sport'].str.lower() == sport.lower()]
+                break
+            except Exception:
+                pass
+
+    with col1:
+        if not dynamo_df.empty:
+            # Find grip strength column
+            grip_cols = [c for c in dynamo_df.columns if 'maxforce' in c.lower() or 'grip' in c.lower() or 'peak' in c.lower()]
+            left_col = next((c for c in grip_cols if 'left' in c.lower()), None)
+            if left_col and 'full_name' in dynamo_df.columns:
+                # Get latest per athlete
+                latest = dynamo_df.groupby('full_name')[left_col].last().reset_index()
+                latest = latest.sort_values(left_col, ascending=True)
+
+                fig = go.Figure()
+                fig.add_trace(go.Bar(
+                    y=latest['full_name'],
+                    x=latest[left_col],
+                    orientation='h',
+                    marker_color=TEAL_PRIMARY,
+                    text=[f"{v:.1f} N" for v in latest[left_col]],
+                    textposition='outside'
+                ))
+                fig.update_layout(
+                    title="Grip Strength - Left Hand",
+                    xaxis_title="Peak Force (N)",
+                    yaxis_title="",
+                    height=max(250, min(400, len(latest) * 35)),
+                    margin=dict(l=10, r=10, t=40, b=10)
+                )
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.info("Grip Strength (Left) - No DynaMo data")
+        else:
+            st.info("Grip Strength (Left) - No DynaMo data")
+
+    with col2:
+        if not dynamo_df.empty:
+            # Find right grip strength column
+            grip_cols = [c for c in dynamo_df.columns if 'maxforce' in c.lower() or 'grip' in c.lower() or 'peak' in c.lower()]
+            right_col = next((c for c in grip_cols if 'right' in c.lower()), None)
+            if right_col and 'full_name' in dynamo_df.columns:
+                # Get latest per athlete
+                latest = dynamo_df.groupby('full_name')[right_col].last().reset_index()
+                latest = latest.sort_values(right_col, ascending=True)
+
+                fig = go.Figure()
+                fig.add_trace(go.Bar(
+                    y=latest['full_name'],
+                    x=latest[right_col],
+                    orientation='h',
+                    marker_color=TEAL_PRIMARY,
+                    text=[f"{v:.1f} N" for v in latest[right_col]],
+                    textposition='outside'
+                ))
+                fig.update_layout(
+                    title="Grip Strength - Right Hand",
+                    xaxis_title="Peak Force (N)",
+                    yaxis_title="",
+                    height=max(250, min(400, len(latest) * 35)),
+                    margin=dict(l=10, r=10, t=40, b=10)
+                )
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.info("Grip Strength (Right) - No DynaMo data")
+        else:
+            st.info("Grip Strength (Right) - No DynaMo data")
+
     st.markdown("---")
 
     # =========================================================================
