@@ -311,6 +311,7 @@ def fetch_device_data(token, region, tenant_id, device, fetch_trials=True):
         'forcedecks': f'https://prd-{region}-api-extforcedecks.valdperformance.com/tests',
         'forceframe': f'https://prd-{region}-api-externalforceframe.valdperformance.com/tests',
         'nordbord': f'https://prd-{region}-api-externalnordbord.valdperformance.com/tests',
+        'dynamo': f'https://prd-{region}-api-externaldynamo.valdperformance.com/tests',
     }
 
     url = base_urls[device]
@@ -419,6 +420,33 @@ def fetch_device_data(token, region, tenant_id, device, fetch_trials=True):
                 break
             page += 1
 
+    elif device == 'dynamo':
+        # DynaMo (grip strength) uses cursor-based pagination
+        modified_from = from_date
+        while True:
+            time.sleep(0.5)  # Rate limit
+            params = {'TenantId': tenant_id, 'ModifiedFromUtc': modified_from}
+            response = requests.get(url, headers=headers, params=params, timeout=120)
+            if response.status_code == 204:
+                print(f"{device}: No more data (204)")
+                break
+            if response.status_code != 200:
+                print(f"{device} API error: {response.status_code} - {response.text[:200]}")
+                break
+            data = response.json()
+            tests = data.get('tests', data) if isinstance(data, dict) else data
+            if not tests or not isinstance(tests, list):
+                print(f"{device}: Empty or invalid response")
+                break
+            all_tests.extend(tests)
+            print(f"{device}: Fetched {len(tests)} tests (total: {len(all_tests)})")
+            if len(tests) < 50:
+                break
+            last_modified = tests[-1].get('modifiedDateUtc')
+            if not last_modified or last_modified == modified_from:
+                break
+            modified_from = last_modified
+
     return all_tests
 
 
@@ -494,7 +522,7 @@ def main():
 
     os.makedirs('data_export', exist_ok=True)
 
-    for device in ['forcedecks', 'forceframe', 'nordbord']:
+    for device in ['forcedecks', 'forceframe', 'nordbord', 'dynamo']:
         print(f"\nFetching {device} data...")
         tests = fetch_device_data(token, region, tenant_id, device)
         print(f"Found {len(tests)} {device} tests from API")

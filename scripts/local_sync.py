@@ -395,6 +395,46 @@ def fetch_nordbord(token, region, tenant_id):
     return all_tests
 
 
+def fetch_dynamo(token, region, tenant_id):
+    """Fetch ALL DynaMo (grip strength) tests."""
+    url = f'https://prd-{region}-api-externaldynamo.valdperformance.com/tests'
+    headers = {'Authorization': f'Bearer {token}'}
+    from_date = '2020-01-01T00:00:00.000Z'
+
+    all_tests = []
+    modified_from = from_date
+
+    while True:
+        time.sleep(0.5)
+        params = {'TenantId': tenant_id, 'ModifiedFromUtc': modified_from}
+        response = requests.get(url, headers=headers, params=params, timeout=120)
+
+        if response.status_code == 204:
+            break
+        if response.status_code != 200:
+            print(f"    API error: {response.status_code} - {response.text[:200]}")
+            break
+
+        data = response.json()
+        tests = data.get('tests', data) if isinstance(data, dict) else data
+
+        if not tests or not isinstance(tests, list):
+            break
+
+        all_tests.extend(tests)
+        print(f"    Fetched {len(tests)} tests (total: {len(all_tests)})")
+
+        if len(tests) < 50:
+            break
+
+        last_modified = tests[-1].get('modifiedDateUtc')
+        if not last_modified or last_modified == modified_from:
+            break
+        modified_from = last_modified
+
+    return all_tests
+
+
 def main():
     """Main sync execution."""
     print("=" * 70)
@@ -507,6 +547,21 @@ def main():
         df['athlete_sport'] = df[id_col].map(lambda pid: profiles.get(pid, {}).get('athlete_sport', 'Unknown'))
 
         output_file = OUTPUT_DIR / 'nordbord_allsports_with_athletes.csv'
+        df.to_csv(output_file, index=False)
+        print(f"    Saved: {output_file}")
+
+    print(f"\n[8] Fetching DynaMo data...")
+    dynamo_tests = fetch_dynamo(token, region, tenant_id)
+    print(f"    Total DynaMo tests: {len(dynamo_tests)}")
+
+    if dynamo_tests:
+        df = pd.DataFrame(dynamo_tests)
+        id_col = 'athleteId' if 'athleteId' in df.columns else 'profileId'
+
+        df['full_name'] = df[id_col].map(lambda pid: profiles.get(pid, {}).get('full_name', f'Athlete_{str(pid)[:8]}'))
+        df['athlete_sport'] = df[id_col].map(lambda pid: profiles.get(pid, {}).get('athlete_sport', 'Unknown'))
+
+        output_file = OUTPUT_DIR / 'dynamo_allsports_with_athletes.csv'
         df.to_csv(output_file, index=False)
         print(f"    Saved: {output_file}")
 
