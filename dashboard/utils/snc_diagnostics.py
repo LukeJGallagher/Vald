@@ -1918,37 +1918,43 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
         else:
             filtered_df, sport, gender = render_filters(balance_df, "balance")
 
-            # Metric selection
+            # Metric selection with unit conversion factors
+            # VALD stores values in m/m², display in mm/mm²
             balance_metrics = [
-                ('BAL_COP_MEAN_VELOCITY', 'CoP Mean Velocity', 'mm/s'),
-                ('BAL_COP_TOTAL_EXCURSION', 'CoP Total Excursion', 'mm'),
-                ('BAL_COP_ELLIPSE_AREA', 'CoP Ellipse Area', 'mm²'),
-                ('BAL_COP_RANGE_MEDLAT', 'CoP Range Med-Lat', 'mm'),
-                ('BAL_COP_RANGE_ANTPOST', 'CoP Range Ant-Post', 'mm'),
+                ('BAL_COP_MEAN_VELOCITY', 'CoP Mean Velocity', 'mm/s', 1000),      # m/s -> mm/s
+                ('BAL_COP_TOTAL_EXCURSION', 'CoP Total Excursion', 'mm', 1000),    # m -> mm
+                ('BAL_COP_ELLIPSE_AREA', 'CoP Ellipse Area', 'mm²', 1000000),      # m² -> mm²
+                ('BAL_COP_RANGE_MEDLAT', 'CoP Range Med-Lat', 'mm', 1000),         # m -> mm
+                ('BAL_COP_RANGE_ANTPOST', 'CoP Range Ant-Post', 'mm', 1000),       # m -> mm
             ]
 
-            available_metrics = [(col, name, unit) for col, name, unit in balance_metrics if col in filtered_df.columns]
+            available_metrics = [(col, name, unit, conv) for col, name, unit, conv in balance_metrics if col in filtered_df.columns]
 
             if not available_metrics:
                 st.warning("No balance metrics found in data.")
             else:
                 col1, col2 = st.columns([3, 1])
                 with col2:
-                    metric_options = [f"{name} ({unit})" for _, name, unit in available_metrics]
+                    metric_options = [f"{name} ({unit})" for _, name, unit, _ in available_metrics]
                     selected_metric_display = st.selectbox("Metric:", metric_options, key="balance_metric")
                     selected_idx = metric_options.index(selected_metric_display)
-                    metric_col, metric_name, metric_unit = available_metrics[selected_idx]
+                    metric_col, metric_name, metric_unit, conversion = available_metrics[selected_idx]
 
                     # For balance, lower is better - no benchmark needed
                     st.info("Lower values = better stability")
 
+                # Apply unit conversion to display data
+                display_df = filtered_df.copy()
+                if metric_col in display_df.columns and conversion != 1:
+                    display_df[metric_col] = display_df[metric_col] * conversion
+
                 view_tabs = st.tabs(["👥 Group View", "🏃 Individual View"])
 
                 with view_tabs[0]:
-                    if metric_col in filtered_df.columns:
+                    if metric_col in display_df.columns:
                         # For balance, we want to rank by lowest (best)
                         fig = create_ranked_bar_chart(
-                            filtered_df,
+                            display_df,
                             metric_col,
                             metric_name,
                             metric_unit,
@@ -1961,7 +1967,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                         st.warning(f"Metric {metric_col} not found in data.")
 
                 with view_tabs[1]:
-                    athletes = sorted(filtered_df['Name'].dropna().unique()) if 'Name' in filtered_df.columns else []
+                    athletes = sorted(display_df['Name'].dropna().unique()) if 'Name' in display_df.columns else []
 
                     if athletes:
                         selected_athletes = st.multiselect(
@@ -1973,9 +1979,10 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
 
                         show_squad = st.checkbox("Show Squad Average", value=True, key="balance_show_squad")
 
-                        if selected_athletes and metric_col in balance_df.columns:
+                        if selected_athletes and metric_col in display_df.columns:
+                            # Use converted display_df for individual chart too
                             fig = create_individual_line_chart(
-                                balance_df,
+                                display_df,
                                 selected_athletes,
                                 metric_col,
                                 metric_name,

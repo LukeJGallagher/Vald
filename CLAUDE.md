@@ -231,3 +231,30 @@ Production: Streamlit Cloud Secrets dashboard
 **Rate Limiting (429):**
 - System auto-handles with 12 calls per 5 seconds
 - Adjust in `config/vald_config.py` if needed
+
+## Sport-Specific Test Types
+
+### Shooting (10m Pistol)
+**Balance Tests** - Quiet standing 30 sec, open eyes
+- Test types: `QSB` (Quiet Static Balance), `SLSB` (Single Leg Static Balance)
+- Located in S&C Diagnostics → "⚖️ Balance" tab
+- Key metrics (VALD stores in m, display in mm):
+  - `BAL_COP_TOTAL_EXCURSION` - Total CoP excursion (mm) - lower is better
+  - `BAL_COP_MEAN_VELOCITY` - Mean CoP velocity (mm/s) - lower is better
+  - `BAL_COP_ELLIPSE_AREA` - CoP 95% ellipse area (mm²) - smaller is better
+
+### Hop Tests (All Sports)
+- Test types: `HJ` (Hop Jump), `SLHJ` (Single Leg Hop Jump), `RSHIP`, `RSKIP`, `RSAIP`
+- Located in S&C Diagnostics → "🏃 10:5 Hop" tab
+- Key metric: RSI (Reactive Strength Index)
+
+### Common Test Type Codes
+| Code | Full Name | Primary Sports |
+|------|-----------|----------------|
+| CMJ | Counter Movement Jump | All |
+| IMTP | Isometric Mid-Thigh Pull | All |
+| HJ | Hop Jump | All |
+| QSB | Quiet Static Balance | Shooting |
+| SLSB | Single Leg Static Balance | Shooting |
+| ISOT | Isometric Test | Various |
+| SLJ | Single Leg Jump | All |
