@@ -33,9 +33,26 @@ GROUP_TO_CATEGORY = {
     'Para Swimming': 'Para Swimming', 'Para Sprints': 'Para Athletics',
     'Para TKD': 'Para Taekwondo', 'Para Cycling': 'Para Cycling', 'Wheel Chair': 'Wheelchair Sports',
     # Individual Sports (group = category)
-    'Karate': 'Karate', 'Coastal': 'Rowing', 'Pistol 10m': 'Shooting',
-    'Snow Sports': 'Snow Sports', 'Equestrian': 'Equestrian',
-    'Judo': 'Judo', 'Jiu-Jitsu': 'Jiu-Jitsu', 'Weightlifting': 'Weightlifting',
+    'Karate': 'Karate', 'Karate TBC': 'Karate', 'Coastal': 'Rowing', 'Pistol 10m': 'Shooting',
+    'Snow Sports': 'Snow Sports', 'Equestrian': 'Equestrian', 'Equestrian TBC': 'Equestrian',
+    'Judo': 'Judo', 'Judo TBC': 'Judo',
+    'Jiu-Jitsu': 'Jiu-Jitsu', 'Jiu Jitsu TBC': 'Jiu-Jitsu',
+    'Weightlifting': 'Weightlifting', 'Weightlifting TBC': 'Weightlifting',
+    # Rowing sub-groups
+    'Rowing - Classic': 'Rowing', 'Rowing - Coastal': 'Rowing',
+    # Athletics sub-groups with TBC
+    'Athletics - Multi events': 'Athletics', 'Athletics - Short Sprints': 'Athletics',
+    'Athletics - Throwers': 'Athletics', 'Athletics - TBC': 'Athletics',
+    # Fencing with full names
+    'Fencing - Epee ': 'Fencing', 'Fencing - Foil': 'Fencing', 'Fencing - Sabre': 'Fencing',
+    # TKD TBC
+    'TKD TBC': 'Taekwondo',
+    # Para TBC
+    'Para TBC': 'Para Athletics',
+    # Shooting TBC
+    'Shooting TBC': 'Shooting',
+    # Swimming TBC
+    'Swimming TBC': 'Swimming',
     # Excluded groups
     'ARCHIVED': None, 'Staff': None, 'TBC': None, 'All Athletes': None,
 }

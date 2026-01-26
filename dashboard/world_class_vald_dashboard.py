@@ -5813,10 +5813,17 @@ with tabs[1]:
             if 'Name' in filtered_df.columns and 'athlete_sport' in filtered_df.columns:
                 for _, row in filtered_df[['Name', 'athlete_sport']].dropna().drop_duplicates().iterrows():
                     athlete_sport_map[row['Name']] = row['athlete_sport']
-            # Create athleteId to Name mapping (for ForceFrame/NordBord enrichment)
-            if 'athleteId' in filtered_df.columns and 'Name' in filtered_df.columns:
-                for _, row in filtered_df[['athleteId', 'Name']].dropna().drop_duplicates().iterrows():
-                    athlete_id_to_name[row['athleteId']] = row['Name']
+            # Create athleteId/profileId to Name mapping (for ForceFrame/NordBord enrichment)
+            # ForceDecks uses 'profileId', ForceFrame/NordBord use 'athleteId' - they're the same
+            if 'Name' in filtered_df.columns:
+                # Try athleteId first
+                if 'athleteId' in filtered_df.columns:
+                    for _, row in filtered_df[['athleteId', 'Name']].dropna().drop_duplicates().iterrows():
+                        athlete_id_to_name[row['athleteId']] = row['Name']
+                # Also try profileId (ForceDecks uses this)
+                if 'profileId' in filtered_df.columns:
+                    for _, row in filtered_df[['profileId', 'Name']].dropna().drop_duplicates().iterrows():
+                        athlete_id_to_name[row['profileId']] = row['Name']
 
             # Filter ForceFrame and NordBord for sport
             sport_ff = filtered_forceframe.copy() if not filtered_forceframe.empty else pd.DataFrame()

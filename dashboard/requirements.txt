@@ -17,5 +17,8 @@ requests>=2.31.0
 scipy>=1.11.0
 statsmodels>=0.14.0
 
+# Export Functionality
+kaleido>=0.2.1
+
 # Environment Variables
 python-dotenv>=1.0.0

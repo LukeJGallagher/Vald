@@ -45,8 +45,12 @@ GROUP_TO_CATEGORY = {
     'SOTC Swimming': 'Swimming',
     'Para Swimming': 'Para Swimming', 'Para Sprints': 'Para Athletics',
     'Para TKD': 'Para Taekwondo', 'Para Cycling': 'Para Cycling', 'Wheel Chair': 'Wheelchair Sports',
-    'Karate': 'Karate', 'Coastal': 'Rowing', 'Pistol 10m': 'Shooting',
-    'Weightlifting': 'Weightlifting', 'Judo': 'Judo', 'Jiu-Jitsu': 'Jiu-Jitsu',
+    'Karate': 'Karate', 'Karate TBC': 'Karate', 'Coastal': 'Rowing', 'Pistol 10m': 'Shooting',
+    'Weightlifting': 'Weightlifting', 'Weightlifting TBC': 'Weightlifting',
+    'Judo': 'Judo', 'Judo TBC': 'Judo', 'Jiu-Jitsu': 'Jiu-Jitsu', 'Jiu Jitsu TBC': 'Jiu-Jitsu',
+    'Rowing - Classic': 'Rowing', 'Rowing - Coastal': 'Rowing',
+    'Equestrian TBC': 'Equestrian', 'Snow Sports': 'Snow Sports',
+    'Athletics - Multi events': 'Athletics', 'Athletics - Short Sprints': 'Athletics', 'Athletics - Throwers': 'Athletics',
     'ARCHIVED': None, 'Staff': None, 'TBC': None, 'All Athletes': None,
 }
 

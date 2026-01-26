@@ -16,6 +16,8 @@ import plotly.graph_objects as go
 from typing import Dict, List, Optional, Tuple
 from datetime import datetime
 import os
+import io
+import base64
 
 # Import benchmark database for dynamic VALD norms and Saudi population norms
 try:
@@ -82,6 +84,120 @@ DEFAULT_BENCHMARKS = {
     'asymmetry': {'excellent': 5, 'good': 10, 'average': 15},
     'nordbord_force': {'excellent': 400, 'good': 337, 'average': 280},  # N - 337N is injury risk threshold
 }
+
+
+# =============================================================================
+# EXPORT HELPER FUNCTIONS
+# =============================================================================
+
+def export_chart_to_png(fig: go.Figure, filename: str = "chart") -> bytes:
+    """
+    Export a Plotly figure to PNG bytes for download.
+
+    Args:
+        fig: Plotly figure object
+        filename: Base filename (without extension)
+
+    Returns:
+        PNG image as bytes
+    """
+    try:
+        img_bytes = fig.to_image(format="png", width=1200, height=800, scale=2)
+        return img_bytes
+    except Exception as e:
+        st.warning(f"PNG export requires kaleido package: {e}")
+        return None
+
+
+def export_chart_to_pdf(fig: go.Figure, filename: str = "chart") -> bytes:
+    """
+    Export a Plotly figure to PDF bytes for download.
+
+    Args:
+        fig: Plotly figure object
+        filename: Base filename (without extension)
+
+    Returns:
+        PDF image as bytes
+    """
+    try:
+        pdf_bytes = fig.to_image(format="pdf", width=1200, height=800)
+        return pdf_bytes
+    except Exception as e:
+        st.warning(f"PDF export requires kaleido package: {e}")
+        return None
+
+
+def export_dataframe_to_csv(df: pd.DataFrame) -> str:
+    """
+    Export a DataFrame to CSV string for download.
+
+    Args:
+        df: DataFrame to export
+
+    Returns:
+        CSV string
+    """
+    return df.to_csv(index=False)
+
+
+def create_download_button_for_chart(fig: go.Figure, chart_name: str, key_prefix: str):
+    """
+    Create download buttons for a chart (PNG and PDF).
+
+    Args:
+        fig: Plotly figure object
+        chart_name: Name of the chart for filename
+        key_prefix: Unique key prefix for Streamlit buttons
+    """
+    col1, col2 = st.columns(2)
+
+    with col1:
+        try:
+            png_bytes = export_chart_to_png(fig, chart_name)
+            if png_bytes:
+                st.download_button(
+                    label="📥 Download PNG",
+                    data=png_bytes,
+                    file_name=f"{chart_name.replace(' ', '_').lower()}.png",
+                    mime="image/png",
+                    key=f"{key_prefix}_png"
+                )
+        except Exception:
+            pass
+
+    with col2:
+        try:
+            pdf_bytes = export_chart_to_pdf(fig, chart_name)
+            if pdf_bytes:
+                st.download_button(
+                    label="📥 Download PDF",
+                    data=pdf_bytes,
+                    file_name=f"{chart_name.replace(' ', '_').lower()}.pdf",
+                    mime="application/pdf",
+                    key=f"{key_prefix}_pdf"
+                )
+        except Exception:
+            pass
+
+
+def create_download_button_for_table(df: pd.DataFrame, table_name: str, key_prefix: str):
+    """
+    Create download button for a table (CSV).
+
+    Args:
+        df: DataFrame to export
+        table_name: Name of the table for filename
+        key_prefix: Unique key prefix for Streamlit button
+    """
+    csv_data = export_dataframe_to_csv(df)
+    st.download_button(
+        label="📥 Download CSV",
+        data=csv_data,
+        file_name=f"{table_name.replace(' ', '_').lower()}.csv",
+        mime="text/csv",
+        key=f"{key_prefix}_csv"
+    )
 
 
 def get_dynamic_benchmarks(gender: str = "male", source: str = "VALD") -> Dict:
@@ -2013,6 +2129,94 @@ def create_individual_report(df: pd.DataFrame,
                                          plot_bgcolor='white', paper_bgcolor='white')
                         st.plotly_chart(fig, use_container_width=True)
 
+    # =========================================================================
+    # EXPORT SECTION - Download athlete data
+    # =========================================================================
+    st.markdown("---")
+    with st.expander("📥 Export Athlete Data", expanded=False):
+        st.markdown(f"### Download Data for {athlete_name}")
+
+        # Create summary dataframe from athlete data
+        summary_data = []
+
+        # Add VALD test data
+        if not athlete_df.empty:
+            for _, row in athlete_df.iterrows():
+                test_date = row.get(date_col, '')
+                test_type = row.get('testType', 'Unknown')
+
+                summary_row = {
+                    'Date': str(test_date)[:10] if pd.notna(test_date) else '',
+                    'Test Type': test_type,
+                    'Source': 'VALD ForceDecks'
+                }
+
+                # Add available metrics
+                metric_mappings = [
+                    ('Jump Height (cm)', ['JUMP_HEIGHT_IMP_MOM', 'JUMP_HEIGHT_FLIGHT', 'jumpHeight']),
+                    ('Peak Power (W/kg)', ['BODYMASS_RELATIVE_PEAK_POWER', 'BODYMASS_RELATIVE_CONCENTRIC_PEAK_POWER']),
+                    ('Peak Force (N/kg)', ['BODYMASS_RELATIVE_PEAK_FORCE', 'BODYMASS_RELATIVE_CONCENTRIC_PEAK_FORCE']),
+                    ('RSI', ['RSI_MODIFIED', 'RSI_MODIFIED_PP', 'RSI'])
+                ]
+
+                for metric_name, cols in metric_mappings:
+                    for col in cols:
+                        if col in row and pd.notna(row[col]):
+                            summary_row[metric_name] = round(float(row[col]), 2)
+                            break
+
+                summary_data.append(summary_row)
+
+        # Add NordBord data if available
+        if nordbord_df is not None and not nordbord_df.empty and 'Name' in nordbord_df.columns:
+            athlete_nb = nordbord_df[nordbord_df['Name'] == athlete_name]
+            for _, row in athlete_nb.iterrows():
+                nb_date_col = None
+                for col in ['recordedDateUtc', 'testDateUtc', 'modifiedDateUtc']:
+                    if col in row and pd.notna(row[col]):
+                        nb_date_col = col
+                        break
+
+                summary_row = {
+                    'Date': str(row.get(nb_date_col, ''))[:10] if nb_date_col else '',
+                    'Test Type': 'NordBord',
+                    'Source': 'VALD NordBord'
+                }
+
+                # Add left/right force if available
+                left_col, right_col = get_nordbord_force_columns(nordbord_df)
+                if left_col and left_col in row and pd.notna(row[left_col]):
+                    summary_row['Left Hamstring (N)'] = round(float(row[left_col]), 0)
+                if right_col and right_col in row and pd.notna(row[right_col]):
+                    summary_row['Right Hamstring (N)'] = round(float(row[right_col]), 0)
+
+                summary_data.append(summary_row)
+
+        if summary_data:
+            export_df = pd.DataFrame(summary_data)
+
+            # Sort by date
+            if 'Date' in export_df.columns:
+                export_df['Date'] = pd.to_datetime(export_df['Date'], errors='coerce')
+                export_df = export_df.sort_values('Date', ascending=False)
+                export_df['Date'] = export_df['Date'].dt.strftime('%Y-%m-%d')
+
+            # Display preview
+            st.markdown("**Data Preview:**")
+            st.dataframe(export_df.head(10), use_container_width=True, hide_index=True)
+
+            # Download button
+            csv_data = export_df.to_csv(index=False)
+            st.download_button(
+                label="📥 Download Full Athlete Report (CSV)",
+                data=csv_data,
+                file_name=f"{athlete_name.replace(' ', '_').lower()}_performance_report.csv",
+                mime="text/csv",
+                key=f"individual_export_{athlete_name.replace(' ', '_')}"
+            )
+        else:
+            st.info("No data available to export")
+
 
 def create_group_report_v2(df: pd.DataFrame,
                            sport: str,
@@ -2457,6 +2661,9 @@ def create_group_report_v2(df: pd.DataFrame,
     # =========================================================================
     st.markdown("### Strength RM (Manual Entry)")
 
+    # Get list of athletes from this sport for filtering manual data
+    sport_athletes = sport_df['Name'].dropna().unique().tolist() if 'Name' in sport_df.columns else []
+
     strength_data = []
     data_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data')
     lower_body_path = os.path.join(data_dir, 'sc_lower_body.csv')
@@ -2483,8 +2690,12 @@ def create_group_report_v2(df: pd.DataFrame,
         if 'athlete' in strength_df.columns and 'Name' not in strength_df.columns:
             strength_df['Name'] = strength_df['athlete']
 
+        # Filter by sport athletes (only show athletes from the selected sport)
+        if sport_athletes and 'Name' in strength_df.columns:
+            strength_df = strength_df[strength_df['Name'].isin(sport_athletes)]
+
         # Get latest 1RM per athlete per exercise
-        if 'estimated_1rm' in strength_df.columns and 'exercise' in strength_df.columns:
+        if 'estimated_1rm' in strength_df.columns and 'exercise' in strength_df.columns and not strength_df.empty:
             exercises = strength_df['exercise'].unique()
             athletes_str = strength_df['Name'].dropna().unique()
 
@@ -2507,7 +2718,7 @@ def create_group_report_v2(df: pd.DataFrame,
         strength_table = pd.DataFrame(strength_data)
         st.dataframe(strength_table, use_container_width=True, hide_index=True)
     else:
-        st.info("No Strength RM data available. Use ✏️ Data Entry tab to add.")
+        st.info(f"No Strength RM data available for {sport} athletes. Use ✏️ Data Entry tab to add.")
 
     st.markdown("---")
 
@@ -2523,13 +2734,18 @@ def create_group_report_v2(df: pd.DataFrame,
         try:
             bj_df = pd.read_csv(broad_jump_path)
             if 'athlete' in bj_df.columns and 'distance_cm' in bj_df.columns:
-                # Get best jump per athlete
-                best_jumps = bj_df.groupby('athlete')['distance_cm'].max().reset_index()
-                for _, row in best_jumps.iterrows():
-                    broad_data.append({
-                        'Athlete': row['athlete'],
-                        'Best Distance (cm)': round(row['distance_cm'], 0)
-                    })
+                # Filter by sport athletes
+                if sport_athletes:
+                    bj_df = bj_df[bj_df['athlete'].isin(sport_athletes)]
+
+                if not bj_df.empty:
+                    # Get best jump per athlete
+                    best_jumps = bj_df.groupby('athlete')['distance_cm'].max().reset_index()
+                    for _, row in best_jumps.iterrows():
+                        broad_data.append({
+                            'Athlete': row['athlete'],
+                            'Best Distance (cm)': round(row['distance_cm'], 0)
+                        })
         except Exception:
             pass
 
@@ -2537,7 +2753,7 @@ def create_group_report_v2(df: pd.DataFrame,
         broad_table = pd.DataFrame(broad_data).sort_values('Best Distance (cm)', ascending=False)
         st.dataframe(broad_table, use_container_width=True, hide_index=True)
     else:
-        st.info("No Broad Jump data available. Use ✏️ Data Entry tab to add.")
+        st.info(f"No Broad Jump data available for {sport} athletes. Use ✏️ Data Entry tab to add.")
 
     st.markdown("---")
 
@@ -2554,12 +2770,17 @@ def create_group_report_v2(df: pd.DataFrame,
         try:
             aero_df = pd.read_csv(aerobic_path)
             if 'athlete' in aero_df.columns and 'avg_relative_wattage' in aero_df.columns:
-                latest_aero = aero_df.groupby('athlete')['avg_relative_wattage'].last().reset_index()
-                for _, row in latest_aero.iterrows():
-                    fitness_data.append({
-                        'Athlete': row['athlete'],
-                        '6 Min Aerobic (W/kg)': round(row['avg_relative_wattage'], 2)
-                    })
+                # Filter by sport athletes
+                if sport_athletes:
+                    aero_df = aero_df[aero_df['athlete'].isin(sport_athletes)]
+
+                if not aero_df.empty:
+                    latest_aero = aero_df.groupby('athlete')['avg_relative_wattage'].last().reset_index()
+                    for _, row in latest_aero.iterrows():
+                        fitness_data.append({
+                            'Athlete': row['athlete'],
+                            '6 Min Aerobic (W/kg)': round(row['avg_relative_wattage'], 2)
+                        })
         except Exception:
             pass
 
@@ -2567,7 +2788,7 @@ def create_group_report_v2(df: pd.DataFrame,
         fitness_table = pd.DataFrame(fitness_data).sort_values('6 Min Aerobic (W/kg)', ascending=False)
         st.dataframe(fitness_table, use_container_width=True, hide_index=True)
     else:
-        st.info("No Fitness test data available. Use ✏️ Data Entry tab to add.")
+        st.info(f"No Fitness test data available for {sport} athletes. Use ✏️ Data Entry tab to add.")
 
 
 def _display_section_table(data: list, section_name: str):
