@@ -457,22 +457,34 @@ def fetch_device_data(token, region, tenant_id, device, fetch_trials=None):
     return all_tests
 
 
-def merge_with_existing(new_df, existing_path, id_column='testId'):
-    """Merge new data with existing CSV, removing duplicates."""
+def merge_with_existing(new_df, existing_path, id_column='id'):
+    """Merge new data with existing CSV, removing duplicates.
+
+    Uses smart ID detection to find the right column for deduplication.
+    """
     if os.path.exists(existing_path):
         try:
             existing_df = pd.read_csv(existing_path)
             print(f"  Existing data: {len(existing_df)} rows")
 
+            # Smart ID column detection (same as local_sync.py)
+            if id_column not in new_df.columns:
+                for col in ['id', 'testId', 'athleteId', 'profileId']:
+                    if col in new_df.columns:
+                        id_column = col
+                        break
+
             # Combine and remove duplicates based on test ID
             if id_column in new_df.columns and id_column in existing_df.columns:
                 combined = pd.concat([existing_df, new_df], ignore_index=True)
                 combined = combined.drop_duplicates(subset=[id_column], keep='last')
-                print(f"  After merge: {len(combined)} rows")
+                added = len(combined) - len(existing_df)
+                print(f"  After merge: {len(combined)} rows (added {added} new)")
                 return combined
             else:
                 # If no ID column, just append
                 combined = pd.concat([existing_df, new_df], ignore_index=True)
+                print(f"  After append: {len(combined)} rows (no dedup column found)")
                 return combined
         except Exception as e:
             print(f"  Could not read existing file: {e}")
