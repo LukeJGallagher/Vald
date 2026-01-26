@@ -258,3 +258,24 @@ Production: Streamlit Cloud Secrets dashboard
 | SLSB | Single Leg Static Balance | Shooting |
 | ISOT | Isometric Test | Various |
 | SLJ | Single Leg Jump | All |
+
+## Important Fixes (Don't Revert!)
+
+### API Endpoint Corrections
+- **DynaMo**: Use `prd-{region}-api-extdynamo.valdperformance.com` (NOT `externaldynamo`)
+  - Endpoint: `/v2022q2/teams/{tenant_id}/tests`
+  - Uses page-based pagination with `includeRepSummaries=true`
+- **ForceFrame/NordBord**: Require ALL date params: `TestFromUtc`, `TestToUtc`, `ModifiedFromUtc`
+
+### Unit Conversions (S&C Diagnostics)
+- **Balance metrics**: VALD stores in meters, display in mm
+  - Total Excursion: multiply by 1000 (m → mm)
+  - Mean Velocity: multiply by 1000 (m/s → mm/s)
+  - Ellipse Area: multiply by 1,000,000 (m² → mm²)
+- **RSI metrics**: Some stored as 0-100 scale, display as 0-1 scale (divide by 100 if median > 10)
+
+### S&C Diagnostics Tab Filters
+- **10:5 Hop tab**: Filter by `testType.isin(['HJ', 'SLHJ', 'RSHIP', 'RSKIP', 'RSAIP'])`
+  - NOT `str.contains('Hop')` - that misses HJ, RSHIP codes
+- **Balance tab**: Filter by `testType.isin(['QSB', 'SLSB'])`
+  - Primarily for Shooting (10m Pistol) athletes
