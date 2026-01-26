@@ -1160,6 +1160,11 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
     """
     Main function to render the S&C Diagnostics Canvas tab.
     """
+    # Ensure Name column exists (map from full_name if needed)
+    if 'Name' not in forcedecks_df.columns and 'full_name' in forcedecks_df.columns:
+        forcedecks_df = forcedecks_df.copy()
+        forcedecks_df['Name'] = forcedecks_df['full_name']
+
     st.markdown("""
     <div style="background: linear-gradient(135deg, #1D4D3B 0%, #153829 100%); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
         <h2 style="color: white; margin: 0;">S&C Diagnostics Canvas</h2>

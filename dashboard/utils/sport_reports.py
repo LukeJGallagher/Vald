@@ -600,6 +600,11 @@ def create_group_report(df: pd.DataFrame,
 
     Benchmarks are loaded from VALD norms and can be adjusted in Benchmark Settings.
     """
+    # Ensure Name column exists (map from full_name if needed)
+    if 'Name' not in df.columns and 'full_name' in df.columns:
+        df = df.copy()
+        df['Name'] = df['full_name']
+
     st.markdown(f"## {sport} Group Report")
 
     # =========================================================================
@@ -1755,6 +1760,11 @@ def create_group_report_v2(df: pd.DataFrame,
     - Shoulder Health
     - Hip Health
     """
+    # Ensure Name column exists (map from full_name if needed)
+    if 'Name' not in df.columns and 'full_name' in df.columns:
+        df = df.copy()
+        df['Name'] = df['full_name']
+
     st.markdown(f"## {sport} - Table View")
 
     # =========================================================================
@@ -2524,6 +2534,11 @@ def create_group_report_v3(df: pd.DataFrame,
     - Box plots for team distributions
     - Bullet charts for quick status
     """
+    # Ensure Name column exists (map from full_name if needed)
+    if 'Name' not in df.columns and 'full_name' in df.columns:
+        df = df.copy()
+        df['Name'] = df['full_name']
+
     benchmarks = get_sport_benchmarks(sport, config)
 
     st.markdown(f"## {sport} Group Report - Alternative View")
