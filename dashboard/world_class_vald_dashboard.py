@@ -1990,6 +1990,120 @@ with tabs[0]:
 
         st.plotly_chart(fig_sport_dist, use_container_width=True)
 
+    # Sport and Test Type Summary
+    with st.expander("📋 Sports & Test Types Summary", expanded=False):
+        st.markdown("""
+        <div style="background: linear-gradient(135deg, #005430 0%, #003d1f 100%);
+             padding: 1rem; border-radius: 8px; margin-bottom: 1rem; border-left: 4px solid #a08e66;">
+            <h4 style="color: white; margin: 0;">Available Tests by Sport</h4>
+            <p style="color: rgba(255,255,255,0.9); margin: 0.5rem 0 0 0; font-size: 0.9rem;">
+                Summary of all sports and their corresponding test types in the dataset
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        if 'athlete_sport' in filtered_df.columns and 'testType' in filtered_df.columns:
+            # Create a summary dataframe using named aggregation
+            sport_test_summary = filtered_df.groupby('athlete_sport').agg(
+                Test_Types_Available=('testType', lambda x: ', '.join(sorted(x.unique()))),
+                Total_Tests=('testType', 'count')
+            ).reset_index()
+            sport_test_summary.columns = ['Sport', 'Test Types Available', 'Total Tests']
+
+            # Also count unique test types
+            sport_test_summary['# Test Types'] = filtered_df.groupby('athlete_sport')['testType'].nunique().values
+
+            # Count unique athletes per sport
+            if 'athleteId' in filtered_df.columns:
+                sport_test_summary['Athletes'] = filtered_df.groupby('athlete_sport')['athleteId'].nunique().values
+            elif 'profileId' in filtered_df.columns:
+                sport_test_summary['Athletes'] = filtered_df.groupby('athlete_sport')['profileId'].nunique().values
+            else:
+                sport_test_summary['Athletes'] = '-'
+
+            # Reorder columns
+            sport_test_summary = sport_test_summary[['Sport', 'Athletes', '# Test Types', 'Total Tests', 'Test Types Available']]
+            sport_test_summary = sport_test_summary.sort_values('Total Tests', ascending=False)
+
+            st.dataframe(
+                sport_test_summary,
+                use_container_width=True,
+                hide_index=True,
+                column_config={
+                    "Sport": st.column_config.TextColumn("Sport", width="medium"),
+                    "Athletes": st.column_config.NumberColumn("Athletes", width="small"),
+                    "# Test Types": st.column_config.NumberColumn("Test Types", width="small"),
+                    "Total Tests": st.column_config.NumberColumn("Total Tests", width="small"),
+                    "Test Types Available": st.column_config.TextColumn("Test Types", width="large")
+                }
+            )
+
+            # Test Type Legend
+            st.markdown("---")
+            st.markdown("**📚 Test Type Reference:**")
+
+            test_type_legend = {
+                # Jump Tests
+                'CMJ': 'Counter-Movement Jump',
+                'ABCMJ': 'Abalakov CMJ (with arm swing)',
+                'SJ': 'Squat Jump',
+                'DJ': 'Drop Jump',
+                'SLJ': 'Single Leg Jump',
+                'SLCMJ': 'Single Leg Counter-Movement Jump',
+                'SLCMRJ': 'Single Leg CMJ with Rebound',
+                'SLDJ': 'Single Leg Drop Jump',
+                'SLSJ': 'Single Leg Squat Jump',
+                'BDSJ': 'Bilateral Drop Squat Jump',
+                'DLSJ': 'Depth Landing Squat Jump',
+                # Hop / Reactive Strength Tests
+                'HJ': 'Hop Jump (10:5 Repeated Hop)',
+                'SLHJ': 'Single Leg Hop Jump',
+                'RSHIP': 'Repeated Single Leg Hop In Place',
+                'RSKIP': 'Repeated Single Leg Knee In Place',
+                'RSAIP': 'Repeated Single Leg Ankle In Place',
+                # Isometric Tests
+                'IMTP': 'Isometric Mid-Thigh Pull',
+                'SLIMTP': 'Single Leg IMTP',
+                'ISOT': 'Isometric Test',
+                'SLISOT': 'Single Leg Isometric Test',
+                'ISOSQT': 'Isometric Squat',
+                'SLISOSQT': 'Single Leg Isometric Squat',
+                'ISO': 'Isometric Test',
+                'ISOSQ': 'Isometric Squat',
+                'SLIS': 'Single Leg Isometric Squat',
+                'ISOSP': 'Isometric Shoulder Press',
+                'ISOHP': 'Isometric Hip Pull',
+                # Shoulder Isometric Tests
+                'SHLDISOI': 'Shoulder Isometric Internal Rotation',
+                'SHLDISOT': 'Shoulder Isometric Total',
+                'SHLDISOY': 'Shoulder Isometric External Rotation',
+                # Balance Tests
+                'QSB': 'Quiet Standing Balance',
+                'SLSB': 'Single Leg Standing Balance',
+                # Landing Tests
+                'STICR': 'Stick Landing (Bilateral)',
+                'SLSTICR': 'Single Leg Stick Landing',
+                'SLLAH': 'Single Leg Land and Hold',
+                # Upper Body
+                'PPU': 'Plyo Pushup (Upper Body Power)',
+            }
+
+            # Get unique test types in the data
+            unique_tests = sorted(filtered_df['testType'].unique())
+
+            # Display in columns
+            col1, col2, col3 = st.columns(3)
+            test_list = list(unique_tests)
+            chunk_size = len(test_list) // 3 + 1
+
+            for idx, col in enumerate([col1, col2, col3]):
+                with col:
+                    start_idx = idx * chunk_size
+                    end_idx = min(start_idx + chunk_size, len(test_list))
+                    for test in test_list[start_idx:end_idx]:
+                        desc = test_type_legend.get(test, 'Unknown Test Type')
+                        st.markdown(f"**{test}**: {desc}")
+
 # ============================================================================
 # PAGE: ATHLETE PROFILE (REMOVED - see docs/DASHBOARD_TABS_REFERENCE.md)
 # ============================================================================
@@ -5646,6 +5760,18 @@ with tabs[1]:
             sport_reports_available = False
             st.error("Sport reports module not found. Please check utils/sport_reports.py")
 
+    # Import S&C Diagnostics render function for full 12-tab canvas
+    snc_diagnostics_available = False
+    try:
+        from dashboard.utils.snc_diagnostics import render_snc_diagnostics_tab
+        snc_diagnostics_available = True
+    except ImportError:
+        try:
+            from utils.snc_diagnostics import render_snc_diagnostics_tab
+            snc_diagnostics_available = True
+        except ImportError:
+            snc_diagnostics_available = False
+
     if sport_reports_available:
         # Use sidebar sport selection instead of duplicate dropdown
         # selected_sport comes from sidebar (set earlier in the file)
@@ -5657,9 +5783,9 @@ with tabs[1]:
 
         if available_sports or selected_report_sport:
 
-            # Report type tabs - Strength Diagnostics, Group v2, Individual, Shooting, Throws, and Benchmark Settings
-            # Note: Group v3 hidden, Throws added
-            report_tabs = st.tabs(["💪 Strength Diagnostics", "📊 Group v2", "🏃 Individual Report", "🎯 Shooting Balance", "🥏 Throws", "⚙️ Benchmark Settings"])
+            # Report type tabs - Strength Diagnostics (with Canvas/Classic/Group V2/Individual), Shooting, Throws, and Benchmark Settings
+            # Note: Group v2 and Individual moved inside Strength Diagnostics tab, Group v3 hidden
+            report_tabs = st.tabs(["💪 Strength Diagnostics", "🎯 Shooting Balance", "🥏 Throws", "⚙️ Benchmark Settings"])
 
             # Render benchmark legend
             render_benchmark_legend()
@@ -5683,13 +5809,26 @@ with tabs[1]:
             # Create athlete-sport mapping from ForceDecks data
             # This allows filtering ForceFrame/NordBord by sport even without athlete_sport column
             athlete_sport_map = {}
+            athlete_id_to_name = {}  # Also create athleteId to Name mapping
             if 'Name' in filtered_df.columns and 'athlete_sport' in filtered_df.columns:
                 for _, row in filtered_df[['Name', 'athlete_sport']].dropna().drop_duplicates().iterrows():
                     athlete_sport_map[row['Name']] = row['athlete_sport']
+            # Create athleteId to Name mapping (for ForceFrame/NordBord enrichment)
+            if 'athleteId' in filtered_df.columns and 'Name' in filtered_df.columns:
+                for _, row in filtered_df[['athleteId', 'Name']].dropna().drop_duplicates().iterrows():
+                    athlete_id_to_name[row['athleteId']] = row['Name']
 
             # Filter ForceFrame and NordBord for sport
             sport_ff = filtered_forceframe.copy() if not filtered_forceframe.empty else pd.DataFrame()
             sport_nb = filtered_nordbord.copy() if not filtered_nordbord.empty else pd.DataFrame()
+
+            # Enrich ForceFrame with Name from athleteId mapping (required for reports)
+            if not sport_ff.empty and 'athleteId' in sport_ff.columns and 'Name' not in sport_ff.columns:
+                sport_ff['Name'] = sport_ff['athleteId'].map(athlete_id_to_name)
+
+            # Enrich NordBord with Name from athleteId mapping (required for reports)
+            if not sport_nb.empty and 'athleteId' in sport_nb.columns and 'Name' not in sport_nb.columns:
+                sport_nb['Name'] = sport_nb['athleteId'].map(athlete_id_to_name)
 
             # Enrich ForceFrame with sport info from athlete mapping if missing
             if not sport_ff.empty and 'Name' in sport_ff.columns:
@@ -5724,153 +5863,245 @@ with tabs[1]:
                         sport_nb = filtered_nb
 
             with report_tabs[0]:
-                # Strength Diagnostics (formerly Group v1) - S&C Diagnostics chart styles
-                create_group_report(
-                    sport_data,
-                    selected_report_sport,
-                    forceframe_df=sport_ff if not sport_ff.empty else None,
-                    nordbord_df=sport_nb if not sport_nb.empty else None
-                )
+                # View toggle - Canvas vs Classic vs Group V2 vs Individual layout (using tabs)
+                view_tabs = st.tabs(["📊 S&C Canvas (12 Tests)", "📋 Classic Layout", "👥 Group V2 (Summary)", "🏃 Individual"])
 
-                # Trunk Endurance Quadrant Test Chart
-                st.markdown("---")
-                st.markdown("### 🏋️ Trunk Endurance (Quadrant Test)")
-                st.caption("Core stability assessment: Supine, Prone, Lateral-Left, Lateral-Right positions")
+                with view_tabs[0]:
+                    # S&C Diagnostics Canvas - Full 12-tab system
+                    # Includes: IMTP, CMJ, SL Tests, NordBord, 10:5 Hop, Quadrant Tests,
+                    #           Strength RM, Broad Jump, Fitness Tests, Plyo Pushup, DynaMo, Balance
+                    if snc_diagnostics_available:
+                        render_snc_diagnostics_tab(
+                            sport_data,
+                            nordbord_df=sport_nb if not sport_nb.empty else None,
+                            forceframe_df=sport_ff if not sport_ff.empty else None
+                        )
+                    else:
+                        st.warning("S&C Diagnostics module not available.")
 
-                # Load trunk endurance data
-                trunk_csv_path = os.path.join(os.path.dirname(__file__), 'data', 'trunk_endurance.csv')
-                if os.path.exists(trunk_csv_path):
-                    try:
-                        trunk_df = pd.read_csv(trunk_csv_path)
-                        if 'date' in trunk_df.columns:
-                            trunk_df['date'] = pd.to_datetime(trunk_df['date'])
+                with view_tabs[1]:
+                    # Classic Strength Diagnostics layout
+                    create_group_report(
+                        sport_data,
+                        selected_report_sport,
+                        forceframe_df=sport_ff if not sport_ff.empty else None,
+                        nordbord_df=sport_nb if not sport_nb.empty else None
+                    )
 
-                        # Filter by selected sport if filtering by athlete_sport
-                        if selected_report_sport and selected_report_sport != "All Sports":
-                            # Get athletes from the filtered sport data
-                            if 'Name' in sport_data.columns:
-                                sport_athletes = sport_data['Name'].dropna().unique()
-                                trunk_df = trunk_df[trunk_df['athlete'].isin(sport_athletes)]
+                    # Trunk Endurance Quadrant Test Chart (Classic layout only)
+                    st.markdown("---")
+                    st.markdown("### 🏋️ Trunk Endurance (Quadrant Test)")
+                    st.caption("Core stability assessment: Supine, Prone, Lateral-Left, Lateral-Right positions")
 
-                        if not trunk_df.empty:
-                            # Get latest test per athlete
+                    trunk_csv_path = os.path.join(os.path.dirname(__file__), 'data', 'trunk_endurance.csv')
+                    if os.path.exists(trunk_csv_path):
+                        try:
+                            trunk_df = pd.read_csv(trunk_csv_path)
                             if 'date' in trunk_df.columns:
-                                latest_trunk = trunk_df.sort_values('date').groupby('athlete').last().reset_index()
-                            else:
-                                latest_trunk = trunk_df.groupby('athlete').last().reset_index()
+                                trunk_df['date'] = pd.to_datetime(trunk_df['date'])
 
-                            if not latest_trunk.empty:
-                                import plotly.graph_objects as go
+                            if selected_report_sport and selected_report_sport != "All Sports":
+                                if 'Name' in sport_data.columns:
+                                    sport_athletes = sport_data['Name'].dropna().unique()
+                                    trunk_df = trunk_df[trunk_df['athlete'].isin(sport_athletes)]
 
-                                # Stacked bar chart - Team Saudi colors
-                                fig_trunk = go.Figure()
+                            if not trunk_df.empty:
+                                if 'date' in trunk_df.columns:
+                                    latest_trunk = trunk_df.sort_values('date').groupby('athlete').last().reset_index()
+                                else:
+                                    latest_trunk = trunk_df.groupby('athlete').last().reset_index()
 
-                                position_colors = {
-                                    'Supine': '#005430',       # Saudi Green
-                                    'Prone': '#a08e66',        # Gold Accent
-                                    'Lateral-Left': '#0077B6', # Info Blue
-                                    'Lateral-Right': '#2A8F5C' # Light Green
-                                }
+                                if not latest_trunk.empty:
+                                    fig_trunk = go.Figure()
+                                    position_colors = {
+                                        'Supine': '#005430', 'Prone': '#a08e66',
+                                        'Lateral-Left': '#0077B6', 'Lateral-Right': '#2A8F5C'
+                                    }
+                                    for pos, col in [('Supine', 'supine_sec'), ('Prone', 'prone_sec'),
+                                                     ('Lateral-Left', 'lateral_left_sec'), ('Lateral-Right', 'lateral_right_sec')]:
+                                        if col in latest_trunk.columns:
+                                            fig_trunk.add_trace(go.Bar(name=pos, x=latest_trunk['athlete'],
+                                                                       y=latest_trunk[col], marker_color=position_colors[pos]))
+                                    fig_trunk.update_layout(
+                                        barmode='stack', title='Trunk Endurance by Position (seconds)',
+                                        xaxis_title='Athlete', yaxis_title='Duration (seconds)',
+                                        plot_bgcolor='white', paper_bgcolor='white',
+                                        font=dict(family='Inter, sans-serif', color='#333'),
+                                        legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='center', x=0.5),
+                                        margin=dict(l=10, r=10, t=80, b=30)
+                                    )
+                                    fig_trunk.update_xaxes(showgrid=False)
+                                    fig_trunk.update_yaxes(showgrid=True, gridwidth=1, gridcolor='#e9ecef')
+                                    st.plotly_chart(fig_trunk, use_container_width=True)
 
-                                fig_trunk.add_trace(go.Bar(
-                                    name='Supine',
-                                    x=latest_trunk['athlete'],
-                                    y=latest_trunk['supine_sec'],
-                                    marker_color=position_colors['Supine']
-                                ))
-                                fig_trunk.add_trace(go.Bar(
-                                    name='Prone',
-                                    x=latest_trunk['athlete'],
-                                    y=latest_trunk['prone_sec'],
-                                    marker_color=position_colors['Prone']
-                                ))
-                                fig_trunk.add_trace(go.Bar(
-                                    name='Lateral-Left',
-                                    x=latest_trunk['athlete'],
-                                    y=latest_trunk['lateral_left_sec'],
-                                    marker_color=position_colors['Lateral-Left']
-                                ))
-                                fig_trunk.add_trace(go.Bar(
-                                    name='Lateral-Right',
-                                    x=latest_trunk['athlete'],
-                                    y=latest_trunk['lateral_right_sec'],
-                                    marker_color=position_colors['Lateral-Right']
-                                ))
-
-                                fig_trunk.update_layout(
-                                    barmode='stack',
-                                    title='Trunk Endurance by Position (seconds)',
-                                    xaxis_title='Athlete',
-                                    yaxis_title='Duration (seconds)',
-                                    plot_bgcolor='white',
-                                    paper_bgcolor='white',
-                                    font=dict(family='Inter, sans-serif', color='#333'),
-                                    legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='center', x=0.5),
-                                    margin=dict(l=10, r=10, t=80, b=30)
-                                )
-                                fig_trunk.update_xaxes(showgrid=False)
-                                fig_trunk.update_yaxes(showgrid=True, gridwidth=1, gridcolor='#e9ecef')
-
-                                st.plotly_chart(fig_trunk, use_container_width=True)
-
-                                # Summary stats
-                                col1, col2, col3 = st.columns(3)
-                                with col1:
-                                    st.metric("Athletes Tested", len(latest_trunk))
-                                with col2:
-                                    avg_total = latest_trunk['total_sec'].mean() if 'total_sec' in latest_trunk.columns else 0
-                                    st.metric("Avg Total Time", f"{avg_total:.0f}s")
-                                with col3:
-                                    max_total = latest_trunk['total_sec'].max() if 'total_sec' in latest_trunk.columns else 0
-                                    st.metric("Best Total Time", f"{max_total:.0f}s")
+                                    col1, col2, col3 = st.columns(3)
+                                    with col1:
+                                        st.metric("Athletes Tested", len(latest_trunk))
+                                    with col2:
+                                        avg_total = latest_trunk['total_sec'].mean() if 'total_sec' in latest_trunk.columns else 0
+                                        st.metric("Avg Total Time", f"{avg_total:.0f}s")
+                                    with col3:
+                                        max_total = latest_trunk['total_sec'].max() if 'total_sec' in latest_trunk.columns else 0
+                                        st.metric("Best Total Time", f"{max_total:.0f}s")
+                                else:
+                                    st.info("No trunk endurance data for the selected sport.")
                             else:
                                 st.info("No trunk endurance data for the selected sport.")
+                        except Exception as e:
+                            st.warning(f"Could not load trunk endurance data: {e}")
+                    else:
+                        st.info("📭 No trunk endurance data recorded yet.")
+
+                    # =====================================================================
+                    # BROAD JUMP (Manual Entry)
+                    # =====================================================================
+                    st.markdown("---")
+                    st.markdown("### 🦘 Broad Jump")
+                    st.caption("Standing broad/long jump distance (Manual Entry)")
+
+                    broad_jump_path = os.path.join(os.path.dirname(__file__), 'data', 'broad_jump.csv')
+                    if os.path.exists(broad_jump_path):
+                        try:
+                            bj_df = pd.read_csv(broad_jump_path)
+                            if 'date' in bj_df.columns:
+                                bj_df['date'] = pd.to_datetime(bj_df['date'])
+
+                            if selected_report_sport and selected_report_sport != "All Sports" and 'Name' in sport_data.columns:
+                                sport_athletes = sport_data['Name'].dropna().unique()
+                                bj_df = bj_df[bj_df['athlete'].isin(sport_athletes)]
+
+                            if not bj_df.empty and 'distance_cm' in bj_df.columns:
+                                latest_bj = bj_df.sort_values('date').groupby('athlete').last().reset_index()
+                                latest_bj = latest_bj.sort_values('distance_cm', ascending=True)
+
+                                fig_bj = go.Figure()
+                                fig_bj.add_trace(go.Bar(
+                                    y=latest_bj['athlete'],
+                                    x=latest_bj['distance_cm'],
+                                    orientation='h',
+                                    marker_color='#005430',
+                                    text=[f"{v:.0f} cm" for v in latest_bj['distance_cm']],
+                                    textposition='outside'
+                                ))
+                                squad_avg = latest_bj['distance_cm'].mean()
+                                fig_bj.add_vline(x=squad_avg, line_dash="dash", line_color="#a08e66",
+                                               annotation_text=f"Avg: {squad_avg:.0f}cm")
+                                fig_bj.update_layout(
+                                    title='Broad Jump - Distance (cm)',
+                                    xaxis_title='Distance (cm)', yaxis_title='',
+                                    plot_bgcolor='white', paper_bgcolor='white',
+                                    font=dict(family='Inter, sans-serif', color='#333'),
+                                    height=max(250, min(400, len(latest_bj) * 35)),
+                                    margin=dict(l=10, r=10, t=40, b=10)
+                                )
+                                st.plotly_chart(fig_bj, use_container_width=True)
+                            else:
+                                st.info("No broad jump data for the selected sport.")
+                        except Exception as e:
+                            st.warning(f"Could not load broad jump data: {e}")
+                    else:
+                        st.info("📭 No broad jump data. Use ✏️ Data Entry to add.")
+
+                    # =====================================================================
+                    # FITNESS TESTS (Manual Entry)
+                    # =====================================================================
+                    st.markdown("---")
+                    st.markdown("### 🏃 Fitness Tests")
+                    st.caption("6 Min Aerobic, VO2 Max, Yo-Yo, 30-15 IFT (Manual Entry)")
+
+                    fitness_paths = [
+                        os.path.join(os.path.dirname(__file__), 'data', 'aerobic_tests.csv'),
+                        os.path.join(os.path.dirname(__file__), 'data', 'power_tests.csv'),
+                    ]
+                    fitness_df = pd.DataFrame()
+                    for fp in fitness_paths:
+                        if os.path.exists(fp):
+                            try:
+                                temp_df = pd.read_csv(fp)
+                                if 'date' in temp_df.columns:
+                                    temp_df['date'] = pd.to_datetime(temp_df['date'])
+                                fitness_df = pd.concat([fitness_df, temp_df], ignore_index=True) if not fitness_df.empty else temp_df
+                            except Exception:
+                                pass
+
+                    if not fitness_df.empty:
+                        if selected_report_sport and selected_report_sport != "All Sports" and 'Name' in sport_data.columns:
+                            sport_athletes = sport_data['Name'].dropna().unique()
+                            if 'athlete' in fitness_df.columns:
+                                fitness_df = fitness_df[fitness_df['athlete'].isin(sport_athletes)]
+
+                        # 6 Minute Aerobic Test
+                        if 'avg_relative_wattage' in fitness_df.columns:
+                            aero_df = fitness_df[fitness_df['avg_relative_wattage'].notna()].copy()
+                            if not aero_df.empty:
+                                latest_aero = aero_df.sort_values('date').groupby('athlete').last().reset_index()
+                                latest_aero = latest_aero.sort_values('avg_relative_wattage', ascending=True)
+
+                                fig_aero = go.Figure()
+                                fig_aero.add_trace(go.Bar(
+                                    y=latest_aero['athlete'],
+                                    x=latest_aero['avg_relative_wattage'],
+                                    orientation='h',
+                                    marker_color='#005430',
+                                    text=[f"{v:.1f} W/kg" for v in latest_aero['avg_relative_wattage']],
+                                    textposition='outside'
+                                ))
+                                squad_avg = latest_aero['avg_relative_wattage'].mean()
+                                fig_aero.add_vline(x=squad_avg, line_dash="dash", line_color="#a08e66",
+                                                  annotation_text=f"Avg: {squad_avg:.1f}")
+                                fig_aero.update_layout(
+                                    title='6 Min Aerobic - Relative Wattage',
+                                    xaxis_title='W/kg', yaxis_title='',
+                                    plot_bgcolor='white', paper_bgcolor='white',
+                                    font=dict(family='Inter, sans-serif', color='#333'),
+                                    height=max(250, min(400, len(latest_aero) * 35)),
+                                    margin=dict(l=10, r=10, t=40, b=10)
+                                )
+                                st.plotly_chart(fig_aero, use_container_width=True)
                         else:
-                            st.info("No trunk endurance data for the selected sport.")
-                    except Exception as e:
-                        st.warning(f"Could not load trunk endurance data: {e}")
-                else:
-                    st.info("📭 No trunk endurance data recorded yet. Go to Data Entry → Trunk Endurance to add test data.")
+                            st.info("No aerobic test data available.")
+                    else:
+                        st.info("📭 No fitness test data. Use ✏️ Data Entry to add.")
+
+                with view_tabs[2]:
+                    # Group Report v2 - Summary table with RAG status
+                    st.markdown("### Team Summary View")
+                    st.caption("Summary table with RAG status indicators")
+
+                    create_group_report_v2(
+                        sport_data,
+                        selected_report_sport,
+                        forceframe_df=sport_ff if not sport_ff.empty else None,
+                        nordbord_df=sport_nb if not sport_nb.empty else None
+                    )
+
+                with view_tabs[3]:
+                    # Individual Report - Single athlete analysis
+                    st.markdown("### Individual Athlete Analysis")
+
+                    # Get athletes for selected sport
+                    sport_athletes = sorted(
+                        filtered_df[sport_mask]['Name'].dropna().unique()
+                    ) if 'Name' in filtered_df.columns else []
+
+                    if sport_athletes:
+                        selected_report_athlete = st.selectbox(
+                            "Select Athlete:",
+                            options=sport_athletes,
+                            key="report_athlete_selector"
+                        )
+
+                        create_individual_report(
+                            filtered_df,
+                            selected_report_athlete,
+                            selected_report_sport,
+                            forceframe_df=filtered_forceframe if not filtered_forceframe.empty else None,
+                            nordbord_df=filtered_nordbord if not filtered_nordbord.empty else None
+                        )
+                    else:
+                        st.info("No athletes found for the selected sport")
 
             with report_tabs[1]:
-                # Group Report v2 - Summary table with RAG status
-                st.markdown("### Team Summary View")
-                st.caption("Summary table with RAG status indicators")
-
-                create_group_report_v2(
-                    sport_data,
-                    selected_report_sport,
-                    forceframe_df=sport_ff if not sport_ff.empty else None,
-                    nordbord_df=sport_nb if not sport_nb.empty else None
-                )
-
-            with report_tabs[2]:
-                # Individual Report
-                st.markdown("### Individual Athlete Analysis")
-
-                # Get athletes for selected sport
-                sport_athletes = sorted(
-                    filtered_df[sport_mask]['Name'].dropna().unique()
-                ) if 'Name' in filtered_df.columns else []
-
-                if sport_athletes:
-                    selected_report_athlete = st.selectbox(
-                        "Select Athlete:",
-                        options=sport_athletes,
-                        key="report_athlete_selector"
-                    )
-
-                    create_individual_report(
-                        filtered_df,
-                        selected_report_athlete,
-                        selected_report_sport,
-                        forceframe_df=filtered_forceframe if not filtered_forceframe.empty else None,
-                        nordbord_df=filtered_nordbord if not filtered_nordbord.empty else None
-                    )
-                else:
-                    st.info("No athletes found for the selected sport")
-
-            with report_tabs[3]:
                 # Shooting Balance Report - 10m Pistol
                 # Note: Uses original df, not filtered_df, so shooting athletes show regardless of sport filter
                 st.markdown("### 🎯 10m Pistol - Balance Analysis")
@@ -5938,7 +6169,7 @@ with tabs[1]:
                                 if len(available_sports) > 20:
                                     st.write(f"... and {len(available_sports) - 20} more")
 
-            with report_tabs[4]:
+            with report_tabs[2]:
                 # Throws Report - Athletics throws analysis using ThrowsTrainingModule
                 st.markdown("### 🥏 Throws Analysis")
                 st.caption("Shot Put, Discus, Javelin, and Hammer performance tracking")
@@ -6002,7 +6233,7 @@ with tabs[1]:
                 else:
                     st.info("No throws athletes found. Looking for Athletics athletes or those with 'Throw', 'Shot', 'Discus', 'Javelin', or 'Hammer' in their sport.")
 
-            with report_tabs[5]:
+            with report_tabs[3]:
                 # Benchmark Settings - S&C staff can edit VALD norms
                 try:
                     from dashboard.utils.benchmark_database import render_benchmark_editor

@@ -626,12 +626,14 @@ def main():
         df = pd.DataFrame(forcedecks_tests)
         id_col = 'athleteId' if 'athleteId' in df.columns else 'profileId'
 
-        df['full_name'] = df[id_col].map(lambda pid: profiles.get(pid, {}).get('full_name', f'Athlete_{str(pid)[:8]}'))
-        df['athlete_sport'] = df[id_col].map(lambda pid: profiles.get(pid, {}).get('athlete_sport', 'Unknown'))
-
         output_file = OUTPUT_DIR / 'forcedecks_allsports_with_athletes.csv'
         # Merge with existing data instead of overwriting
         df = merge_with_existing(df, output_file, id_column='id')
+
+        # Re-enrich ALL rows after merge (fixes "Unknown" sport for old data)
+        df['full_name'] = df[id_col].map(lambda pid: profiles.get(pid, {}).get('full_name', f'Athlete_{str(pid)[:8]}'))
+        df['athlete_sport'] = df[id_col].map(lambda pid: profiles.get(pid, {}).get('athlete_sport', 'Unknown'))
+
         df.to_csv(output_file, index=False)
         print(f"    Saved: {output_file}")
 
@@ -650,11 +652,13 @@ def main():
         df = pd.DataFrame(forceframe_tests)
         id_col = 'athleteId' if 'athleteId' in df.columns else 'profileId'
 
+        output_file = OUTPUT_DIR / 'forceframe_allsports_with_athletes.csv'
+        df = merge_with_existing(df, output_file, id_column='id')
+
+        # Re-enrich ALL rows after merge (fixes "Unknown" sport for old data)
         df['full_name'] = df[id_col].map(lambda pid: profiles.get(pid, {}).get('full_name', f'Athlete_{str(pid)[:8]}'))
         df['athlete_sport'] = df[id_col].map(lambda pid: profiles.get(pid, {}).get('athlete_sport', 'Unknown'))
 
-        output_file = OUTPUT_DIR / 'forceframe_allsports_with_athletes.csv'
-        df = merge_with_existing(df, output_file, id_column='id')
         df.to_csv(output_file, index=False)
         print(f"    Saved: {output_file}")
 
@@ -666,11 +670,13 @@ def main():
         df = pd.DataFrame(nordbord_tests)
         id_col = 'athleteId' if 'athleteId' in df.columns else 'profileId'
 
+        output_file = OUTPUT_DIR / 'nordbord_allsports_with_athletes.csv'
+        df = merge_with_existing(df, output_file, id_column='id')
+
+        # Re-enrich ALL rows after merge (fixes "Unknown" sport for old data)
         df['full_name'] = df[id_col].map(lambda pid: profiles.get(pid, {}).get('full_name', f'Athlete_{str(pid)[:8]}'))
         df['athlete_sport'] = df[id_col].map(lambda pid: profiles.get(pid, {}).get('athlete_sport', 'Unknown'))
 
-        output_file = OUTPUT_DIR / 'nordbord_allsports_with_athletes.csv'
-        df = merge_with_existing(df, output_file, id_column='id')
         df.to_csv(output_file, index=False)
         print(f"    Saved: {output_file}")
 
@@ -682,11 +688,13 @@ def main():
         df = pd.DataFrame(dynamo_tests)
         id_col = 'athleteId' if 'athleteId' in df.columns else 'profileId'
 
+        output_file = OUTPUT_DIR / 'dynamo_allsports_with_athletes.csv'
+        df = merge_with_existing(df, output_file, id_column='id')
+
+        # Re-enrich ALL rows after merge (fixes "Unknown" sport for old data)
         df['full_name'] = df[id_col].map(lambda pid: profiles.get(pid, {}).get('full_name', f'Athlete_{str(pid)[:8]}'))
         df['athlete_sport'] = df[id_col].map(lambda pid: profiles.get(pid, {}).get('athlete_sport', 'Unknown'))
 
-        output_file = OUTPUT_DIR / 'dynamo_allsports_with_athletes.csv'
-        df = merge_with_existing(df, output_file, id_column='id')
         df.to_csv(output_file, index=False)
         print(f"    Saved: {output_file}")
 

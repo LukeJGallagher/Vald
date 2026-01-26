@@ -305,15 +305,24 @@ def flatten_trial_metrics(trials):
     return flattened
 
 
-def fetch_device_data(token, region, tenant_id, device, fetch_trials=None):
+def fetch_device_data(token, region, tenant_id, device, fetch_trials=None, existing_test_ids=None):
     """Fetch test data from a VALD device API.
 
     Args:
-        fetch_trials: If None, reads from FETCH_TRIALS env var (default: false for GitHub Actions)
+        fetch_trials: If None, uses INCREMENTAL mode (fetches trials only for new tests)
+        existing_test_ids: Set of test IDs that already have trial data (for incremental sync)
     """
-    # For GitHub Actions, skip trial fetching by default (takes too long)
+    # Incremental mode: fetch trials only for tests not in existing_test_ids
+    # This makes daily syncs fast while still getting full metrics
+    incremental_mode = os.environ.get('INCREMENTAL_TRIALS', 'true').lower() == 'true'
+
     if fetch_trials is None:
-        fetch_trials = os.environ.get('FETCH_TRIALS', 'false').lower() == 'true'
+        # Default: incremental trial fetching (fast daily syncs)
+        fetch_trials = incremental_mode or os.environ.get('FETCH_TRIALS', 'false').lower() == 'true'
+
+    if existing_test_ids is None:
+        existing_test_ids = set()
+
     base_urls = {
         'forcedecks': f'https://prd-{region}-api-extforcedecks.valdperformance.com/tests',
         'forceframe': f'https://prd-{region}-api-externalforceframe.valdperformance.com/tests',
@@ -359,9 +368,23 @@ def fetch_device_data(token, region, tenant_id, device, fetch_trials=None):
             modified_from = last_modified
 
         # Fetch trial data for detailed metrics (ForceDecks only)
+        # In incremental mode, only fetch for tests NOT in existing_test_ids
         if fetch_trials and all_tests:
-            print(f"{device}: Fetching trial data for {len(all_tests)} tests...")
-            for i, test in enumerate(all_tests):
+            # Identify tests that need trial data
+            tests_needing_trials = []
+            for test in all_tests:
+                test_id = test.get('id') or test.get('testId')
+                if test_id and str(test_id) not in existing_test_ids:
+                    tests_needing_trials.append(test)
+
+            if existing_test_ids:
+                print(f"{device}: {len(all_tests)} total tests, {len(tests_needing_trials)} new tests need trials")
+            else:
+                print(f"{device}: Fetching trial data for all {len(all_tests)} tests (no existing data)")
+                tests_needing_trials = all_tests
+
+            # Fetch trials for new tests only
+            for i, test in enumerate(tests_needing_trials):
                 test_id = test.get('id') or test.get('testId')
                 if test_id:
                     trials = fetch_trial_data(token, region, tenant_id, test_id, device)
@@ -369,10 +392,11 @@ def fetch_device_data(token, region, tenant_id, device, fetch_trials=None):
                         metrics = flatten_trial_metrics(trials)
                         test.update(metrics)
 
-                if (i + 1) % 100 == 0:
-                    print(f"{device}: Trial progress: {i + 1}/{len(all_tests)}")
+                if (i + 1) % 50 == 0:
+                    print(f"{device}: Trial progress: {i + 1}/{len(tests_needing_trials)}")
 
-            print(f"{device}: Trial fetching complete!")
+            if tests_needing_trials:
+                print(f"{device}: Trial fetching complete! ({len(tests_needing_trials)} tests processed)")
 
     elif device == 'forceframe':
         # ForceFrame uses cursor-based pagination
@@ -579,16 +603,89 @@ def main():
     os.makedirs('data_export', exist_ok=True)
 
     for device in ['forcedecks', 'forceframe', 'nordbord', 'dynamo']:
-        print(f"\nFetching {device} data...")
-        tests = fetch_device_data(token, region, tenant_id, device)
-        print(f"Found {len(tests)} {device} tests from API")
+        print(f"\n{'='*60}")
+        print(f"Processing {device.upper()}...")
+        print(f"{'='*60}")
 
         filename = f'data_export/{device}_allsports_with_athletes.csv'
         existing_path = f'private_data_repo/data/{device}_allsports_with_athletes.csv'
 
+        # Load existing data to get test IDs that already have trial metrics
+        existing_test_ids = set()
+        existing_df = None
+        trial_metric_columns = ['JUMP_HEIGHT', 'Peak Force', 'BODYMASS_RELATIVE', 'RSI']  # Key metrics from trials
+
+        if os.path.exists(existing_path):
+            try:
+                existing_df = pd.read_csv(existing_path)
+                print(f"Loaded existing data: {len(existing_df)} rows")
+
+                # Find ID column
+                id_col = None
+                for col in ['id', 'testId']:
+                    if col in existing_df.columns:
+                        id_col = col
+                        break
+
+                if id_col:
+                    # Check which tests have trial metrics (look for any metric column)
+                    has_metrics = existing_df.columns.str.contains('|'.join(trial_metric_columns), case=False, na=False)
+                    if has_metrics.any():
+                        # Tests that have at least one non-null metric value
+                        metric_cols = existing_df.columns[has_metrics].tolist()
+                        tests_with_metrics = existing_df.dropna(subset=metric_cols, how='all')
+                        existing_test_ids = set(tests_with_metrics[id_col].astype(str).tolist())
+                        print(f"Found {len(existing_test_ids)} tests with trial metrics (will skip)")
+                    else:
+                        # No metric columns - all tests need trials
+                        print(f"No trial metrics in existing data - will fetch all trials")
+            except Exception as e:
+                print(f"Could not load existing data: {e}")
+
+        # Fetch new data from API (with incremental trial fetching)
+        tests = fetch_device_data(token, region, tenant_id, device, existing_test_ids=existing_test_ids)
+        print(f"Fetched {len(tests)} tests from API")
+
         if tests:
             df = pd.DataFrame(tests)
             id_col = 'athleteId' if 'athleteId' in df.columns else 'profileId'
+
+            # Smart merge: preserve trial metrics from existing data
+            if existing_df is not None and not existing_df.empty:
+                # Find test ID column
+                test_id_col = None
+                for col in ['id', 'testId']:
+                    if col in df.columns and col in existing_df.columns:
+                        test_id_col = col
+                        break
+
+                if test_id_col:
+                    # Get new test IDs
+                    new_ids = set(df[test_id_col].astype(str))
+                    existing_ids = set(existing_df[test_id_col].astype(str))
+
+                    # Tests in new data that are also in existing (potential updates)
+                    overlap_ids = new_ids & existing_ids
+                    new_only_ids = new_ids - existing_ids
+                    existing_only_ids = existing_ids - new_ids
+
+                    print(f"  New tests: {len(new_only_ids)}")
+                    print(f"  Existing tests to keep: {len(existing_only_ids)}")
+                    print(f"  Overlapping tests (using new): {len(overlap_ids)}")
+
+                    # Keep existing tests that aren't in new data (preserve their metrics)
+                    existing_to_keep = existing_df[existing_df[test_id_col].astype(str).isin(existing_only_ids)]
+
+                    # Combine: new data + existing data not in new
+                    df = pd.concat([df, existing_to_keep], ignore_index=True)
+                    df = df.drop_duplicates(subset=[test_id_col], keep='first')
+
+                    print(f"  After merge: {len(df)} total rows")
+                else:
+                    # Fallback: simple concat
+                    df = pd.concat([existing_df, df], ignore_index=True)
+
+            # Re-enrich ALL rows after merge (fixes "Unknown" sport for old data)
             if id_col in df.columns:
                 df['full_name'] = df[id_col].map(
                     lambda pid: profiles.get(pid, {}).get('full_name', f'Athlete_{str(pid)[:8]}')
@@ -597,18 +694,23 @@ def main():
                     lambda pid: profiles.get(pid, {}).get('athlete_sport', 'Unknown')
                 )
 
-            # Merge with existing data
-            df = merge_with_existing(df, existing_path)
-
             # Report sport distribution
             if 'athlete_sport' in df.columns:
                 sports = df['athlete_sport'].value_counts()
                 print(f"Sport distribution: {dict(sports.head(10))}")
 
+            # Count tests with trial metrics
+            has_metrics = df.columns.str.contains('|'.join(trial_metric_columns), case=False, na=False)
+            if has_metrics.any():
+                metric_cols = df.columns[has_metrics].tolist()
+                tests_with_data = len(df.dropna(subset=metric_cols, how='all'))
+                print(f"Tests with trial metrics: {tests_with_data}/{len(df)}")
+
             df.to_csv(filename, index=False)
             print(f"Saved {filename} ({len(df)} total rows)")
+
         elif os.path.exists(existing_path):
-            # No new data, but keep existing
+            # No new data from API, but keep existing
             import shutil
             shutil.copy(existing_path, filename)
             print(f"No new {device} data, kept existing file")

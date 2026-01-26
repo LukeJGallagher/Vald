@@ -25,6 +25,8 @@ import plotly.express as px
 from plotly.subplots import make_subplots
 from typing import Dict, List, Optional, Tuple
 from datetime import datetime, timedelta
+import os
+import io
 
 # Import benchmark database for VALD norms
 try:
@@ -64,6 +66,471 @@ MULTI_LINE_COLORS = [
 # Squad average styling
 SQUAD_AVG_COLOR = '#005430'  # Saudi Green
 BENCHMARK_COLOR = '#0077B6'  # Blue dashed
+
+
+# =====================
+# Export Helper Functions
+# =====================
+def export_to_excel(df: pd.DataFrame, sheet_name: str = "Data") -> bytes:
+    """Export DataFrame to Excel format and return as bytes."""
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, sheet_name=sheet_name, index=False)
+    output.seek(0)
+    return output.getvalue()
+
+
+def export_group_summary(df: pd.DataFrame, metric_col: str, name_col: str = 'Name',
+                         test_name: str = "Test") -> bytes:
+    """
+    Export group summary (latest values for all athletes) to Excel.
+
+    Args:
+        df: DataFrame with athlete data
+        metric_col: Column name for the metric to summarize
+        name_col: Column name for athlete names
+        test_name: Name of the test for the sheet name
+
+    Returns:
+        Excel file as bytes
+    """
+    if df.empty:
+        return export_to_excel(pd.DataFrame(columns=['Athlete', 'Latest Value', 'Date']))
+
+    # Get latest value for each athlete
+    if 'date' in df.columns:
+        summary_df = df.sort_values('date').groupby(name_col).last().reset_index()
+    else:
+        summary_df = df.groupby(name_col).last().reset_index()
+
+    # Select and rename relevant columns
+    export_cols = {name_col: 'Athlete'}
+    if metric_col in summary_df.columns:
+        export_cols[metric_col] = 'Latest Value'
+    if 'date' in summary_df.columns:
+        export_cols['date'] = 'Date'
+    if 'athlete_sport' in summary_df.columns:
+        export_cols['athlete_sport'] = 'Sport'
+    if 'exercise' in summary_df.columns:
+        export_cols['exercise'] = 'Exercise'
+
+    # Filter and rename
+    available_cols = [c for c in export_cols.keys() if c in summary_df.columns]
+    export_df = summary_df[available_cols].rename(columns={k: v for k, v in export_cols.items() if k in available_cols})
+
+    # Sort by value descending (best performers first)
+    if 'Latest Value' in export_df.columns:
+        export_df = export_df.sort_values('Latest Value', ascending=False)
+
+    return export_to_excel(export_df, sheet_name=f"{test_name}_Group")
+
+
+def export_individual_data(df: pd.DataFrame, athletes: List[str], metric_col: str,
+                          name_col: str = 'Name', test_name: str = "Test") -> bytes:
+    """
+    Export individual athlete time-series data to Excel.
+
+    Args:
+        df: DataFrame with athlete data
+        athletes: List of athlete names to include
+        metric_col: Column name for the metric
+        name_col: Column name for athlete names
+        test_name: Name of the test for the sheet name
+
+    Returns:
+        Excel file as bytes
+    """
+    if df.empty or not athletes:
+        return export_to_excel(pd.DataFrame(columns=['Athlete', 'Date', 'Value']))
+
+    # Filter to selected athletes
+    ind_df = df[df[name_col].isin(athletes)].copy()
+
+    # Select and rename relevant columns
+    export_cols = {name_col: 'Athlete'}
+    if 'date' in ind_df.columns:
+        export_cols['date'] = 'Date'
+    if metric_col in ind_df.columns:
+        export_cols[metric_col] = 'Value'
+    if 'athlete_sport' in ind_df.columns:
+        export_cols['athlete_sport'] = 'Sport'
+    if 'exercise' in ind_df.columns:
+        export_cols['exercise'] = 'Exercise'
+    if 'reps' in ind_df.columns:
+        export_cols['reps'] = 'Reps'
+    if 'sets' in ind_df.columns:
+        export_cols['sets'] = 'Sets'
+    if 'weight_kg' in ind_df.columns:
+        export_cols['weight_kg'] = 'Weight (kg)'
+    if 'rpe' in ind_df.columns:
+        export_cols['rpe'] = 'RPE'
+
+    # Filter and rename
+    available_cols = [c for c in export_cols.keys() if c in ind_df.columns]
+    export_df = ind_df[available_cols].rename(columns={k: v for k, v in export_cols.items() if k in available_cols})
+
+    # Sort by athlete then date
+    sort_cols = []
+    if 'Athlete' in export_df.columns:
+        sort_cols.append('Athlete')
+    if 'Date' in export_df.columns:
+        sort_cols.append('Date')
+    if sort_cols:
+        export_df = export_df.sort_values(sort_cols)
+
+    return export_to_excel(export_df, sheet_name=f"{test_name}_Individual")
+
+
+def render_export_buttons(group_df: pd.DataFrame, individual_df: pd.DataFrame,
+                         selected_athletes: List[str], metric_col: str,
+                         name_col: str = 'Name', test_name: str = "Test",
+                         key_prefix: str = "export"):
+    """
+    Render export buttons for group and individual data.
+
+    Args:
+        group_df: DataFrame for group summary (latest values)
+        individual_df: DataFrame for individual time-series
+        selected_athletes: List of selected athlete names for individual export
+        metric_col: Column name for the metric
+        name_col: Column name for athlete names
+        test_name: Name of the test
+        key_prefix: Unique prefix for widget keys
+    """
+    st.markdown("---")
+    st.markdown("##### Export Data")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        # Group summary export
+        if not group_df.empty:
+            excel_data = export_group_summary(group_df, metric_col, name_col, test_name)
+            st.download_button(
+                label="📥 Export Group Summary",
+                data=excel_data,
+                file_name=f"{test_name.replace(' ', '_')}_group_summary.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                key=f"{key_prefix}_group_export"
+            )
+            st.caption(f"All athletes - latest values")
+        else:
+            st.info("No group data to export")
+
+    with col2:
+        # Individual data export
+        if not individual_df.empty and selected_athletes:
+            excel_data = export_individual_data(individual_df, selected_athletes, metric_col, name_col, test_name)
+            st.download_button(
+                label="📥 Export Individual Data",
+                data=excel_data,
+                file_name=f"{test_name.replace(' ', '_')}_individual_data.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                key=f"{key_prefix}_individual_export"
+            )
+            st.caption(f"{len(selected_athletes)} athlete(s) - time-series")
+        else:
+            if not selected_athletes:
+                st.info("Select athletes for individual export")
+            else:
+                st.info("No individual data to export")
+
+
+# =====================
+# PDF Export Functions
+# =====================
+def export_chart_to_image(fig: go.Figure, width: int = 800, height: int = 500) -> bytes:
+    """Convert Plotly figure to PNG image bytes."""
+    try:
+        return fig.to_image(format="png", width=width, height=height, scale=2)
+    except Exception as e:
+        print(f"Error exporting chart to image: {e}")
+        return None
+
+
+def export_to_pdf_with_chart(fig: go.Figure, df: pd.DataFrame, test_name: str,
+                             subtitle: str = "", metric_col: str = None,
+                             name_col: str = 'Name') -> bytes:
+    """
+    Export chart and data table to PDF with Team Saudi branding.
+
+    Args:
+        fig: Plotly figure to include
+        df: DataFrame with data to include as table
+        test_name: Name of the test for the title
+        subtitle: Additional subtitle text
+        metric_col: Column name for the metric (for formatting)
+        name_col: Column name for athlete names
+
+    Returns:
+        PDF file as bytes
+    """
+    from reportlab.lib.pagesizes import A4, landscape
+    from reportlab.lib import colors
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import inch, cm
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, Table, TableStyle
+    from reportlab.lib.enums import TA_CENTER, TA_LEFT
+
+    # Team Saudi colors
+    SAUDI_GREEN = colors.HexColor('#005430')
+    GOLD_ACCENT = colors.HexColor('#a08e66')
+    DARK_GREEN = colors.HexColor('#003d1f')
+
+    output = io.BytesIO()
+    doc = SimpleDocTemplate(output, pagesize=landscape(A4),
+                           leftMargin=1*cm, rightMargin=1*cm,
+                           topMargin=1*cm, bottomMargin=1*cm)
+
+    styles = getSampleStyleSheet()
+    # Custom styles
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=20,
+        textColor=SAUDI_GREEN,
+        spaceAfter=6,
+        alignment=TA_CENTER
+    )
+    subtitle_style = ParagraphStyle(
+        'CustomSubtitle',
+        parent=styles['Normal'],
+        fontSize=12,
+        textColor=GOLD_ACCENT,
+        spaceAfter=20,
+        alignment=TA_CENTER
+    )
+    section_style = ParagraphStyle(
+        'SectionHeader',
+        parent=styles['Heading2'],
+        fontSize=14,
+        textColor=SAUDI_GREEN,
+        spaceBefore=15,
+        spaceAfter=10
+    )
+
+    elements = []
+
+    # Title
+    elements.append(Paragraph(f"S&C Diagnostics Report: {test_name}", title_style))
+    if subtitle:
+        elements.append(Paragraph(subtitle, subtitle_style))
+    else:
+        # Add date
+        from datetime import datetime
+        elements.append(Paragraph(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}", subtitle_style))
+
+    # Chart section
+    if fig is not None:
+        elements.append(Paragraph("Performance Chart", section_style))
+        try:
+            chart_bytes = export_chart_to_image(fig, width=900, height=450)
+            if chart_bytes:
+                chart_image = Image(io.BytesIO(chart_bytes), width=24*cm, height=12*cm)
+                elements.append(chart_image)
+        except Exception as e:
+            elements.append(Paragraph(f"Chart could not be rendered: {str(e)}", styles['Normal']))
+
+    elements.append(Spacer(1, 20))
+
+    # Data table section
+    if df is not None and not df.empty:
+        elements.append(Paragraph("Data Summary", section_style))
+
+        # Prepare table data
+        table_df = df.copy()
+
+        # Format numeric columns
+        for col in table_df.select_dtypes(include=['float64', 'float32']).columns:
+            table_df[col] = table_df[col].apply(lambda x: f"{x:.1f}" if pd.notna(x) else "")
+
+        # Format date columns
+        for col in table_df.columns:
+            if 'date' in col.lower():
+                try:
+                    table_df[col] = pd.to_datetime(table_df[col]).dt.strftime('%Y-%m-%d')
+                except:
+                    pass
+
+        # Limit to reasonable number of rows for PDF
+        if len(table_df) > 20:
+            table_df = table_df.head(20)
+            elements.append(Paragraph("(Showing top 20 entries)", styles['Italic']))
+
+        # Create table
+        table_data = [table_df.columns.tolist()] + table_df.values.tolist()
+
+        # Calculate column widths
+        num_cols = len(table_df.columns)
+        col_width = 24*cm / num_cols if num_cols > 0 else 4*cm
+
+        table = Table(table_data, colWidths=[col_width] * num_cols)
+        table.setStyle(TableStyle([
+            # Header styling
+            ('BACKGROUND', (0, 0), (-1, 0), SAUDI_GREEN),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 10),
+            ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+            # Body styling
+            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 1), (-1, -1), 9),
+            ('ALIGN', (0, 1), (-1, -1), 'CENTER'),
+            # Alternating row colors
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f5f5f5')]),
+            # Grid
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#cccccc')),
+            ('BOX', (0, 0), (-1, -1), 1, SAUDI_GREEN),
+            # Padding
+            ('TOPPADDING', (0, 0), (-1, -1), 6),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ]))
+        elements.append(table)
+
+    # Footer
+    elements.append(Spacer(1, 30))
+    footer_style = ParagraphStyle(
+        'Footer',
+        parent=styles['Normal'],
+        fontSize=8,
+        textColor=colors.grey,
+        alignment=TA_CENTER
+    )
+    elements.append(Paragraph("Team Saudi Performance Analysis | Confidential", footer_style))
+
+    doc.build(elements)
+    output.seek(0)
+    return output.getvalue()
+
+
+def render_export_buttons_with_pdf(group_df: pd.DataFrame, individual_df: pd.DataFrame,
+                                   selected_athletes: List[str], metric_col: str,
+                                   group_fig: go.Figure = None, individual_fig: go.Figure = None,
+                                   name_col: str = 'Name', test_name: str = "Test",
+                                   key_prefix: str = "export"):
+    """
+    Render export buttons with Excel and PDF options.
+
+    Args:
+        group_df: DataFrame for group summary
+        individual_df: DataFrame for individual time-series
+        selected_athletes: List of selected athlete names
+        metric_col: Column name for the metric
+        group_fig: Plotly figure for group chart (optional)
+        individual_fig: Plotly figure for individual chart (optional)
+        name_col: Column name for athlete names
+        test_name: Name of the test
+        key_prefix: Unique prefix for widget keys
+    """
+    st.markdown("---")
+    st.markdown("##### Export Data")
+
+    # Format selector
+    export_format = st.radio(
+        "Export Format:",
+        ["Excel (.xlsx)", "PDF with Chart"],
+        horizontal=True,
+        key=f"{key_prefix}_format"
+    )
+
+    col1, col2 = st.columns(2)
+
+    if export_format == "Excel (.xlsx)":
+        with col1:
+            if not group_df.empty:
+                excel_data = export_group_summary(group_df, metric_col, name_col, test_name)
+                st.download_button(
+                    label="📥 Export Group Summary",
+                    data=excel_data,
+                    file_name=f"{test_name.replace(' ', '_')}_group_summary.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    key=f"{key_prefix}_group_excel"
+                )
+                st.caption("All athletes - latest values")
+            else:
+                st.info("No group data to export")
+
+        with col2:
+            if not individual_df.empty and selected_athletes:
+                excel_data = export_individual_data(individual_df, selected_athletes, metric_col, name_col, test_name)
+                st.download_button(
+                    label="📥 Export Individual Data",
+                    data=excel_data,
+                    file_name=f"{test_name.replace(' ', '_')}_individual_data.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    key=f"{key_prefix}_individual_excel"
+                )
+                st.caption(f"{len(selected_athletes)} athlete(s) - time-series")
+            else:
+                st.info("Select athletes for individual export")
+
+    else:  # PDF with Chart
+        with col1:
+            if not group_df.empty:
+                # Prepare summary data for PDF
+                if 'date' in group_df.columns:
+                    summary_df = group_df.sort_values('date').groupby(name_col).last().reset_index()
+                else:
+                    summary_df = group_df.groupby(name_col).last().reset_index()
+
+                if metric_col in summary_df.columns:
+                    summary_df = summary_df.sort_values(metric_col, ascending=False)
+
+                # Select columns for PDF table
+                pdf_cols = [name_col]
+                if metric_col in summary_df.columns:
+                    pdf_cols.append(metric_col)
+                if 'date' in summary_df.columns:
+                    pdf_cols.append('date')
+                if 'athlete_sport' in summary_df.columns:
+                    pdf_cols.append('athlete_sport')
+
+                pdf_df = summary_df[[c for c in pdf_cols if c in summary_df.columns]].copy()
+                pdf_df.columns = ['Athlete', 'Value', 'Date', 'Sport'][:len(pdf_df.columns)]
+
+                pdf_data = export_to_pdf_with_chart(
+                    group_fig, pdf_df, test_name,
+                    subtitle="Group Comparison - Latest Values"
+                )
+                st.download_button(
+                    label="📄 Export Group PDF",
+                    data=pdf_data,
+                    file_name=f"{test_name.replace(' ', '_')}_group_report.pdf",
+                    mime="application/pdf",
+                    key=f"{key_prefix}_group_pdf"
+                )
+                st.caption("Chart + data table")
+            else:
+                st.info("No group data to export")
+
+        with col2:
+            if not individual_df.empty and selected_athletes:
+                # Filter individual data
+                ind_pdf_df = individual_df[individual_df[name_col].isin(selected_athletes)].copy()
+
+                # Select columns
+                pdf_cols = [name_col, 'date', metric_col]
+                ind_pdf_df = ind_pdf_df[[c for c in pdf_cols if c in ind_pdf_df.columns]]
+                ind_pdf_df.columns = ['Athlete', 'Date', 'Value'][:len(ind_pdf_df.columns)]
+
+                if 'Date' in ind_pdf_df.columns:
+                    ind_pdf_df = ind_pdf_df.sort_values(['Athlete', 'Date'])
+
+                pdf_data = export_to_pdf_with_chart(
+                    individual_fig, ind_pdf_df, test_name,
+                    subtitle=f"Individual Progression - {', '.join(selected_athletes[:3])}{'...' if len(selected_athletes) > 3 else ''}"
+                )
+                st.download_button(
+                    label="📄 Export Individual PDF",
+                    data=pdf_data,
+                    file_name=f"{test_name.replace(' ', '_')}_individual_report.pdf",
+                    mime="application/pdf",
+                    key=f"{key_prefix}_individual_pdf"
+                )
+                st.caption(f"{len(selected_athletes)} athlete(s) - time-series")
+            else:
+                st.info("Select athletes for individual export")
+
 
 # Test configurations
 # Supports both legacy API format and local_sync format column names
@@ -390,12 +857,20 @@ def create_ranked_bar_chart(
     metric_name: str,
     unit: str,
     benchmark: float = None,
-    title: str = None
+    title: str = None,
+    horizontal: bool = True
 ) -> go.Figure:
     """
-    Create a vertical ranked bar chart with squad average and benchmark lines.
+    Create a ranked bar chart with squad average and benchmark lines.
 
-    Like the PowerBI example: bars sorted by value, with horizontal reference lines.
+    Args:
+        df: DataFrame with athlete data
+        metric_col: Column name for the metric
+        metric_name: Display name for the metric
+        unit: Unit string for axis label
+        benchmark: Optional benchmark value to show as reference line
+        title: Chart title
+        horizontal: If True, creates horizontal bars (athletes on y-axis). Default True.
     """
     if 'Name' not in df.columns or metric_col not in df.columns:
         return None
@@ -405,7 +880,8 @@ def create_ranked_bar_chart(
     if plot_df.empty:
         return None
 
-    plot_df = plot_df.sort_values(metric_col, ascending=False)
+    # Sort ascending for horizontal (so best performers appear at top)
+    plot_df = plot_df.sort_values(metric_col, ascending=True)
 
     # Calculate squad average
     squad_avg = plot_df[metric_col].mean()
@@ -413,56 +889,111 @@ def create_ranked_bar_chart(
     # Create figure
     fig = go.Figure()
 
-    # Add bars
-    fig.add_trace(go.Bar(
-        x=plot_df['Name'],
-        y=plot_df[metric_col],
-        marker_color=TEAL_PRIMARY,
-        text=[f"{v:.1f}" for v in plot_df[metric_col]],
-        textposition='outside',
-        textfont=dict(size=10),
-        name='Athletes'
-    ))
+    if horizontal:
+        # Horizontal bars (athletes on y-axis) - like NordBord
+        fig.add_trace(go.Bar(
+            y=plot_df['Name'],
+            x=plot_df[metric_col],
+            orientation='h',
+            marker_color=TEAL_PRIMARY,
+            text=[f"{v:.1f}" for v in plot_df[metric_col]],
+            textposition='auto',
+            textfont=dict(size=10),
+            name='Athletes'
+        ))
 
-    # Add squad average line (green dashed)
-    fig.add_hline(
-        y=squad_avg,
-        line_dash="dash",
-        line_color=SQUAD_AVG_COLOR,
-        line_width=2,
-        annotation_text=f"Squad Avg: {squad_avg:.2f}",
-        annotation_position="right",
-        annotation_font_color=SQUAD_AVG_COLOR
-    )
-
-    # Add benchmark line (blue dashed) if provided
-    if benchmark and benchmark > 0:
-        fig.add_hline(
-            y=benchmark,
+        # Add squad average line (vertical)
+        fig.add_vline(
+            x=squad_avg,
             line_dash="dash",
-            line_color=BENCHMARK_COLOR,
+            line_color=SQUAD_AVG_COLOR,
             line_width=2,
-            annotation_text=f"Benchmark: {benchmark:.2f}",
-            annotation_position="right",
-            annotation_font_color=BENCHMARK_COLOR
+            annotation_text=f"Squad Avg: {squad_avg:.1f}",
+            annotation_position="top",
+            annotation_font_color=SQUAD_AVG_COLOR
         )
 
-    # Update layout
-    fig.update_layout(
-        title=title or f"{metric_name}",
-        xaxis_title="",
-        yaxis_title=f"{metric_name} ({unit})" if unit else metric_name,
-        plot_bgcolor='white',
-        paper_bgcolor='white',
-        font=dict(family='Inter, sans-serif', color='#333'),
-        height=400,
-        margin=dict(l=10, r=100, t=50, b=100),
-        showlegend=False,
-        xaxis=dict(tickangle=-45)
-    )
+        # Add benchmark line if provided
+        if benchmark and benchmark > 0:
+            fig.add_vline(
+                x=benchmark,
+                line_dash="dash",
+                line_color=BENCHMARK_COLOR,
+                line_width=2,
+                annotation_text=f"Benchmark: {benchmark:.1f}",
+                annotation_position="top",
+                annotation_font_color=BENCHMARK_COLOR
+            )
 
-    fig.update_xaxes(showgrid=False)
-    fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
+        # Update layout for horizontal
+        fig.update_layout(
+            title=title or f"{metric_name}",
+            xaxis_title=f"{metric_name} ({unit})" if unit else metric_name,
+            yaxis_title="",
+            plot_bgcolor='white',
+            paper_bgcolor='white',
+            font=dict(family='Inter, sans-serif', color='#333'),
+            height=max(350, len(plot_df) * 40),
+            margin=dict(l=10, r=10, t=50, b=30),
+            showlegend=False
+        )
+
+        fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
+        fig.update_yaxes(showgrid=False)
+
+    else:
+        # Vertical bars (original format)
+        plot_df = plot_df.sort_values(metric_col, ascending=False)
+
+        fig.add_trace(go.Bar(
+            x=plot_df['Name'],
+            y=plot_df[metric_col],
+            marker_color=TEAL_PRIMARY,
+            text=[f"{v:.1f}" for v in plot_df[metric_col]],
+            textposition='outside',
+            textfont=dict(size=10),
+            name='Athletes'
+        ))
+
+        # Add squad average line (horizontal)
+        fig.add_hline(
+            y=squad_avg,
+            line_dash="dash",
+            line_color=SQUAD_AVG_COLOR,
+            line_width=2,
+            annotation_text=f"Squad Avg: {squad_avg:.2f}",
+            annotation_position="right",
+            annotation_font_color=SQUAD_AVG_COLOR
+        )
+
+        # Add benchmark line if provided
+        if benchmark and benchmark > 0:
+            fig.add_hline(
+                y=benchmark,
+                line_dash="dash",
+                line_color=BENCHMARK_COLOR,
+                line_width=2,
+                annotation_text=f"Benchmark: {benchmark:.2f}",
+                annotation_position="right",
+                annotation_font_color=BENCHMARK_COLOR
+            )
+
+        # Update layout for vertical
+        fig.update_layout(
+            title=title or f"{metric_name}",
+            xaxis_title="",
+            yaxis_title=f"{metric_name} ({unit})" if unit else metric_name,
+            plot_bgcolor='white',
+            paper_bgcolor='white',
+            font=dict(family='Inter, sans-serif', color='#333'),
+            height=400,
+            margin=dict(l=10, r=100, t=50, b=100),
+            showlegend=False,
+            xaxis=dict(tickangle=-45)
+        )
+
+        fig.update_xaxes(showgrid=False)
+        fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
 
     return fig
 
@@ -855,14 +1386,34 @@ def create_individual_line_chart(
     metric_col: str,
     metric_name: str,
     unit: str,
-    show_squad_avg: bool = True,
-    title: str = None
+    show_squad_avg: bool = False,
+    title: str = None,
+    show_value_labels: bool = True
 ) -> go.Figure:
     """
-    Create individual line chart with multiple athlete selection and squad average.
+    Create individual line chart with multiple athlete selection.
+    Styled to match Strength RM chart with value labels on data points.
+
+    Args:
+        df: DataFrame with athlete data
+        selected_athletes: List of athlete names to display
+        metric_col: Column name for the metric
+        metric_name: Display name for the metric
+        unit: Unit string for axis label
+        show_squad_avg: If True, shows squad average line (default False)
+        title: Chart title
+        show_value_labels: If True, shows value labels on data points
     """
-    if 'Name' not in df.columns or 'recordedDateUtc' not in df.columns:
+    if 'Name' not in df.columns:
         return None
+
+    # Support both 'recordedDateUtc' (VALD) and 'date' (manual entry) columns
+    date_col = 'recordedDateUtc'
+    if date_col not in df.columns:
+        if 'date' in df.columns:
+            date_col = 'date'
+        else:
+            return None
 
     if metric_col not in df.columns:
         return None
@@ -871,46 +1422,67 @@ def create_individual_line_chart(
 
     # Add line for each selected athlete
     for i, athlete in enumerate(selected_athletes):
-        athlete_df = df[df['Name'] == athlete].sort_values('recordedDateUtc')
+        athlete_df = df[df['Name'] == athlete].sort_values(date_col)
         if athlete_df.empty:
             continue
 
         color = MULTI_LINE_COLORS[i % len(MULTI_LINE_COLORS)]
 
+        # Create value labels
+        if show_value_labels:
+            text_labels = [f"{v:.1f}" for v in athlete_df[metric_col]]
+            mode = 'markers+lines+text'
+        else:
+            text_labels = None
+            mode = 'markers+lines'
+
         fig.add_trace(go.Scatter(
-            x=athlete_df['recordedDateUtc'],
+            x=athlete_df[date_col],
             y=athlete_df[metric_col],
-            mode='markers+lines',
-            marker=dict(size=8, color=color),
+            mode=mode,
+            marker=dict(size=10, color=color),
             line=dict(color=color, width=2),
-            name=athlete
+            name=athlete,
+            text=text_labels,
+            textposition='top center',
+            textfont=dict(size=9, color=color),
+            hovertemplate=f"<b>{athlete}</b><br>Date: %{{x|%d %b %Y}}<br>{metric_name}: %{{y:.1f}} {unit}<extra></extra>"
         ))
 
     # Add squad average line if requested
     if show_squad_avg:
         # Calculate squad average per date
-        squad_avg = df.groupby('recordedDateUtc')[metric_col].mean().reset_index()
-        squad_avg = squad_avg.sort_values('recordedDateUtc')
+        squad_avg = df.groupby(date_col)[metric_col].mean().reset_index()
+        squad_avg = squad_avg.sort_values(date_col)
 
         fig.add_trace(go.Scatter(
-            x=squad_avg['recordedDateUtc'],
+            x=squad_avg[date_col],
             y=squad_avg[metric_col],
             mode='lines',
             line=dict(color=SQUAD_AVG_COLOR, width=2, dash='dash'),
             name='Squad Average'
         ))
 
-    # Update layout
+    # Update layout - matching Strength RM style
     fig.update_layout(
-        title=title or f"{metric_name} - Individual Trends",
-        xaxis_title="Date",
+        title=dict(
+            text=title or f"{metric_name} - Individual Trends",
+            font=dict(size=14)
+        ),
+        xaxis_title="Test Date",
         yaxis_title=f"{metric_name} ({unit})" if unit else metric_name,
         plot_bgcolor='white',
         paper_bgcolor='white',
         font=dict(family='Inter, sans-serif', color='#333'),
-        height=400,
-        margin=dict(l=10, r=10, t=50, b=30),
-        legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1),
+        height=450,
+        margin=dict(l=60, r=60, t=80, b=50),
+        legend=dict(
+            orientation='h',
+            yanchor='bottom',
+            y=1.02,
+            xanchor='left',
+            x=0
+        ),
         hovermode='x unified'
     )
 
@@ -1172,17 +1744,20 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
     </div>
     """, unsafe_allow_html=True)
 
-    # Test type selector
+    # Test type selector (Canvas Overview: Ranked Bar, Side-by-Side, Stacked)
     test_tabs = st.tabs([
-        "📊 IMTP",
-        "🦘 CMJ",
-        "🦵 SL Tests",
-        "💪 NordBord",
-        "🏃 10:5 Hop",
-        "🔄 Quadrant Tests",
-        "🏋️ Strength RM",
-        "✊ DynaMo",
-        "⚖️ Balance"
+        "📊 IMTP",           # Ranked Bar
+        "🦘 CMJ",            # Ranked Bar
+        "🦵 SL Tests",       # Side-by-Side (includes Ash Test)
+        "💪 NordBord",       # Side-by-Side (Nordic)
+        "🏃 10:5 Hop",       # Ranked Bar
+        "🔄 Quadrant Tests", # Stacked Multi-Variable
+        "🏋️ Strength RM",    # Ranked Bar (Manual Entry)
+        "🦘 Broad Jump",     # Ranked Bar (Manual Entry)
+        "🏃 Fitness Tests",  # Ranked Bar (6 Min Aerobic, etc.)
+        "💥 Plyo Pushup",    # Ranked Bar (Upper Body Power)
+        "✊ DynaMo",          # Ranked Bar
+        "⚖️ Balance"         # Ranked Bar (Shooting)
     ])
 
     # =====================
@@ -1238,8 +1813,6 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                         key="imtp_athlete_select"
                     )
 
-                    show_squad = st.checkbox("Show Squad Average", value=True, key="imtp_show_squad")
-
                     if selected_athletes:
                         # Get all data (not just most recent) for trends
                         all_imtp = forcedecks_df[forcedecks_df['testType'] == 'IMTP'].copy()
@@ -1255,7 +1828,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                             metric_col,
                             'Relative Peak Force',
                             'N/Kg',
-                            show_squad,
+                            False,  # No squad average
                             'IMTP - Individual Trends'
                         )
                         if fig:
@@ -1331,8 +1904,6 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                         key="cmj_athlete_select"
                     )
 
-                    show_squad = st.checkbox("Show Squad Average", value=True, key="cmj_show_squad")
-
                     if selected_athletes:
                         all_cmj = forcedecks_df[forcedecks_df['testType'] == 'CMJ'].copy()
 
@@ -1347,7 +1918,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                             metric_col,
                             'Relative Peak Power',
                             'W/Kg',
-                            show_squad,
+                            False,  # No squad average
                             'CMJ - Individual Trends'
                         )
                         if fig:
@@ -1366,7 +1937,8 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
             'SL CMJ': 'SLCMRJ',
             'SL Drop Jump': 'SLDJ',
             'SL Jump': 'SLJ',
-            'SL Hop Jump': 'SLHJ'
+            'SL Hop Jump': 'SLHJ',
+            'Ash Test (ForceFrame)': 'ASH'  # ForceFrame Shoulder Assessment
         }
 
         sl_test_options = list(sl_test_mapping.keys())
@@ -1375,11 +1947,21 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
         # Get the actual test type code
         test_type_code = sl_test_mapping.get(selected_sl_test, selected_sl_test)
 
-        # Filter for selected SL test using exact match
-        if 'testType' in forcedecks_df.columns:
-            sl_df = forcedecks_df[forcedecks_df['testType'] == test_type_code].copy()
+        # Handle Ash Test separately (uses ForceFrame data)
+        if 'Ash Test' in selected_sl_test:
+            # Ash Test uses ForceFrame data for shoulder assessment
+            if forceframe_df is not None and not forceframe_df.empty:
+                # Look for shoulder assessment tests
+                sl_df = forceframe_df.copy()
+            else:
+                sl_df = pd.DataFrame()
+                st.info("Ash Test requires ForceFrame data. No ForceFrame data available.")
         else:
-            sl_df = pd.DataFrame()
+            # Filter for selected SL test using exact match (ForceDecks)
+            if 'testType' in forcedecks_df.columns:
+                sl_df = forcedecks_df[forcedecks_df['testType'] == test_type_code].copy()
+            else:
+                sl_df = pd.DataFrame()
 
         if sl_df.empty:
             st.warning(f"No {selected_sl_test} test data available.")
@@ -1583,8 +2165,11 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                 metric_col = None
                 needs_conversion = False
 
-                # Check for RSI columns - local_sync format first, then legacy
+                # Check for RSI columns - hop-specific columns first, then general
                 rsi_columns = [
+                    ('HOP_BEST_RSI', False),      # Primary hop RSI metric
+                    ('HOP_RSI', False),           # Alternative hop RSI
+                    ('HOP_MEAN_RSI', False),      # Mean RSI from hop tests
                     ('RSI_MODIFIED', True),       # local_sync format, needs /100 conversion
                     ('RSI_MODIFIED_IMP_MOM', True),
                     ('RSI', True),
@@ -1594,7 +2179,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                 ]
 
                 for col, convert in rsi_columns:
-                    if col in filtered_df.columns:
+                    if col in filtered_df.columns and filtered_df[col].notna().sum() > 0:
                         metric_col = col
                         needs_conversion = convert
                         break
@@ -1629,8 +2214,6 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                         key="hop_athlete_select"
                     )
 
-                    show_squad = st.checkbox("Show Squad Average", value=True, key="hop_show_squad")
-
                     if selected_athletes and metric_col and metric_col in hop_df.columns:
                         # Apply conversion if needed
                         ind_hop_df = hop_df.copy()
@@ -1643,7 +2226,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                             metric_col,
                             'RSI',
                             '',
-                            show_squad,
+                            False,  # No squad average
                             '10:5 Hop Test - Individual Trends'
                         )
                         if fig:
@@ -1774,26 +2357,463 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
     # =====================
     with test_tabs[6]:
         st.markdown("### Strength RM (Manual Entry)")
-        st.info("Strength RM data comes from manual entry. This section will display data once entered through the Data Entry tab.")
 
-        # Placeholder for manual entry integration
-        st.markdown("""
-        **Available Exercises:**
-        - Back Squat
-        - Bench Press
-        - Deadlift
-        - Chin-Up
-        - And more...
+        # Load strength data from manual entry files
+        data_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data')
+        lower_body_path = os.path.join(data_dir, 'sc_lower_body.csv')
+        upper_body_path = os.path.join(data_dir, 'sc_upper_body.csv')
 
-        **Metrics:**
-        - Absolute Strength (Kg)
-        - Relative Strength (Kg/BM)
-        """)
+        strength_dfs = []
+        if os.path.exists(lower_body_path):
+            try:
+                lb_df = pd.read_csv(lower_body_path)
+                lb_df['body_region'] = 'Lower Body'
+                strength_dfs.append(lb_df)
+            except Exception as e:
+                st.warning(f"Could not load lower body data: {e}")
+
+        if os.path.exists(upper_body_path):
+            try:
+                ub_df = pd.read_csv(upper_body_path)
+                ub_df['body_region'] = 'Upper Body'
+                strength_dfs.append(ub_df)
+            except Exception as e:
+                st.warning(f"Could not load upper body data: {e}")
+
+        if strength_dfs:
+            strength_df = pd.concat(strength_dfs, ignore_index=True)
+
+            # Rename columns to match expected format
+            if 'athlete' in strength_df.columns and 'Name' not in strength_df.columns:
+                strength_df['Name'] = strength_df['athlete']
+            if 'date' in strength_df.columns:
+                strength_df['date'] = pd.to_datetime(strength_df['date'])
+
+            # Add sport filter for manual entry data
+            # Try to match athletes to sports from ForceDecks data if available
+            if 'athlete_sport' not in strength_df.columns and 'full_name' in forcedecks_df.columns:
+                # Create athlete-to-sport mapping from ForceDecks
+                athlete_sport_map = forcedecks_df.drop_duplicates('full_name').set_index('full_name')['athlete_sport'].to_dict() if 'athlete_sport' in forcedecks_df.columns else {}
+                strength_df['athlete_sport'] = strength_df['Name'].map(athlete_sport_map).fillna('Unknown')
+
+            # Sport filter
+            if 'athlete_sport' in strength_df.columns:
+                sports = ['All Sports'] + sorted(strength_df['athlete_sport'].dropna().unique().tolist())
+                selected_sport_rm = st.selectbox("Filter by Sport:", sports, key="strength_sport_filter")
+                if selected_sport_rm != "All Sports":
+                    strength_df = strength_df[strength_df['athlete_sport'] == selected_sport_rm]
+
+            if not strength_df.empty:
+                # Exercise filter
+                exercises = sorted(strength_df['exercise'].unique()) if 'exercise' in strength_df.columns else []
+                col1, col2, col3 = st.columns([2, 2, 1])
+
+                with col1:
+                    body_region = st.selectbox("Body Region:", ["All", "Lower Body", "Upper Body"], key="strength_body_region")
+                with col2:
+                    if body_region != "All":
+                        exercises = sorted(strength_df[strength_df['body_region'] == body_region]['exercise'].unique())
+                    selected_exercise = st.selectbox("Exercise:", exercises, key="strength_exercise_select") if exercises else None
+                with col3:
+                    benchmark = render_benchmark_input('Strength_RM', 'strength_rm')
+
+                if selected_exercise:
+                    exercise_df = strength_df[strength_df['exercise'] == selected_exercise].copy()
+
+                    # Initialize variables for export
+                    athletes_rm = sorted(exercise_df['Name'].dropna().unique())
+                    selected_athletes_rm = []
+                    group_fig_rm = None
+                    individual_fig_rm = None
+
+                    view_tabs_rm = st.tabs(["👥 Group View", "🏃 Individual Progression", "📥 Export"])
+
+                    with view_tabs_rm[0]:
+                        # Get latest 1RM for each athlete
+                        if 'estimated_1rm' in exercise_df.columns:
+                            latest_df = exercise_df.sort_values('date').groupby('Name').last().reset_index()
+                            latest_df['Name'] = latest_df['Name'].astype(str)
+
+                            group_fig_rm = create_ranked_bar_chart(
+                                latest_df,
+                                'estimated_1rm',
+                                f'{selected_exercise} Est. 1RM',
+                                'kg',
+                                benchmark,
+                                f'{selected_exercise} - Estimated 1RM Comparison'
+                            )
+                            if group_fig_rm:
+                                st.plotly_chart(group_fig_rm, use_container_width=True, key="strength_group_bar")
+                        else:
+                            st.info("No estimated 1RM data available.")
+
+                    with view_tabs_rm[1]:
+                        if athletes_rm:
+                            selected_athletes_rm = st.multiselect(
+                                "Select Athletes:",
+                                options=athletes_rm,
+                                default=[athletes_rm[0]] if athletes_rm else [],
+                                key="strength_athlete_select"
+                            )
+
+                            show_squad = st.checkbox("Show Squad Average", value=True, key="strength_show_squad")
+
+                            if selected_athletes_rm and 'estimated_1rm' in exercise_df.columns:
+                                individual_fig_rm = create_individual_line_chart(
+                                    exercise_df,
+                                    selected_athletes_rm,
+                                    'estimated_1rm',
+                                    f'{selected_exercise} Est. 1RM',
+                                    'kg',
+                                    show_squad,
+                                    f'{selected_exercise} - 1RM Progression'
+                                )
+                                if individual_fig_rm:
+                                    st.plotly_chart(individual_fig_rm, use_container_width=True, key="strength_ind_line")
+
+                    with view_tabs_rm[2]:
+                        # Export tab
+                        st.markdown(f"#### Export {selected_exercise} Data")
+                        st.markdown("Download group summary or individual athlete data as Excel or PDF with charts.")
+
+                        # Get latest data for group export
+                        if 'estimated_1rm' in exercise_df.columns:
+                            latest_df = exercise_df.sort_values('date').groupby('Name').last().reset_index()
+                        else:
+                            latest_df = pd.DataFrame()
+
+                        # Athletes for individual export
+                        export_athletes = st.multiselect(
+                            "Select Athletes for Individual Export:",
+                            options=athletes_rm,
+                            default=athletes_rm[:3] if len(athletes_rm) >= 3 else athletes_rm,
+                            key="strength_export_athletes"
+                        )
+
+                        # Recreate individual figure for export if athletes selected
+                        export_individual_fig = None
+                        if export_athletes and 'estimated_1rm' in exercise_df.columns:
+                            export_individual_fig = create_individual_line_chart(
+                                exercise_df,
+                                export_athletes,
+                                'estimated_1rm',
+                                f'{selected_exercise} Est. 1RM',
+                                'kg',
+                                True,
+                                f'{selected_exercise} - 1RM Progression'
+                            )
+
+                        render_export_buttons_with_pdf(
+                            group_df=latest_df,
+                            individual_df=exercise_df,
+                            selected_athletes=export_athletes,
+                            metric_col='estimated_1rm',
+                            group_fig=group_fig_rm,
+                            individual_fig=export_individual_fig,
+                            name_col='Name',
+                            test_name=f"Strength_RM_{selected_exercise}",
+                            key_prefix="strength_rm_export"
+                        )
+            else:
+                st.info("No strength data available for the selected filters.")
+        else:
+            st.info("Strength RM data comes from manual entry. Enter data through the Data Entry tab.")
+            st.markdown("""
+            **Available Exercises:**
+            - Back Squat, Front Squat, Deadlift (Lower Body)
+            - Bench Press, Pull Up, Overhead Press (Upper Body)
+
+            **Metrics:**
+            - Estimated 1RM (kg)
+            - Weight × Reps × Sets
+            """)
+
+    # =====================
+    # Broad Jump Tab (Manual Entry)
+    # =====================
+    with test_tabs[7]:
+        st.markdown("### Broad Jump (Manual Entry)")
+        st.info("Broad Jump data comes from manual entry. Enter data through the Data Entry tab.")
+
+        # Try to load manual entry data
+        broad_jump_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'broad_jump.csv')
+
+        if os.path.exists(broad_jump_path):
+            try:
+                bj_df = pd.read_csv(broad_jump_path)
+                if 'date' in bj_df.columns:
+                    bj_df['date'] = pd.to_datetime(bj_df['date'])
+
+                if not bj_df.empty:
+                    filtered_df, sport, gender = render_filters(bj_df, "broad_jump")
+
+                    col1, col2 = st.columns([3, 1])
+                    with col2:
+                        benchmark = render_benchmark_input('Broad_Jump', 'broad_jump')
+
+                    view_tabs = st.tabs(["👥 Group View", "🏃 Individual View"])
+
+                    with view_tabs[0]:
+                        metric_col = 'distance_m' if 'distance_m' in filtered_df.columns else 'distance'
+                        if metric_col in filtered_df.columns:
+                            fig = create_ranked_bar_chart(
+                                filtered_df,
+                                metric_col,
+                                'Broad Jump Distance',
+                                'm',
+                                benchmark,
+                                'Broad Jump - Distance'
+                            )
+                            if fig:
+                                st.plotly_chart(fig, use_container_width=True, key="broad_jump_group_bar")
+
+                    with view_tabs[1]:
+                        athletes = sorted(filtered_df['Name'].dropna().unique()) if 'Name' in filtered_df.columns else []
+                        if athletes:
+                            selected_athletes = st.multiselect(
+                                "Select Athletes:",
+                                options=athletes,
+                                default=[athletes[0]] if athletes else [],
+                                key="broad_jump_athlete_select"
+                            )
+
+                            show_squad = st.checkbox("Show Squad Average", value=True, key="broad_jump_show_squad")
+
+                            if selected_athletes and metric_col in filtered_df.columns:
+                                fig = create_individual_line_chart(
+                                    filtered_df,
+                                    selected_athletes,
+                                    metric_col,
+                                    'Broad Jump Distance',
+                                    'm',
+                                    show_squad,
+                                    'Broad Jump - Individual Trends'
+                                )
+                                if fig:
+                                    st.plotly_chart(fig, use_container_width=True, key="broad_jump_ind_line")
+            except Exception as e:
+                st.warning(f"Could not load Broad Jump data: {e}")
+        else:
+            st.markdown("""
+            **Broad Jump measures:**
+            - Standing broad jump distance (m)
+            - Can be used as power indicator
+
+            **Data Entry:**
+            Enter broad jump results through the Data Entry tab.
+            """)
+
+    # =====================
+    # Fitness Tests Tab (6 Min Aerobic, etc.)
+    # =====================
+    with test_tabs[8]:
+        st.markdown("### Fitness Testing")
+        st.markdown("*Aerobic capacity and endurance tests*")
+
+        fitness_test_options = [
+            '6 Minute Aerobic',
+            'VO2 Max Estimate',
+            'Yo-Yo Test',
+            '30-15 IFT'
+        ]
+        selected_fitness_test = st.selectbox("Select Test:", fitness_test_options, key="fitness_test_select")
+
+        # Try to load fitness test data
+        fitness_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'fitness_tests.csv')
+
+        if os.path.exists(fitness_path):
+            try:
+                fitness_df = pd.read_csv(fitness_path)
+                if 'date' in fitness_df.columns:
+                    fitness_df['date'] = pd.to_datetime(fitness_df['date'])
+
+                if not fitness_df.empty and 'test_type' in fitness_df.columns:
+                    test_df = fitness_df[fitness_df['test_type'] == selected_fitness_test].copy()
+
+                    if not test_df.empty:
+                        filtered_df, sport, gender = render_filters(test_df, "fitness")
+
+                        col1, col2 = st.columns([3, 1])
+                        with col2:
+                            benchmark = render_benchmark_input(selected_fitness_test.replace(' ', '_'), 'fitness')
+
+                        view_tabs = st.tabs(["👥 Group View", "🏃 Individual View"])
+
+                        with view_tabs[0]:
+                            # Common fitness metrics
+                            metric_cols = ['distance', 'vo2_max', 'result', 'score']
+                            metric_col = None
+                            for col in metric_cols:
+                                if col in filtered_df.columns:
+                                    metric_col = col
+                                    break
+
+                            if metric_col:
+                                unit = 'm' if metric_col == 'distance' else 'ml/kg/min' if metric_col == 'vo2_max' else ''
+                                fig = create_ranked_bar_chart(
+                                    filtered_df,
+                                    metric_col,
+                                    selected_fitness_test,
+                                    unit,
+                                    benchmark,
+                                    f'{selected_fitness_test} Results'
+                                )
+                                if fig:
+                                    st.plotly_chart(fig, use_container_width=True, key="fitness_group_bar")
+
+                        with view_tabs[1]:
+                            athletes = sorted(filtered_df['Name'].dropna().unique()) if 'Name' in filtered_df.columns else []
+                            if athletes:
+                                selected_athletes = st.multiselect(
+                                    "Select Athletes:",
+                                    options=athletes,
+                                    default=[athletes[0]] if athletes else [],
+                                    key="fitness_athlete_select"
+                                )
+
+                                show_squad = st.checkbox("Show Squad Average", value=True, key="fitness_show_squad")
+
+                                if selected_athletes and metric_col:
+                                    fig = create_individual_line_chart(
+                                        filtered_df,
+                                        selected_athletes,
+                                        metric_col,
+                                        selected_fitness_test,
+                                        unit,
+                                        show_squad,
+                                        f'{selected_fitness_test} - Individual Trends'
+                                    )
+                                    if fig:
+                                        st.plotly_chart(fig, use_container_width=True, key="fitness_ind_line")
+                    else:
+                        st.info(f"No {selected_fitness_test} data available.")
+            except Exception as e:
+                st.warning(f"Could not load fitness test data: {e}")
+        else:
+            st.info("Fitness test data comes from manual entry. Enter data through the Data Entry tab.")
+            st.markdown("""
+            **Available Tests:**
+            - **6 Minute Aerobic** - Distance covered in 6 minutes
+            - **VO2 Max Estimate** - Aerobic capacity
+            - **Yo-Yo Test** - Intermittent recovery test
+            - **30-15 IFT** - Intermittent fitness test
+
+            **Metrics:**
+            - Distance (m)
+            - VO2 Max (ml/kg/min)
+            - Final stage/level
+            """)
+
+    # =====================
+    # Plyo Pushup Tab (Upper Body Power)
+    # =====================
+    with test_tabs[9]:
+        st.markdown("### Plyo Pushup (Upper Body Power)")
+
+        # Filter for Plyo Pushup tests - VALD test type is PPU
+        pp_df = forcedecks_df[forcedecks_df['testType'] == 'PPU'].copy() if 'testType' in forcedecks_df.columns else pd.DataFrame()
+
+        # Ensure Name column exists (map from full_name if needed)
+        if not pp_df.empty and 'Name' not in pp_df.columns and 'full_name' in pp_df.columns:
+            pp_df['Name'] = pp_df['full_name']
+
+        if pp_df.empty:
+            st.warning("No Plyo Pushup test data available.")
+            st.markdown("""
+            **Plyo Pushup measures:**
+            - Pushup Height (cm) - primary metric
+            - Flight Time (s)
+            - Upper Body Mass (kg)
+
+            *Used to assess upper body explosive power*
+            """)
+        else:
+            filtered_df, sport, gender = render_filters(pp_df, "plyo_pushup")
+
+            col1, col2 = st.columns([3, 1])
+            with col2:
+                benchmark = render_benchmark_input('Plyo_Pushup', 'plyo_pushup')
+
+            view_tabs = st.tabs(["👥 Group View", "🏃 Individual View"])
+
+            with view_tabs[0]:
+                # Look for pushup metrics - PUSHUP_HEIGHT is the primary metric
+                metric_col = None
+                metric_name = 'Pushup Height'
+                metric_unit = 'cm'
+
+                # Check columns in order of preference
+                metric_options = [
+                    ('PUSHUP_HEIGHT', 'Pushup Height', 'cm'),
+                    ('FLIGHT_TIME', 'Flight Time', 's'),
+                    ('BODYMASS_RELATIVE_TAKEOFF_POWER', 'Relative Peak Power', 'W/kg'),
+                    ('PEAK_TAKEOFF_FORCE', 'Peak Takeoff Force', 'N'),
+                ]
+
+                for col, name, unit in metric_options:
+                    if col in filtered_df.columns and filtered_df[col].notna().sum() > 0:
+                        metric_col = col
+                        metric_name = name
+                        metric_unit = unit
+                        break
+
+                if metric_col:
+                    # Get latest test per athlete for group view
+                    if 'recordedDateUtc' in filtered_df.columns:
+                        latest_df = filtered_df.sort_values('recordedDateUtc').groupby('Name').last().reset_index()
+                    else:
+                        latest_df = filtered_df.groupby('Name').last().reset_index()
+
+                    fig = create_ranked_bar_chart(
+                        latest_df,
+                        metric_col,
+                        metric_name,
+                        metric_unit,
+                        benchmark,
+                        f'Plyo Pushup - {metric_name}'
+                    )
+                    if fig:
+                        st.plotly_chart(fig, use_container_width=True, key="plyo_pushup_group_bar")
+                else:
+                    st.warning("Plyo Pushup metrics not found in data.")
+
+            with view_tabs[1]:
+                athletes = sorted(filtered_df['Name'].dropna().unique()) if 'Name' in filtered_df.columns else []
+
+                if athletes:
+                    selected_athletes = st.multiselect(
+                        "Select Athletes:",
+                        options=athletes,
+                        default=[athletes[0]] if athletes else [],
+                        key="plyo_pushup_athlete_select"
+                    )
+
+                    if selected_athletes and metric_col:
+                        # Get all PPU data for trends (still apply sport/gender filters)
+                        all_ppu = pp_df.copy()
+                        if sport != 'All' and 'athlete_sport' in all_ppu.columns:
+                            all_ppu = all_ppu[all_ppu['athlete_sport'] == sport]
+                        if gender != 'All' and 'athlete_sex' in all_ppu.columns:
+                            all_ppu = all_ppu[all_ppu['athlete_sex'] == gender]
+
+                        fig = create_individual_line_chart(
+                            all_ppu,
+                            selected_athletes,
+                            metric_col,
+                            metric_name,
+                            metric_unit,
+                            False,  # No squad average
+                            'Plyo Pushup - Individual Trends'
+                        )
+                        if fig:
+                            st.plotly_chart(fig, use_container_width=True, key="plyo_pushup_ind_line")
+                else:
+                    st.info("No athletes found in filtered data.")
 
     # =====================
     # DynaMo Tab (Grip Strength)
     # =====================
-    with test_tabs[7]:
+    with test_tabs[10]:
         st.markdown("### DynaMo (Grip Strength)")
 
         # Load DynaMo data
@@ -1809,8 +2829,13 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
             if os.path.exists(path):
                 try:
                     dynamo_df = pd.read_csv(path)
-                    if 'recordedDateUtc' in dynamo_df.columns:
-                        dynamo_df['recordedDateUtc'] = pd.to_datetime(dynamo_df['recordedDateUtc'])
+                    # Standardize column names for DynaMo data
+                    if 'full_name' in dynamo_df.columns and 'Name' not in dynamo_df.columns:
+                        dynamo_df['Name'] = dynamo_df['full_name']
+                    if 'startTimeUTC' in dynamo_df.columns:
+                        dynamo_df['recordedDateUtc'] = pd.to_datetime(dynamo_df['startTimeUTC'])
+                    if 'athlete_sport' in dynamo_df.columns and 'athlete_sport' not in dynamo_df.columns:
+                        pass  # Already has it
                     break
                 except Exception as e:
                     pass
@@ -1825,27 +2850,25 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
             - Grip strength asymmetry
             """)
         else:
-            # Filters
-            filtered_df, sport, gender = render_filters(dynamo_df, "dynamo")
-
-            if filtered_df.empty:
-                st.warning("No DynaMo data for selected filters.")
+            # Filter for grip squeeze tests only
+            if 'movement' in dynamo_df.columns:
+                grip_df = dynamo_df[dynamo_df['movement'] == 'GripSqueeze'].copy()
             else:
-                # Find grip force columns
-                grip_cols = [c for c in filtered_df.columns if 'GRIP' in c.upper() or 'FORCE' in c.upper() or 'PEAK' in c.upper()]
+                grip_df = dynamo_df.copy()
 
-                # Show available metrics
-                st.markdown(f"**{len(filtered_df)} DynaMo tests found**")
+            if grip_df.empty:
+                st.warning("No grip squeeze tests found in DynaMo data.")
+            else:
+                # Filters
+                filtered_df, sport, gender = render_filters(grip_df, "dynamo")
 
-                if grip_cols:
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        metric_col = st.selectbox(
-                            "Select Metric:",
-                            options=grip_cols[:10],
-                            key="dynamo_metric"
-                        )
+                if filtered_df.empty:
+                    st.warning("No DynaMo data for selected filters.")
+                else:
+                    # Show available metrics
+                    st.markdown(f"**{len(filtered_df)} Grip Strength tests found**")
 
+                    col1, col2 = st.columns([3, 1])
                     with col2:
                         benchmark = st.number_input(
                             "Benchmark (N):",
@@ -1855,17 +2878,26 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                             key="dynamo_benchmark"
                         )
 
-                    if metric_col and metric_col in filtered_df.columns:
+                    # Use maxForceNewtons as the primary metric
+                    metric_col = 'maxForceNewtons' if 'maxForceNewtons' in filtered_df.columns else None
+
+                    if metric_col:
                         view_tabs = st.tabs(["👥 Group View", "🏃 Individual View"])
 
                         with view_tabs[0]:
+                            # Get latest test per athlete for group view
+                            if 'recordedDateUtc' in filtered_df.columns:
+                                latest_df = filtered_df.sort_values('recordedDateUtc').groupby('Name').last().reset_index()
+                            else:
+                                latest_df = filtered_df.groupby('Name').last().reset_index()
+
                             fig = create_ranked_bar_chart(
-                                filtered_df,
+                                latest_df,
                                 metric_col,
-                                metric_col.replace('_', ' ').title(),
+                                'Max Grip Force',
                                 'N',
                                 benchmark,
-                                f'DynaMo - {metric_col}'
+                                'DynaMo - Grip Strength'
                             )
                             if fig:
                                 st.plotly_chart(fig, use_container_width=True, key="dynamo_group_bar")
@@ -1880,27 +2912,34 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                                     key="dynamo_athlete_select"
                                 )
 
-                                show_squad = st.checkbox("Show Squad Average", value=True, key="dynamo_show_squad")
-
                                 if selected_athletes:
+                                    # Get all grip data for trends (still apply sport/gender filters)
+                                    all_grip = grip_df.copy()
+                                    if sport != 'All' and 'athlete_sport' in all_grip.columns:
+                                        all_grip = all_grip[all_grip['athlete_sport'] == sport]
+                                    if gender != 'All' and 'athlete_sex' in all_grip.columns:
+                                        all_grip = all_grip[all_grip['athlete_sex'] == gender]
+
                                     fig = create_individual_line_chart(
-                                        filtered_df,
+                                        all_grip,
                                         selected_athletes,
                                         metric_col,
-                                        metric_col.replace('_', ' ').title(),
+                                        'Max Grip Force',
                                         'N',
-                                        show_squad,
-                                        f'DynaMo - Individual Trends'
+                                        False,  # No squad average
+                                        'DynaMo - Individual Trends'
                                     )
                                     if fig:
                                         st.plotly_chart(fig, use_container_width=True, key="dynamo_ind_line")
-                else:
-                    st.info("DynaMo data loaded but no grip force metrics found. Check column names.")
+                            else:
+                                st.info("No athletes found in filtered data.")
+                    else:
+                        st.warning("Grip force metric (maxForceNewtons) not found in data.")
 
     # =====================
     # Balance Tab (QSB/SLSB for Shooting)
     # =====================
-    with test_tabs[8]:
+    with test_tabs[11]:
         st.markdown("### Balance Testing (QSB / SLSB)")
         st.markdown("*Quiet Static Balance & Single Leg Static Balance - primarily used by Shooting athletes*")
 

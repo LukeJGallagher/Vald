@@ -81,6 +81,7 @@ OAuth: https://security.valdperformance.com/connect/token (use empty scope!)
 ForceDecks: https://prd-{REGION}-api-extforcedecks.valdperformance.com/
 ForceFrame: https://prd-{REGION}-api-externalforceframe.valdperformance.com/
 NordBord: https://prd-{REGION}-api-externalnordbord.valdperformance.com/
+DynaMo: https://prd-{REGION}-api-extdynamo.valdperformance.com/
 Profiles: https://prd-{REGION}-api-externalprofile.valdperformance.com/
 Tenants: https://prd-{REGION}-api-externaltenants.valdperformance.com/
 ```
@@ -155,12 +156,79 @@ Local sync workflow:
 # 1. Sync all data with trial metrics
 python scripts/local_sync.py
 
-# 2. Copy to dashboard directory
-cp ../vald-data/data/forcedecks_allsports_with_athletes.csv dashboard/data/
+# 2. Copy ALL synced files to dashboard directory
+cp ../vald-data/data/*.csv dashboard/data/
 
 # 3. Run dashboard
 cd dashboard && streamlit run world_class_vald_dashboard.py
 ```
+
+### Data Enrichment Pattern (CRITICAL)
+When syncing data, athlete names and sports must be enriched AFTER merging with existing data, not before. This ensures old rows get updated with the latest profile info.
+
+**Correct pattern (in local_sync.py and github_sync.py):**
+```python
+# 1. Merge first
+df = merge_with_existing(df, output_file, id_column='id')
+
+# 2. THEN re-enrich ALL rows (fixes "Unknown" sport for old data)
+df['full_name'] = df[id_col].map(lambda pid: profiles.get(pid, {}).get('full_name', f'Athlete_{str(pid)[:8]}'))
+df['athlete_sport'] = df[id_col].map(lambda pid: profiles.get(pid, {}).get('athlete_sport', 'Unknown'))
+
+# 3. Save
+df.to_csv(output_file, index=False)
+```
+
+**Wrong pattern (enriches before merge, old rows keep stale values):**
+```python
+df['full_name'] = df[id_col].map(...)  # Enriches new data only
+df = merge_with_existing(...)           # Old rows keep "Unknown"
+```
+
+## Manual Test Data Files
+
+Located in `dashboard/data/`:
+
+| File | Content | Columns |
+|------|---------|---------|
+| `broad_jump.csv` | Broad jump distances | date, athlete, distance_cm, attempt, session_type, notes |
+| `sc_lower_body.csv` | Lower body strength (Squat, Deadlift, Front Squat) | date, athlete, exercise, weight_kg, reps, sets, rpe, estimated_1rm |
+| `sc_upper_body.csv` | Upper body strength (Bench, Pull Up, OHP) | date, athlete, exercise, weight_kg, reps, sets, rpe, estimated_1rm |
+| `power_tests.csv` | Power tests (Peak, Repeat, Glycolytic) | date, athlete, test_type, peak_wattage, avg_wattage, body_mass_kg |
+| `aerobic_tests.csv` | Aerobic capacity | date, athlete, avg_wattage, body_mass_kg, avg_relative_wattage |
+| `trunk_endurance.csv` | Trunk endurance tests | (varies) |
+| `training_distances.csv` | Training load | (varies) |
+
+## S&C Diagnostics Tab Structure
+
+```python
+test_tabs = st.tabs([
+    "📊 IMTP",           # Ranked Bar - ForceDecks IMTP tests
+    "🦘 CMJ",            # Ranked Bar - ForceDecks CMJ tests
+    "🦵 SL Tests",       # Side-by-Side - SL ISO Squat, SL IMTP, SL CMJ, SL DJ, SL Jump, SL Hop, Ash Test
+    "💪 NordBord",       # Side-by-Side - Nordic hamstring (Left/Right)
+    "🏃 10:5 Hop",       # Ranked Bar - HJ, SLHJ, RSHIP, RSKIP, RSAIP
+    "🔄 Quadrant Tests", # Stacked - Trunk, Neck, Shoulder, Hip (ForceFrame)
+    "🏋️ Strength RM",    # Ranked Bar - Manual Entry (sc_lower_body.csv, sc_upper_body.csv)
+    "🦘 Broad Jump",     # Ranked Bar - Manual Entry (broad_jump.csv)
+    "🏃 Fitness Tests",  # Ranked Bar - 6 Min Aerobic, VO2 Max, Yo-Yo, 30-15 IFT
+    "💥 Plyo Pushup",    # Ranked Bar - ForceDecks PPU tests (upper body power)
+    "✊ DynaMo",          # Ranked Bar - Grip strength
+    "⚖️ Balance"         # Ranked Bar - QSB, SLSB for Shooting
+])
+```
+
+### VALD Test Type Codes (ForceDecks)
+- **IMTP**: Isometric Mid-Thigh Pull
+- **CMJ**: Countermovement Jump
+- **PPU**: Plyo Pushup (upper body power)
+  - Key metric: `PUSHUP_HEIGHT` (cm)
+  - Also available: `FLIGHT_TIME`, `BODYMASS_RELATIVE_TAKEOFF_POWER`
+- **HJ**: Hop Jump, **SLHJ**: Single Leg Hop Jump
+- **DJ**: Drop Jump, **SJ**: Squat Jump
+- **QSB**: Quiet Stance Balance, **SLSB**: Single Leg Stance Balance
+- **ISOT**: Isometric tests, **SLISOT**: Single Leg Isometric
+- **SLISOSQT**: Single Leg Isometric Squat
 
 ## Important Compatibility Notes
 
@@ -265,6 +333,9 @@ Production: Streamlit Cloud Secrets dashboard
 - **DynaMo**: Use `prd-{region}-api-extdynamo.valdperformance.com` (NOT `externaldynamo`)
   - Endpoint: `/v2022q2/teams/{tenant_id}/tests`
   - Uses page-based pagination with `includeRepSummaries=true`
+  - Key metric: `maxForceNewtons` for grip strength
+  - Filter by `movement == 'GripSqueeze'` for grip tests (excludes trunk, ankle tests)
+  - **Note**: DynaMo athletes often show "Unknown" sport because their profiles may not have VALD group memberships
 - **ForceFrame/NordBord**: Require ALL date params: `TestFromUtc`, `TestToUtc`, `ModifiedFromUtc`
 
 ### Unit Conversions (S&C Diagnostics)
@@ -305,3 +376,41 @@ Production: Streamlit Cloud Secrets dashboard
 1. **Ranked Bar Chart** - Single value tests (IMTP, CMJ, etc.)
 2. **Ranked Side-by-Side Bar** - Bilateral/unilateral tests (SL ISO Squat, Nordic L/R)
 3. **Stacked Multi-Variable Bar** - Quadrant tests (Trunk, 4-Way Neck, Shoulder IR/ER, Hip Add/Abd)
+
+### S&C Diagnostics Tab Structure (snc_diagnostics.py)
+```python
+test_tabs = st.tabs([
+    "📊 IMTP",           # Ranked Bar - ForceDecks IMTP tests
+    "🦘 CMJ",            # Ranked Bar - ForceDecks CMJ tests
+    "🦵 SL Tests",       # Side-by-Side - SL ISO Squat, SL IMTP, SL CMJ, SL DJ, SL Jump, SL Hop, Ash Test
+    "💪 NordBord",       # Side-by-Side - Nordic hamstring (Left/Right)
+    "🏃 10:5 Hop",       # Ranked Bar - HJ, SLHJ, RSHIP, RSKIP, RSAIP
+    "🔄 Quadrant Tests", # Stacked - Trunk, 4-Way Neck, Shoulder IR/ER, Hip Add/Abd (ForceFrame)
+    "🏋️ Strength RM",    # Ranked Bar - Manual Entry (Back Squat, Bench, Deadlift, etc.)
+    "🦘 Broad Jump",     # Ranked Bar - Manual Entry
+    "🏃 Fitness Tests",  # Ranked Bar - 6 Min Aerobic, VO2 Max, Yo-Yo, 30-15 IFT (Manual)
+    "💥 Plyo Pushup",    # Ranked Bar - ForceDecks PP tests (Upper Body Power)
+    "✊ DynaMo",          # Ranked Bar - Grip strength (DynaMo device)
+    "⚖️ Balance"         # Ranked Bar - QSB, SLSB for Shooting athletes
+])
+```
+
+### Reporting Levels
+Each test has two views:
+- **👥 Group View** - Ranked bar charts with squad average line + benchmark reference
+- **🏃 Individual View** - Line charts tracking change over time, multi-athlete selection
+
+**Individual View Pattern (snc_diagnostics.py):**
+```python
+# Get ALL historical data for trends (not just date-filtered data)
+all_data = base_df.copy()  # e.g., all_imtp, all_ppu, grip_df
+
+# Still apply sport/gender filters (but NOT date filter)
+if sport != 'All' and 'athlete_sport' in all_data.columns:
+    all_data = all_data[all_data['athlete_sport'] == sport]
+if gender != 'All' and 'athlete_sex' in all_data.columns:
+    all_data = all_data[all_data['athlete_sex'] == gender]
+
+# Use all_data for line chart (shows full history)
+fig = create_individual_line_chart(all_data, selected_athletes, ...)
+```

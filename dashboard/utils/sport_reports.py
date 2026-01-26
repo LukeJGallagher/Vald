@@ -41,6 +41,7 @@ try:
         create_individual_line_chart,
         create_stacked_quadrant_chart,
         create_multi_line_strength_chart,
+        render_snc_diagnostics_tab,
         TEST_CONFIG,
         QUADRANT_COLORS
     )
@@ -49,6 +50,7 @@ except ImportError:
     SNC_CHARTS_AVAILABLE = False
     TEST_CONFIG = {}
     QUADRANT_COLORS = {}
+    render_snc_diagnostics_tab = None
 
 # Team Saudi colors (from THEME_GUIDE.md)
 TEAL_PRIMARY = '#255035'      # Saudi Green
@@ -1069,27 +1071,83 @@ def create_group_report(df: pd.DataFrame,
         else:
             st.info("Pull Up data not available - Use ✏️ Data Entry tab")
 
-    # Row 2: Plyo Push Up (PPU test type)
+    # Row 2: Plyo Push Up (PPU test type) - Same chart as Canvas Group View
     col1, col2 = st.columns(2)
     with col1:
-        # Plyo Push Up - PPU is the test type code
-        plyo_df = sport_df[sport_df['testType'].str.contains('PPU|Plyo|Plyometric', case=False, na=False)]
-        if not plyo_df.empty:
-            metric_col = get_metric_column(plyo_df, 'peak_power')
-            if metric_col:
-                fig = create_benchmark_bar_chart(
-                    plyo_df, metric_col, 'Name', benchmarks,
-                    "Plyo Push Up - Peak Power", 'peak_power', 'W/kg'
-                )
-                if fig:
-                    st.plotly_chart(fig, use_container_width=True)
-        else:
-            st.info("Plyo Push Up (PPU) data not available")
+        # Plyo Push Up - PPU is the exact test type code
+        plyo_df = sport_df[sport_df['testType'] == 'PPU'].copy() if 'testType' in sport_df.columns else pd.DataFrame()
 
-    # Row 3: Grip Strength (DynaMo)
+        if not plyo_df.empty and 'Name' in plyo_df.columns:
+            # Use same metric priority as Canvas view
+            metric_col = None
+            metric_name = 'Pushup Height'
+            metric_unit = 'cm'
+
+            metric_options = [
+                ('PUSHUP_HEIGHT', 'Pushup Height', 'cm'),
+                ('FLIGHT_TIME', 'Flight Time', 's'),
+                ('BODYMASS_RELATIVE_TAKEOFF_POWER', 'Relative Peak Power', 'W/kg'),
+                ('PEAK_TAKEOFF_FORCE', 'Peak Takeoff Force', 'N'),
+            ]
+
+            for col, name, unit in metric_options:
+                if col in plyo_df.columns and plyo_df[col].notna().sum() > 0:
+                    metric_col = col
+                    metric_name = name
+                    metric_unit = unit
+                    break
+
+            if metric_col:
+                # Get latest test per athlete
+                if 'recordedDateUtc' in plyo_df.columns:
+                    latest_ppu = plyo_df.sort_values('recordedDateUtc').groupby('Name').last().reset_index()
+                else:
+                    latest_ppu = plyo_df.groupby('Name').last().reset_index()
+
+                # Use same create_ranked_bar_chart as Canvas
+                if SNC_CHARTS_AVAILABLE:
+                    fig = create_ranked_bar_chart(
+                        latest_ppu,
+                        metric_col,
+                        metric_name,
+                        metric_unit,
+                        None,  # No benchmark
+                        f'Plyo Pushup - {metric_name}'
+                    )
+                    if fig:
+                        st.plotly_chart(fig, use_container_width=True)
+                else:
+                    # Fallback to simple bar chart
+                    latest_ppu = latest_ppu.sort_values(metric_col, ascending=True)
+                    fig = go.Figure()
+                    fig.add_trace(go.Bar(
+                        y=latest_ppu['Name'],
+                        x=latest_ppu[metric_col],
+                        orientation='h',
+                        marker_color=TEAL_PRIMARY,
+                        text=[f"{v:.1f} {metric_unit}" for v in latest_ppu[metric_col]],
+                        textposition='outside'
+                    ))
+                    squad_avg = latest_ppu[metric_col].mean()
+                    fig.add_vline(x=squad_avg, line_dash="dash", line_color=GOLD_ACCENT,
+                                 annotation_text=f"Avg: {squad_avg:.1f}")
+                    fig.update_layout(
+                        title=f"Plyo Pushup - {metric_name}",
+                        xaxis_title=metric_unit, yaxis_title="",
+                        plot_bgcolor='white',
+                        height=max(250, min(400, len(latest_ppu) * 35)),
+                        margin=dict(l=10, r=10, t=40, b=10)
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.info("Plyo Pushup metrics not found in data")
+        else:
+            st.info("Plyo Pushup (PPU) data not available")
+
+    # Row 3: Grip Strength (DynaMo) - Side by Side L/R
     col1, col2 = st.columns(2)
 
-    # Try to load DynaMo data
+    # Load DynaMo data
     dynamo_df = pd.DataFrame()
     dynamo_paths = [
         os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'dynamo_allsports_with_athletes.csv'),
@@ -1099,76 +1157,92 @@ def create_group_report(df: pd.DataFrame,
         if os.path.exists(path):
             try:
                 dynamo_df = pd.read_csv(path)
-                # Filter by sport if available
-                if not dynamo_df.empty and 'athlete_sport' in dynamo_df.columns:
-                    dynamo_df = dynamo_df[dynamo_df['athlete_sport'].str.lower() == sport.lower()]
                 break
             except Exception:
                 pass
 
+    # Filter DynaMo for grip tests and sport
+    if not dynamo_df.empty:
+        # Filter for GripSqueeze movement
+        if 'movement' in dynamo_df.columns:
+            dynamo_df = dynamo_df[dynamo_df['movement'] == 'GripSqueeze']
+
+        # Filter by sport (flexible matching, not exact)
+        if sport and sport != "All Sports" and 'athlete_sport' in dynamo_df.columns:
+            sport_pattern = sport.split()[0]  # First word of sport
+            sport_mask = dynamo_df['athlete_sport'].str.contains(sport_pattern, case=False, na=False)
+            if sport_mask.any():
+                dynamo_df = dynamo_df[sport_mask]
+
     with col1:
-        if not dynamo_df.empty:
-            # Find grip strength column
-            grip_cols = [c for c in dynamo_df.columns if 'maxforce' in c.lower() or 'grip' in c.lower() or 'peak' in c.lower()]
-            left_col = next((c for c in grip_cols if 'left' in c.lower()), None)
-            if left_col and 'full_name' in dynamo_df.columns:
-                # Get latest per athlete
-                latest = dynamo_df.groupby('full_name')[left_col].last().reset_index()
-                latest = latest.sort_values(left_col, ascending=True)
+        if not dynamo_df.empty and 'maxForceNewtons' in dynamo_df.columns and 'full_name' in dynamo_df.columns:
+            # Filter for Left hand using laterality column
+            left_df = dynamo_df[dynamo_df['laterality'].str.upper() == 'LEFT'] if 'laterality' in dynamo_df.columns else pd.DataFrame()
+
+            if not left_df.empty:
+                latest = left_df.groupby('full_name')['maxForceNewtons'].last().reset_index()
+                latest = latest.sort_values('maxForceNewtons', ascending=True)
 
                 fig = go.Figure()
                 fig.add_trace(go.Bar(
                     y=latest['full_name'],
-                    x=latest[left_col],
+                    x=latest['maxForceNewtons'],
                     orientation='h',
                     marker_color=TEAL_PRIMARY,
-                    text=[f"{v:.1f} N" for v in latest[left_col]],
+                    text=[f"{v:.0f} N" for v in latest['maxForceNewtons']],
                     textposition='outside'
                 ))
+                squad_avg = latest['maxForceNewtons'].mean()
+                fig.add_vline(x=squad_avg, line_dash="dash", line_color=GOLD_ACCENT,
+                             annotation_text=f"Avg: {squad_avg:.0f}N")
                 fig.update_layout(
-                    title="Grip Strength - Left Hand",
+                    title="DynaMo Grip - Left Hand",
                     xaxis_title="Peak Force (N)",
                     yaxis_title="",
+                    plot_bgcolor='white',
                     height=max(250, min(400, len(latest) * 35)),
                     margin=dict(l=10, r=10, t=40, b=10)
                 )
                 st.plotly_chart(fig, use_container_width=True)
             else:
-                st.info("Grip Strength (Left) - No DynaMo data")
+                st.info("No Left grip data in DynaMo")
         else:
-            st.info("Grip Strength (Left) - No DynaMo data")
+            st.info("DynaMo grip data not available")
 
     with col2:
-        if not dynamo_df.empty:
-            # Find right grip strength column
-            grip_cols = [c for c in dynamo_df.columns if 'maxforce' in c.lower() or 'grip' in c.lower() or 'peak' in c.lower()]
-            right_col = next((c for c in grip_cols if 'right' in c.lower()), None)
-            if right_col and 'full_name' in dynamo_df.columns:
-                # Get latest per athlete
-                latest = dynamo_df.groupby('full_name')[right_col].last().reset_index()
-                latest = latest.sort_values(right_col, ascending=True)
+        if not dynamo_df.empty and 'maxForceNewtons' in dynamo_df.columns and 'full_name' in dynamo_df.columns:
+            # Filter for Right hand using laterality column
+            right_df = dynamo_df[dynamo_df['laterality'].str.upper() == 'RIGHT'] if 'laterality' in dynamo_df.columns else pd.DataFrame()
+
+            if not right_df.empty:
+                latest = right_df.groupby('full_name')['maxForceNewtons'].last().reset_index()
+                latest = latest.sort_values('maxForceNewtons', ascending=True)
 
                 fig = go.Figure()
                 fig.add_trace(go.Bar(
                     y=latest['full_name'],
-                    x=latest[right_col],
+                    x=latest['maxForceNewtons'],
                     orientation='h',
                     marker_color=TEAL_PRIMARY,
-                    text=[f"{v:.1f} N" for v in latest[right_col]],
+                    text=[f"{v:.0f} N" for v in latest['maxForceNewtons']],
                     textposition='outside'
                 ))
+                squad_avg = latest['maxForceNewtons'].mean()
+                fig.add_vline(x=squad_avg, line_dash="dash", line_color=GOLD_ACCENT,
+                             annotation_text=f"Avg: {squad_avg:.0f}N")
                 fig.update_layout(
-                    title="Grip Strength - Right Hand",
+                    title="DynaMo Grip - Right Hand",
                     xaxis_title="Peak Force (N)",
                     yaxis_title="",
+                    plot_bgcolor='white',
                     height=max(250, min(400, len(latest) * 35)),
                     margin=dict(l=10, r=10, t=40, b=10)
                 )
                 st.plotly_chart(fig, use_container_width=True)
             else:
-                st.info("Grip Strength (Right) - No DynaMo data")
+                st.info("No Right grip data in DynaMo")
         else:
-            st.info("Grip Strength (Right) - No DynaMo data")
+            st.info("DynaMo grip data not available")
 
     st.markdown("---")
 
@@ -1315,10 +1389,10 @@ def create_group_report(df: pd.DataFrame,
     st.markdown("---")
 
     # =========================================================================
-    # SECTION 5: Strength RM (Manual Entry Data) - Multi-Line Chart
+    # SECTION 5: Strength RM (Manual Entry Data) - Tabbed View
     # =========================================================================
-    st.markdown("### Strength RM Progression")
-    st.caption("Manual entry S&C data - select athlete and exercises to view progression")
+    st.markdown("### Strength RM")
+    st.caption("Manual entry S&C data (Back Squat, Bench Press, Deadlift, etc.)")
 
     # Load S&C manual entry data
     sc_upper_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'sc_upper_body.csv')
@@ -1355,72 +1429,109 @@ def create_group_report(df: pd.DataFrame,
         except Exception:
             pass
 
-    if not sc_df.empty and 'athlete' in sc_df.columns and SNC_CHARTS_AVAILABLE:
+    if not sc_df.empty and 'athlete' in sc_df.columns:
         # Filter S&C data to athletes in the current sport group (skip for "All Sports")
         if sport != "All Sports":
             sport_athletes = sport_df['Name'].dropna().unique().tolist() if 'Name' in sport_df.columns else []
             if sport_athletes:
                 sc_df_filtered = sc_df[sc_df['athlete'].isin(sport_athletes)]
-                # If no matches, keep all S&C data
                 if not sc_df_filtered.empty:
                     sc_df = sc_df_filtered
 
-        # Athlete selector (filtered to sport, or all if "All Sports")
-        sc_athletes = sorted(sc_df['athlete'].dropna().unique().tolist()) if not sc_df.empty else []
+        # Tab view like Canvas
+        strength_tabs = st.tabs(["👥 Group View", "🏃 Individual View"])
 
-        if not sc_athletes:
-            st.info(f"No S&C data available for {sport} athletes")
-        else:
-            col1, col2, col3 = st.columns([1, 2, 1])
-            with col1:
-                selected_sc_athlete = st.selectbox(
-                    "Select Athlete:",
-                    sc_athletes,
-                    key="group_v1_strength_athlete"
-                )
+        with strength_tabs[0]:
+            # Group View - Ranked bar chart for each exercise
+            if 'exercise' in sc_df.columns and 'estimated_1rm' in sc_df.columns:
+                exercises = sorted(sc_df['exercise'].dropna().unique().tolist())
+                if exercises:
+                    exercise_select = st.selectbox("Select Exercise:", exercises, key="strength_group_exercise")
 
-            with col2:
-                # Exercise multiselect
-                if 'exercise' in sc_df.columns:
-                    available_exercises = sorted(sc_df['exercise'].dropna().unique().tolist())
-                    default_exercises = [e for e in ['Back Squat', 'Bench Press', 'Deadlift'] if e in available_exercises]
-                    if not default_exercises and available_exercises:
-                        default_exercises = available_exercises[:3]
+                    exercise_df = sc_df[sc_df['exercise'] == exercise_select].copy()
+                    if not exercise_df.empty:
+                        # Get latest per athlete
+                        latest = exercise_df.sort_values('date').groupby('athlete')['estimated_1rm'].last().reset_index()
+                        latest = latest.sort_values('estimated_1rm', ascending=True)
 
-                    selected_exercises = st.multiselect(
-                        "Select Exercises:",
-                        available_exercises,
-                        default=default_exercises,
-                        key="group_v1_strength_exercises"
-                    )
+                        fig = go.Figure()
+                        fig.add_trace(go.Bar(
+                            y=latest['athlete'],
+                            x=latest['estimated_1rm'],
+                            orientation='h',
+                            marker_color=TEAL_PRIMARY,
+                            text=[f"{v:.0f} kg" for v in latest['estimated_1rm']],
+                            textposition='outside'
+                        ))
+                        squad_avg = latest['estimated_1rm'].mean()
+                        fig.add_vline(x=squad_avg, line_dash="dash", line_color=GOLD_ACCENT,
+                                     annotation_text=f"Avg: {squad_avg:.0f}kg")
+                        fig.update_layout(
+                            title=f"{exercise_select} - Estimated 1RM",
+                            xaxis_title="Estimated 1RM (kg)",
+                            yaxis_title="",
+                            plot_bgcolor='white',
+                            height=max(250, min(450, len(latest) * 35)),
+                            margin=dict(l=10, r=10, t=40, b=10)
+                        )
+                        st.plotly_chart(fig, use_container_width=True)
                 else:
-                    selected_exercises = []
-
-            with col3:
-                # Bodyweight input for relative strength
-                bodyweight = st.number_input(
-                    "Bodyweight (kg):",
-                    min_value=40.0,
-                    max_value=200.0,
-                    value=80.0,
-                    step=1.0,
-                    key="group_v1_bodyweight"
-                )
-
-            if selected_sc_athlete and selected_exercises:
-                fig = create_multi_line_strength_chart(
-                    sc_df,
-                    selected_sc_athlete,
-                    selected_exercises,
-                    bodyweight=bodyweight,
-                    title=f"{selected_sc_athlete} - Strength RM Progression"
-                )
-                if fig:
-                    st.plotly_chart(fig, use_container_width=True)
-                else:
-                    st.info(f"No strength data found for {selected_sc_athlete}")
+                    st.info("No exercises found in data.")
             else:
-                st.info("Select athlete and exercises to view strength progression")
+                st.info("Required columns not found in S&C data.")
+
+        with strength_tabs[1]:
+            # Individual View - Multi-line progression
+            sc_athletes = sorted(sc_df['athlete'].dropna().unique().tolist())
+
+            if sc_athletes:
+                col1, col2, col3 = st.columns([1, 2, 1])
+                with col1:
+                    selected_sc_athlete = st.selectbox(
+                        "Select Athlete:",
+                        sc_athletes,
+                        key="group_v1_strength_athlete"
+                    )
+
+                with col2:
+                    if 'exercise' in sc_df.columns:
+                        available_exercises = sorted(sc_df['exercise'].dropna().unique().tolist())
+                        default_exercises = [e for e in ['Back Squat', 'Bench Press', 'Deadlift'] if e in available_exercises]
+                        if not default_exercises and available_exercises:
+                            default_exercises = available_exercises[:3]
+
+                        selected_exercises = st.multiselect(
+                            "Select Exercises:",
+                            available_exercises,
+                            default=default_exercises,
+                            key="group_v1_strength_exercises"
+                        )
+                    else:
+                        selected_exercises = []
+
+                with col3:
+                    bodyweight = st.number_input(
+                        "Bodyweight (kg):",
+                        min_value=40.0, max_value=200.0, value=80.0, step=1.0,
+                        key="group_v1_bodyweight"
+                    )
+
+                if selected_sc_athlete and selected_exercises and SNC_CHARTS_AVAILABLE:
+                    fig = create_multi_line_strength_chart(
+                        sc_df,
+                        selected_sc_athlete,
+                        selected_exercises,
+                        bodyweight=bodyweight,
+                        title=f"{selected_sc_athlete} - Strength RM Progression"
+                    )
+                    if fig:
+                        st.plotly_chart(fig, use_container_width=True)
+                    else:
+                        st.info(f"No strength data found for {selected_sc_athlete}")
+                elif selected_sc_athlete and selected_exercises:
+                    st.info("Select athlete and exercises to view progression")
+            else:
+                st.info(f"No S&C data available for {sport} athletes")
     else:
         st.info("No S&C manual entry data available. Use ✏️ Data Entry tab to add strength records.")
 
@@ -1744,6 +1855,163 @@ def create_individual_report(df: pd.DataFrame,
                         )
                         if fig:
                             st.plotly_chart(fig, use_container_width=True)
+
+    # Plyo Pushup trend (if PPU data available)
+    ppu_df = athlete_df[athlete_df['testType'] == 'PPU'].copy() if 'testType' in athlete_df.columns else pd.DataFrame()
+    if not ppu_df.empty and date_col:
+        st.markdown("### Plyo Pushup (Upper Body Power)")
+        metric_col = None
+        metric_name = 'Pushup Height'
+        metric_unit = 'cm'
+        for col, name, unit in [('PUSHUP_HEIGHT', 'Pushup Height', 'cm'), ('FLIGHT_TIME', 'Flight Time', 's')]:
+            if col in ppu_df.columns and ppu_df[col].notna().sum() > 0:
+                metric_col = col
+                metric_name = name
+                metric_unit = unit
+                break
+        if metric_col:
+            fig = create_trend_chart(ppu_df, metric_col, date_col, benchmarks, metric_name, 'ppu', metric_unit, athlete_name)
+            if fig:
+                st.plotly_chart(fig, use_container_width=True)
+
+    # DynaMo Grip trends (if data available)
+    data_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data')
+    dynamo_paths = [
+        os.path.join(data_dir, 'dynamo_allsports_with_athletes.csv'),
+        os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'vald-data', 'data', 'dynamo_allsports_with_athletes.csv'),
+    ]
+    for path in dynamo_paths:
+        if os.path.exists(path):
+            try:
+                dynamo_df = pd.read_csv(path)
+                # Filter for GripSqueeze and this athlete
+                if 'movement' in dynamo_df.columns:
+                    dynamo_df = dynamo_df[dynamo_df['movement'] == 'GripSqueeze']
+                name_col = 'full_name' if 'full_name' in dynamo_df.columns else 'Name'
+                athlete_grip = dynamo_df[dynamo_df[name_col] == athlete_name].copy() if name_col in dynamo_df.columns else pd.DataFrame()
+
+                if not athlete_grip.empty and 'maxForceNewtons' in athlete_grip.columns and 'laterality' in athlete_grip.columns:
+                    st.markdown("### DynaMo Grip Strength")
+                    # Parse date
+                    grip_date_col = None
+                    for col in ['testDateUtc', 'recordedDateUtc', 'modifiedDateUtc']:
+                        if col in athlete_grip.columns:
+                            grip_date_col = col
+                            athlete_grip[col] = pd.to_datetime(athlete_grip[col], errors='coerce')
+                            break
+
+                    if grip_date_col:
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            left_grip = athlete_grip[athlete_grip['laterality'].str.upper() == 'LEFT'].sort_values(grip_date_col)
+                            if not left_grip.empty:
+                                fig = go.Figure()
+                                fig.add_trace(go.Scatter(x=left_grip[grip_date_col], y=left_grip['maxForceNewtons'],
+                                                        mode='lines+markers', name='Left Grip', line=dict(color=TEAL_PRIMARY)))
+                                fig.update_layout(title='Left Grip Strength', xaxis_title='Date', yaxis_title='Force (N)',
+                                                 plot_bgcolor='white', paper_bgcolor='white')
+                                st.plotly_chart(fig, use_container_width=True)
+                        with col2:
+                            right_grip = athlete_grip[athlete_grip['laterality'].str.upper() == 'RIGHT'].sort_values(grip_date_col)
+                            if not right_grip.empty:
+                                fig = go.Figure()
+                                fig.add_trace(go.Scatter(x=right_grip[grip_date_col], y=right_grip['maxForceNewtons'],
+                                                        mode='lines+markers', name='Right Grip', line=dict(color=GOLD_ACCENT)))
+                                fig.update_layout(title='Right Grip Strength', xaxis_title='Date', yaxis_title='Force (N)',
+                                                 plot_bgcolor='white', paper_bgcolor='white')
+                                st.plotly_chart(fig, use_container_width=True)
+                break
+            except Exception:
+                pass
+
+    # Strength RM trends (Manual Entry)
+    lower_body_path = os.path.join(data_dir, 'sc_lower_body.csv')
+    upper_body_path = os.path.join(data_dir, 'sc_upper_body.csv')
+    strength_dfs = []
+    if os.path.exists(lower_body_path):
+        try:
+            lb_df = pd.read_csv(lower_body_path)
+            strength_dfs.append(lb_df)
+        except Exception:
+            pass
+    if os.path.exists(upper_body_path):
+        try:
+            ub_df = pd.read_csv(upper_body_path)
+            strength_dfs.append(ub_df)
+        except Exception:
+            pass
+
+    if strength_dfs:
+        strength_df = pd.concat(strength_dfs, ignore_index=True)
+        if 'athlete' in strength_df.columns:
+            athlete_str = strength_df[strength_df['athlete'] == athlete_name].copy()
+            if not athlete_str.empty and 'date' in athlete_str.columns and 'estimated_1rm' in athlete_str.columns:
+                st.markdown("### Strength RM (Manual Entry)")
+                athlete_str['date'] = pd.to_datetime(athlete_str['date'])
+
+                exercises = athlete_str['exercise'].unique() if 'exercise' in athlete_str.columns else []
+                if len(exercises) > 0:
+                    fig = go.Figure()
+                    colors = [TEAL_PRIMARY, GOLD_ACCENT, '#0077B6', '#2A8F5C', '#dc3545']
+                    for i, ex in enumerate(exercises[:5]):
+                        ex_data = athlete_str[athlete_str['exercise'] == ex].sort_values('date')
+                        fig.add_trace(go.Scatter(x=ex_data['date'], y=ex_data['estimated_1rm'],
+                                                mode='lines+markers', name=ex, line=dict(color=colors[i % len(colors)])))
+                    fig.update_layout(title='Strength RM Progression', xaxis_title='Date', yaxis_title='Estimated 1RM (kg)',
+                                     plot_bgcolor='white', paper_bgcolor='white')
+                    st.plotly_chart(fig, use_container_width=True)
+
+    # Broad Jump trend (Manual Entry)
+    broad_jump_path = os.path.join(data_dir, 'broad_jump.csv')
+    if os.path.exists(broad_jump_path):
+        try:
+            bj_df = pd.read_csv(broad_jump_path)
+            if 'athlete' in bj_df.columns:
+                athlete_bj = bj_df[bj_df['athlete'] == athlete_name].copy()
+                if not athlete_bj.empty and 'date' in athlete_bj.columns and 'distance_cm' in athlete_bj.columns:
+                    st.markdown("### Broad Jump (Manual Entry)")
+                    athlete_bj['date'] = pd.to_datetime(athlete_bj['date'])
+                    athlete_bj = athlete_bj.sort_values('date')
+                    fig = go.Figure()
+                    fig.add_trace(go.Scatter(x=athlete_bj['date'], y=athlete_bj['distance_cm'],
+                                            mode='lines+markers', name='Distance', line=dict(color=TEAL_PRIMARY)))
+                    # Add PB line
+                    pb = athlete_bj['distance_cm'].max()
+                    fig.add_hline(y=pb, line_dash="dash", line_color=GOLD_ACCENT, annotation_text=f"PB: {pb:.0f}cm")
+                    fig.update_layout(title='Broad Jump Progression', xaxis_title='Date', yaxis_title='Distance (cm)',
+                                     plot_bgcolor='white', paper_bgcolor='white')
+                    st.plotly_chart(fig, use_container_width=True)
+        except Exception:
+            pass
+
+    # ForceFrame trends (if data available)
+    if forceframe_df is not None and not forceframe_df.empty and 'Name' in forceframe_df.columns:
+        athlete_ff = forceframe_df[forceframe_df['Name'] == athlete_name].copy()
+        if not athlete_ff.empty:
+            st.markdown("### ForceFrame - Isometric Strength")
+            test_col = 'testTypeName' if 'testTypeName' in athlete_ff.columns else 'testType'
+            ff_date_col = None
+            for col in ['testDateUtc', 'recordedDateUtc', 'modifiedDateUtc']:
+                if col in athlete_ff.columns:
+                    ff_date_col = col
+                    athlete_ff[col] = pd.to_datetime(athlete_ff[col], errors='coerce')
+                    break
+
+            if ff_date_col and test_col in athlete_ff.columns:
+                # Show Shoulder tests
+                shoulder_ff = athlete_ff[athlete_ff[test_col].str.contains('Shoulder', case=False, na=False)]
+                if not shoulder_ff.empty:
+                    # Find force column
+                    force_cols = [c for c in shoulder_ff.columns if 'MaxForce' in c or 'maxForce' in c]
+                    if force_cols:
+                        force_col = force_cols[0]
+                        shoulder_ff = shoulder_ff.sort_values(ff_date_col)
+                        fig = go.Figure()
+                        fig.add_trace(go.Scatter(x=shoulder_ff[ff_date_col], y=shoulder_ff[force_col],
+                                                mode='lines+markers', name='Shoulder Force', line=dict(color=TEAL_PRIMARY)))
+                        fig.update_layout(title='Shoulder Strength Progression', xaxis_title='Date', yaxis_title='Force (N)',
+                                         plot_bgcolor='white', paper_bgcolor='white')
+                        st.plotly_chart(fig, use_container_width=True)
 
 
 def create_group_report_v2(df: pd.DataFrame,
@@ -2076,6 +2344,230 @@ def create_group_report_v2(df: pd.DataFrame,
         st.dataframe(hip_df, use_container_width=True, hide_index=True)
     else:
         st.info("No hip health data available (ForceFrame Hip AD/AB tests)")
+
+    st.markdown("---")
+
+    # =========================================================================
+    # SECTION 5: Plyo Pushup (PPU from ForceDecks)
+    # =========================================================================
+    st.markdown("### Plyo Pushup (Upper Body Power)")
+
+    ppu_data = []
+    ppu_df = sport_df[sport_df['testType'] == 'PPU'].copy() if 'testType' in sport_df.columns else pd.DataFrame()
+
+    if not ppu_df.empty and 'Name' in ppu_df.columns:
+        # Find best metric column
+        metric_col = None
+        metric_name = 'Pushup Height'
+        for col in ['PUSHUP_HEIGHT', 'FLIGHT_TIME', 'BODYMASS_RELATIVE_TAKEOFF_POWER']:
+            if col in ppu_df.columns and ppu_df[col].notna().sum() > 0:
+                metric_col = col
+                if col == 'PUSHUP_HEIGHT':
+                    metric_name = 'Height (cm)'
+                elif col == 'FLIGHT_TIME':
+                    metric_name = 'Flight Time (s)'
+                else:
+                    metric_name = 'Rel Power (W/kg)'
+                break
+
+        if metric_col:
+            for athlete in ppu_df['Name'].dropna().unique():
+                athlete_ppu = ppu_df[ppu_df['Name'] == athlete]
+                val = athlete_ppu[metric_col].dropna().iloc[-1] if not athlete_ppu[metric_col].dropna().empty else None
+                if val is not None:
+                    ppu_data.append({
+                        'Athlete': athlete,
+                        metric_name: round(float(val), 2)
+                    })
+
+    if ppu_data:
+        ppu_table = pd.DataFrame(ppu_data).sort_values(list(ppu_data[0].keys())[1], ascending=False)
+        st.dataframe(ppu_table, use_container_width=True, hide_index=True)
+    else:
+        st.info("No Plyo Pushup (PPU) data available")
+
+    st.markdown("---")
+
+    # =========================================================================
+    # SECTION 6: DynaMo Grip Strength
+    # =========================================================================
+    st.markdown("### DynaMo Grip Strength")
+
+    dynamo_df = pd.DataFrame()
+    dynamo_paths = [
+        os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'dynamo_allsports_with_athletes.csv'),
+        os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'vald-data', 'data', 'dynamo_allsports_with_athletes.csv'),
+    ]
+    for path in dynamo_paths:
+        if os.path.exists(path):
+            try:
+                dynamo_df = pd.read_csv(path)
+                break
+            except Exception:
+                pass
+
+    grip_data = []
+    if not dynamo_df.empty and 'maxForceNewtons' in dynamo_df.columns:
+        # Filter for GripSqueeze
+        if 'movement' in dynamo_df.columns:
+            dynamo_df = dynamo_df[dynamo_df['movement'] == 'GripSqueeze']
+
+        # Filter by sport
+        if sport and sport != "All Sports" and 'athlete_sport' in dynamo_df.columns:
+            sport_pattern = sport.split()[0]
+            sport_mask = dynamo_df['athlete_sport'].str.contains(sport_pattern, case=False, na=False)
+            if sport_mask.any():
+                dynamo_df = dynamo_df[sport_mask]
+
+        name_col = 'full_name' if 'full_name' in dynamo_df.columns else 'Name'
+        if name_col in dynamo_df.columns and 'laterality' in dynamo_df.columns:
+            for athlete in dynamo_df[name_col].dropna().unique():
+                athlete_grip = dynamo_df[dynamo_df[name_col] == athlete]
+                row = {'Athlete': athlete}
+
+                # Left hand
+                left_grip = athlete_grip[athlete_grip['laterality'].str.upper() == 'LEFT']
+                if not left_grip.empty:
+                    row['Left (N)'] = round(left_grip['maxForceNewtons'].iloc[-1], 0)
+
+                # Right hand
+                right_grip = athlete_grip[athlete_grip['laterality'].str.upper() == 'RIGHT']
+                if not right_grip.empty:
+                    row['Right (N)'] = round(right_grip['maxForceNewtons'].iloc[-1], 0)
+
+                # Asymmetry
+                if 'Left (N)' in row and 'Right (N)' in row:
+                    avg = (row['Left (N)'] + row['Right (N)']) / 2
+                    if avg > 0:
+                        row['Asym (%)'] = round(abs((row['Left (N)'] - row['Right (N)']) / avg * 100), 1)
+
+                if len(row) > 1:
+                    grip_data.append(row)
+
+    if grip_data:
+        grip_table = pd.DataFrame(grip_data)
+        st.dataframe(grip_table, use_container_width=True, hide_index=True)
+    else:
+        st.info("No DynaMo grip strength data available")
+
+    st.markdown("---")
+
+    # =========================================================================
+    # SECTION 7: Strength RM (Manual Entry)
+    # =========================================================================
+    st.markdown("### Strength RM (Manual Entry)")
+
+    strength_data = []
+    data_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data')
+    lower_body_path = os.path.join(data_dir, 'sc_lower_body.csv')
+    upper_body_path = os.path.join(data_dir, 'sc_upper_body.csv')
+
+    strength_dfs = []
+    if os.path.exists(lower_body_path):
+        try:
+            lb_df = pd.read_csv(lower_body_path)
+            lb_df['body_region'] = 'Lower'
+            strength_dfs.append(lb_df)
+        except Exception:
+            pass
+    if os.path.exists(upper_body_path):
+        try:
+            ub_df = pd.read_csv(upper_body_path)
+            ub_df['body_region'] = 'Upper'
+            strength_dfs.append(ub_df)
+        except Exception:
+            pass
+
+    if strength_dfs:
+        strength_df = pd.concat(strength_dfs, ignore_index=True)
+        if 'athlete' in strength_df.columns and 'Name' not in strength_df.columns:
+            strength_df['Name'] = strength_df['athlete']
+
+        # Get latest 1RM per athlete per exercise
+        if 'estimated_1rm' in strength_df.columns and 'exercise' in strength_df.columns:
+            exercises = strength_df['exercise'].unique()
+            athletes_str = strength_df['Name'].dropna().unique()
+
+            for athlete in athletes_str:
+                row = {'Athlete': athlete}
+                athlete_str = strength_df[strength_df['Name'] == athlete]
+
+                for exercise in ['Back Squat', 'Front Squat', 'Deadlift', 'Bench Press', 'Pull Up']:
+                    ex_df = athlete_str[athlete_str['exercise'].str.contains(exercise, case=False, na=False)]
+                    if not ex_df.empty and 'estimated_1rm' in ex_df.columns:
+                        val = ex_df['estimated_1rm'].max()
+                        if pd.notna(val):
+                            short_name = exercise.replace(' ', '')[:6]
+                            row[f'{short_name} (kg)'] = round(val, 0)
+
+                if len(row) > 1:
+                    strength_data.append(row)
+
+    if strength_data:
+        strength_table = pd.DataFrame(strength_data)
+        st.dataframe(strength_table, use_container_width=True, hide_index=True)
+    else:
+        st.info("No Strength RM data available. Use ✏️ Data Entry tab to add.")
+
+    st.markdown("---")
+
+    # =========================================================================
+    # SECTION 8: Broad Jump (Manual Entry)
+    # =========================================================================
+    st.markdown("### Broad Jump (Manual Entry)")
+
+    broad_jump_path = os.path.join(data_dir, 'broad_jump.csv')
+    broad_data = []
+
+    if os.path.exists(broad_jump_path):
+        try:
+            bj_df = pd.read_csv(broad_jump_path)
+            if 'athlete' in bj_df.columns and 'distance_cm' in bj_df.columns:
+                # Get best jump per athlete
+                best_jumps = bj_df.groupby('athlete')['distance_cm'].max().reset_index()
+                for _, row in best_jumps.iterrows():
+                    broad_data.append({
+                        'Athlete': row['athlete'],
+                        'Best Distance (cm)': round(row['distance_cm'], 0)
+                    })
+        except Exception:
+            pass
+
+    if broad_data:
+        broad_table = pd.DataFrame(broad_data).sort_values('Best Distance (cm)', ascending=False)
+        st.dataframe(broad_table, use_container_width=True, hide_index=True)
+    else:
+        st.info("No Broad Jump data available. Use ✏️ Data Entry tab to add.")
+
+    st.markdown("---")
+
+    # =========================================================================
+    # SECTION 9: Fitness Tests (Manual Entry)
+    # =========================================================================
+    st.markdown("### Fitness Tests (Manual Entry)")
+
+    fitness_data = []
+    aerobic_path = os.path.join(data_dir, 'aerobic_tests.csv')
+    power_path = os.path.join(data_dir, 'power_tests.csv')
+
+    if os.path.exists(aerobic_path):
+        try:
+            aero_df = pd.read_csv(aerobic_path)
+            if 'athlete' in aero_df.columns and 'avg_relative_wattage' in aero_df.columns:
+                latest_aero = aero_df.groupby('athlete')['avg_relative_wattage'].last().reset_index()
+                for _, row in latest_aero.iterrows():
+                    fitness_data.append({
+                        'Athlete': row['athlete'],
+                        '6 Min Aerobic (W/kg)': round(row['avg_relative_wattage'], 2)
+                    })
+        except Exception:
+            pass
+
+    if fitness_data:
+        fitness_table = pd.DataFrame(fitness_data).sort_values('6 Min Aerobic (W/kg)', ascending=False)
+        st.dataframe(fitness_table, use_container_width=True, hide_index=True)
+    else:
+        st.info("No Fitness test data available. Use ✏️ Data Entry tab to add.")
 
 
 def _display_section_table(data: list, section_name: str):
