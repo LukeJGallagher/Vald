@@ -34,23 +34,37 @@ SYNC_STATE_FILE = Path(__file__).parent.parent / 'config' / 'sync_state.json'
 # Output directory - vald-data repo location
 OUTPUT_DIR = Path(r"c:\Users\l.gallagher\OneDrive - Team Saudi\Documents\Performance Analysis\vald-data\data")
 
-# Group to sport mapping
+# Group to sport mapping - Maps VALD group names to sport categories
+# IMPORTANT: Include exact VALD group names (check API for current groups)
 GROUP_TO_CATEGORY = {
+    # Fencing (all 3 weapons)
+    'Fencing - Epee ': 'Fencing', 'Fencing - Foil': 'Fencing', 'Fencing - Sabre': 'Fencing',
     'Epee': 'Fencing', 'Epee ': 'Fencing', 'Foil': 'Fencing', 'Sabre': 'Fencing',
+    # Athletics (all disciplines)
     'Athletics - Horizontal Jumps': 'Athletics', 'Athletics - Middle distance': 'Athletics',
+    'Athletics - Multi events': 'Athletics', 'Athletics - Short Sprints': 'Athletics',
+    'Athletics - Throwers': 'Athletics', 'Athletics - TBC': 'Athletics',
     'Short Sprints': 'Athletics', 'Throwers': 'Athletics', 'Decathlon': 'Athletics',
+    # Wrestling (all styles)
     'Freestyle': 'Wrestling', 'Greco Roman': 'Wrestling', 'GS': 'Wrestling', 'RUS': 'Wrestling',
+    # Taekwondo (all categories + TBC)
     'TKD Junior Female': 'Taekwondo', 'TKD Junior Male': 'Taekwondo',
-    'TKD Senior Female': 'Taekwondo', 'TKD Senior Male': 'Taekwondo',
-    'SOTC Swimming': 'Swimming',
-    'Para Swimming': 'Para Swimming', 'Para Sprints': 'Para Athletics',
+    'TKD Senior Female': 'Taekwondo', 'TKD Senior Male': 'Taekwondo', 'TKD TBC': 'Taekwondo',
+    # Swimming
+    'SOTC Swimming': 'Swimming', 'Swimming TBC': 'Swimming',
+    # Para sports
+    'Para Swimming': 'Para Swimming', 'Para Sprints': 'Para Athletics', 'Para TBC': 'Para Athletics',
     'Para TKD': 'Para Taekwondo', 'Para Cycling': 'Para Cycling', 'Wheel Chair': 'Wheelchair Sports',
-    'Karate': 'Karate', 'Karate TBC': 'Karate', 'Coastal': 'Rowing', 'Pistol 10m': 'Shooting',
+    # Combat sports
+    'Karate': 'Karate', 'Karate TBC': 'Karate',
+    'Judo': 'Judo', 'Judo TBC': 'Judo',
+    'Jiu-Jitsu': 'Jiu-Jitsu', 'Jiu Jitsu TBC': 'Jiu-Jitsu',
+    # Other sports
     'Weightlifting': 'Weightlifting', 'Weightlifting TBC': 'Weightlifting',
-    'Judo': 'Judo', 'Judo TBC': 'Judo', 'Jiu-Jitsu': 'Jiu-Jitsu', 'Jiu Jitsu TBC': 'Jiu-Jitsu',
-    'Rowing - Classic': 'Rowing', 'Rowing - Coastal': 'Rowing',
+    'Rowing - Classic': 'Rowing', 'Rowing - Coastal': 'Rowing', 'Coastal': 'Rowing',
+    'Pistol 10m': 'Shooting', 'Shooting TBC': 'Shooting',
     'Equestrian TBC': 'Equestrian', 'Snow Sports': 'Snow Sports',
-    'Athletics - Multi events': 'Athletics', 'Athletics - Short Sprints': 'Athletics', 'Athletics - Throwers': 'Athletics',
+    # Skip groups (return None - these become "Unknown")
     'ARCHIVED': None, 'Staff': None, 'TBC': None, 'All Athletes': None,
 }
 
