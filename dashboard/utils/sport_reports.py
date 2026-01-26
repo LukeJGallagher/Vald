@@ -2019,7 +2019,8 @@ def create_individual_report(df: pd.DataFrame,
                     if grip_date_col:
                         col1, col2 = st.columns(2)
                         with col1:
-                            left_grip = athlete_grip[athlete_grip['laterality'].str.upper() == 'LEFT'].sort_values(grip_date_col)
+                            # Match 'LEFT', 'LeftSide', 'LeftThenRight', etc.
+                            left_grip = athlete_grip[athlete_grip['laterality'].str.contains('Left', case=False, na=False)].sort_values(grip_date_col)
                             if not left_grip.empty:
                                 fig = go.Figure()
                                 fig.add_trace(go.Scatter(x=left_grip[grip_date_col], y=left_grip['maxForceNewtons'],
@@ -2028,7 +2029,8 @@ def create_individual_report(df: pd.DataFrame,
                                                  plot_bgcolor='white', paper_bgcolor='white')
                                 st.plotly_chart(fig, use_container_width=True)
                         with col2:
-                            right_grip = athlete_grip[athlete_grip['laterality'].str.upper() == 'RIGHT'].sort_values(grip_date_col)
+                            # Match 'RIGHT', 'RightSide', 'RightThenLeft', etc.
+                            right_grip = athlete_grip[athlete_grip['laterality'].str.contains('Right', case=False, na=False)].sort_values(grip_date_col)
                             if not right_grip.empty:
                                 fig = go.Figure()
                                 fig.add_trace(go.Scatter(x=right_grip[grip_date_col], y=right_grip['maxForceNewtons'],
@@ -2629,13 +2631,13 @@ def create_group_report_v2(df: pd.DataFrame,
                 athlete_grip = dynamo_df[dynamo_df[name_col] == athlete]
                 row = {'Athlete': athlete}
 
-                # Left hand
-                left_grip = athlete_grip[athlete_grip['laterality'].str.upper() == 'LEFT']
+                # Left hand - match 'LEFT', 'LeftSide', 'LeftThenRight', etc.
+                left_grip = athlete_grip[athlete_grip['laterality'].str.contains('Left', case=False, na=False)]
                 if not left_grip.empty:
                     row['Left (N)'] = round(left_grip['maxForceNewtons'].iloc[-1], 0)
 
-                # Right hand
-                right_grip = athlete_grip[athlete_grip['laterality'].str.upper() == 'RIGHT']
+                # Right hand - match 'RIGHT', 'RightSide', 'RightThenLeft', etc.
+                right_grip = athlete_grip[athlete_grip['laterality'].str.contains('Right', case=False, na=False)]
                 if not right_grip.empty:
                     row['Right (N)'] = round(right_grip['maxForceNewtons'].iloc[-1], 0)
 
