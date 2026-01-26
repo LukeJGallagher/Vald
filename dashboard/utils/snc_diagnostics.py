@@ -1176,7 +1176,8 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
         "🏃 10:5 Hop",
         "🔄 Quadrant Tests",
         "🏋️ Strength RM",
-        "✊ DynaMo"
+        "✊ DynaMo",
+        "⚖️ Balance"
     ])
 
     # =====================
@@ -1558,7 +1559,9 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
     with test_tabs[4]:
         st.markdown("### 10:5 Hop Test")
 
-        hop_df = forcedecks_df[forcedecks_df['testType'].str.contains('Hop', case=False, na=False)].copy() if 'testType' in forcedecks_df.columns else pd.DataFrame()
+        # Filter for hop/reactive strength tests: HJ, SLHJ, RSHIP, RSKIP, RSAIP
+        hop_test_types = ['HJ', 'SLHJ', 'RSHIP', 'RSKIP', 'RSAIP']
+        hop_df = forcedecks_df[forcedecks_df['testType'].isin(hop_test_types)].copy() if 'testType' in forcedecks_df.columns else pd.DataFrame()
 
         if hop_df.empty:
             st.warning("No Hop Test data available.")
@@ -1888,3 +1891,99 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                                         st.plotly_chart(fig, use_container_width=True, key="dynamo_ind_line")
                 else:
                     st.info("DynaMo data loaded but no grip force metrics found. Check column names.")
+
+    # =====================
+    # Balance Tab (QSB/SLSB for Shooting)
+    # =====================
+    with test_tabs[8]:
+        st.markdown("### Balance Testing (QSB / SLSB)")
+        st.markdown("*Quiet Static Balance & Single Leg Static Balance - primarily used by Shooting athletes*")
+
+        # Filter for balance tests
+        balance_test_types = ['QSB', 'SLSB']
+        balance_df = forcedecks_df[forcedecks_df['testType'].isin(balance_test_types)].copy() if 'testType' in forcedecks_df.columns else pd.DataFrame()
+
+        if balance_df.empty:
+            st.warning("No Balance test data available.")
+            st.markdown("""
+            **Balance test types:**
+            - **QSB** - Quiet Static Balance (bilateral)
+            - **SLSB** - Single Leg Static Balance
+
+            **Key metrics:**
+            - CoP Total Excursion (mm) - lower is better
+            - CoP Mean Velocity (mm/s) - lower is better
+            - CoP Ellipse Area (mm²) - smaller is better
+            """)
+        else:
+            filtered_df, sport, gender = render_filters(balance_df, "balance")
+
+            # Metric selection
+            balance_metrics = [
+                ('BAL_COP_MEAN_VELOCITY', 'CoP Mean Velocity', 'mm/s'),
+                ('BAL_COP_TOTAL_EXCURSION', 'CoP Total Excursion', 'mm'),
+                ('BAL_COP_ELLIPSE_AREA', 'CoP Ellipse Area', 'mm²'),
+                ('BAL_COP_RANGE_MEDLAT', 'CoP Range Med-Lat', 'mm'),
+                ('BAL_COP_RANGE_ANTPOST', 'CoP Range Ant-Post', 'mm'),
+            ]
+
+            available_metrics = [(col, name, unit) for col, name, unit in balance_metrics if col in filtered_df.columns]
+
+            if not available_metrics:
+                st.warning("No balance metrics found in data.")
+            else:
+                col1, col2 = st.columns([3, 1])
+                with col2:
+                    metric_options = [f"{name} ({unit})" for _, name, unit in available_metrics]
+                    selected_metric_display = st.selectbox("Metric:", metric_options, key="balance_metric")
+                    selected_idx = metric_options.index(selected_metric_display)
+                    metric_col, metric_name, metric_unit = available_metrics[selected_idx]
+
+                    # For balance, lower is better - no benchmark needed
+                    st.info("Lower values = better stability")
+
+                view_tabs = st.tabs(["👥 Group View", "🏃 Individual View"])
+
+                with view_tabs[0]:
+                    if metric_col in filtered_df.columns:
+                        # For balance, we want to rank by lowest (best)
+                        fig = create_ranked_bar_chart(
+                            filtered_df,
+                            metric_col,
+                            metric_name,
+                            metric_unit,
+                            None,  # No benchmark
+                            f'Balance Test - {metric_name}'
+                        )
+                        if fig:
+                            st.plotly_chart(fig, use_container_width=True, key="balance_group_bar")
+                    else:
+                        st.warning(f"Metric {metric_col} not found in data.")
+
+                with view_tabs[1]:
+                    athletes = sorted(filtered_df['Name'].dropna().unique()) if 'Name' in filtered_df.columns else []
+
+                    if athletes:
+                        selected_athletes = st.multiselect(
+                            "Select Athletes:",
+                            options=athletes,
+                            default=[athletes[0]] if athletes else [],
+                            key="balance_athlete_select"
+                        )
+
+                        show_squad = st.checkbox("Show Squad Average", value=True, key="balance_show_squad")
+
+                        if selected_athletes and metric_col in balance_df.columns:
+                            fig = create_individual_line_chart(
+                                balance_df,
+                                selected_athletes,
+                                metric_col,
+                                metric_name,
+                                metric_unit,
+                                show_squad,
+                                f'Balance Test - {metric_name} Trends'
+                            )
+                            if fig:
+                                st.plotly_chart(fig, use_container_width=True, key="balance_ind_line")
+                    else:
+                        st.warning("No athletes found in filtered data.")
