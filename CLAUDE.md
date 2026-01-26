@@ -279,3 +279,29 @@ Production: Streamlit Cloud Secrets dashboard
   - NOT `str.contains('Hop')` - that misses HJ, RSHIP codes
 - **Balance tab**: Filter by `testType.isin(['QSB', 'SLSB'])`
   - Primarily for Shooting (10m Pistol) athletes
+
+## S&C Diagnostics Canvas Overview
+
+### Tier 1 Tests (Primary)
+| Test | Group Chart | Individual Chart | Key Metric | Unit | Source |
+|------|-------------|------------------|------------|------|--------|
+| IMTP | Ranked Bar | Line + Squad Avg | Relative Peak Force | N/Kg | VALD |
+| CMJ | Ranked Bar | Line + Squad Avg | Relative Peak Power | W/Kg | VALD |
+| 6 Minute Aerobic | Ranked Bar | Line + Squad Avg | Avg Relative Wattage | W/Kg | Manual |
+
+### Tier 2 Tests (Secondary)
+| Test | Group Chart | Individual Chart | Key Metric 1 | Key Metric 2 | Source |
+|------|-------------|------------------|--------------|--------------|--------|
+| SL ISO Squat & SL IMTP | Ranked side-by-side | Dual line + % diff | Rel Peak Force (N/Kg) | % Difference | VALD |
+| Strength RM | Ranked Bar | Multi Line | Rel Strength (RM/BM) | ABS Strength (Kg) | Manual |
+| SL CMJ | Ranked side-by-side | Dual line + % diff | Rel Peak Power R&L | Height (cm) | VALD |
+| Broad Jump | Ranked Bar | Line + Squad Avg | Distance (cm) | - | Manual |
+| 10:5 Hop Test | Ranked Bar | Line + Squad Avg | RSI (absolute) | - | VALD |
+| Peak Power (10s) | Ranked Bar | Line + Squad Avg | Peak Rel Wattage | W/Kg | Manual |
+| Repeat Power (10x6s) | Ranked Bar | Line + Squad Avg | Peak Rel Wattage | % Fade | Manual |
+| Glycolytic Power (3min) | Ranked Bar | Line + Squad Avg | Peak Rel Wattage | W/Kg | Manual |
+
+### Chart Types
+1. **Ranked Bar Chart** - Single value tests (IMTP, CMJ, etc.)
+2. **Ranked Side-by-Side Bar** - Bilateral/unilateral tests (SL ISO Squat, Nordic L/R)
+3. **Stacked Multi-Variable Bar** - Quadrant tests (Trunk, 4-Way Neck, Shoulder IR/ER, Hip Add/Abd)
