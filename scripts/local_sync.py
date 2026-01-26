@@ -359,71 +359,109 @@ def fetch_forcedecks(token, region, tenant_id, from_date='2020-01-01T00:00:00.00
 
 
 def fetch_forceframe(token, region, tenant_id, from_date='2020-01-01T00:00:00.000Z'):
-    """Fetch ForceFrame tests (requires all date parameters)."""
+    """Fetch ForceFrame tests (requires all date parameters).
+
+    IMPORTANT: ForceFrame API only allows 6-month date ranges.
+    We iterate in 6-month chunks to fetch all historical data.
+    """
     url = f'https://prd-{region}-api-externalforceframe.valdperformance.com/tests'
     headers = {'Authorization': f'Bearer {token}'}
 
     all_tests = []
-    to_date = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.000Z')
 
-    time.sleep(0.5)
-    # ForceFrame requires TenantId, TestFromUtc, TestToUtc, AND ModifiedFromUtc
-    params = {
-        'TenantId': tenant_id,
-        'TestFromUtc': from_date,
-        'TestToUtc': to_date,
-        'ModifiedFromUtc': from_date
-    }
-    response = requests.get(url, headers=headers, params=params, timeout=120)
+    # Parse the from_date and iterate in 6-month chunks
+    start = datetime.fromisoformat(from_date.replace('Z', '+00:00'))
+    end = datetime.now(timezone.utc)
+    chunk_months = 5  # Use 5 months to stay safely under 6-month limit
 
-    if response.status_code == 204:
+    current_start = start
+    while current_start < end:
+        current_end = min(current_start + timedelta(days=chunk_months * 30), end)
+
+        time.sleep(0.5)
+        # ForceFrame requires TenantId, TestFromUtc, TestToUtc, AND ModifiedFromUtc
+        params = {
+            'TenantId': tenant_id,
+            'TestFromUtc': current_start.strftime('%Y-%m-%dT%H:%M:%S.000Z'),
+            'TestToUtc': current_end.strftime('%Y-%m-%dT%H:%M:%S.000Z'),
+            'ModifiedFromUtc': current_start.strftime('%Y-%m-%dT%H:%M:%S.000Z')
+        }
+        response = requests.get(url, headers=headers, params=params, timeout=120)
+
+        if response.status_code == 204:
+            # No data for this period, move to next chunk
+            current_start = current_end
+            continue
+        if response.status_code != 200:
+            print(f"    API error: {response.status_code} - {response.text[:200]}")
+            current_start = current_end
+            continue
+
+        data = response.json()
+        tests = data.get('tests', data) if isinstance(data, dict) else data
+
+        if tests and isinstance(tests, list):
+            all_tests.extend(tests)
+            print(f"    Fetched {len(tests)} tests from {current_start.strftime('%Y-%m')} to {current_end.strftime('%Y-%m')} (total: {len(all_tests)})")
+
+        current_start = current_end
+
+    if not all_tests:
         print("    No ForceFrame data found")
-        return all_tests
-    if response.status_code != 200:
-        print(f"    API error: {response.status_code} - {response.text[:200]}")
-        return all_tests
-
-    data = response.json()
-    tests = data.get('tests', data) if isinstance(data, dict) else data
-
-    if tests and isinstance(tests, list):
-        all_tests.extend(tests)
-        print(f"    Fetched {len(tests)} tests")
 
     return all_tests
 
 
 def fetch_nordbord(token, region, tenant_id, from_date='2020-01-01T00:00:00.000Z'):
-    """Fetch NordBord tests (requires all date parameters)."""
+    """Fetch NordBord tests (requires all date parameters).
+
+    IMPORTANT: NordBord API only allows 6-month date ranges.
+    We iterate in 6-month chunks to fetch all historical data.
+    """
     url = f'https://prd-{region}-api-externalnordbord.valdperformance.com/tests'
     headers = {'Authorization': f'Bearer {token}'}
 
     all_tests = []
-    to_date = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.000Z')
 
-    time.sleep(0.5)
-    # NordBord requires TenantId, TestFromUtc, TestToUtc, AND ModifiedFromUtc
-    params = {
-        'TenantId': tenant_id,
-        'TestFromUtc': from_date,
-        'TestToUtc': to_date,
-        'ModifiedFromUtc': from_date
-    }
-    response = requests.get(url, headers=headers, params=params, timeout=120)
+    # Parse the from_date and iterate in 6-month chunks
+    start = datetime.fromisoformat(from_date.replace('Z', '+00:00'))
+    end = datetime.now(timezone.utc)
+    chunk_months = 5  # Use 5 months to stay safely under 6-month limit
 
-    if response.status_code == 204:
+    current_start = start
+    while current_start < end:
+        current_end = min(current_start + timedelta(days=chunk_months * 30), end)
+
+        time.sleep(0.5)
+        # NordBord requires TenantId, TestFromUtc, TestToUtc, AND ModifiedFromUtc
+        params = {
+            'TenantId': tenant_id,
+            'TestFromUtc': current_start.strftime('%Y-%m-%dT%H:%M:%S.000Z'),
+            'TestToUtc': current_end.strftime('%Y-%m-%dT%H:%M:%S.000Z'),
+            'ModifiedFromUtc': current_start.strftime('%Y-%m-%dT%H:%M:%S.000Z')
+        }
+        response = requests.get(url, headers=headers, params=params, timeout=120)
+
+        if response.status_code == 204:
+            # No data for this period, move to next chunk
+            current_start = current_end
+            continue
+        if response.status_code != 200:
+            print(f"    API error: {response.status_code} - {response.text[:200]}")
+            current_start = current_end
+            continue
+
+        data = response.json()
+        tests = data.get('tests', data) if isinstance(data, dict) else data
+
+        if tests and isinstance(tests, list):
+            all_tests.extend(tests)
+            print(f"    Fetched {len(tests)} tests from {current_start.strftime('%Y-%m')} to {current_end.strftime('%Y-%m')} (total: {len(all_tests)})")
+
+        current_start = current_end
+
+    if not all_tests:
         print("    No NordBord data found")
-        return all_tests
-    if response.status_code != 200:
-        print(f"    API error: {response.status_code} - {response.text[:200]}")
-        return all_tests
-
-    data = response.json()
-    tests = data.get('tests', data) if isinstance(data, dict) else data
-
-    if tests and isinstance(tests, list):
-        all_tests.extend(tests)
-        print(f"    Fetched {len(tests)} tests")
 
     return all_tests
 

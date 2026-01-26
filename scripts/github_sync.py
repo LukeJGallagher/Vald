@@ -418,55 +418,70 @@ def fetch_device_data(token, region, tenant_id, device, fetch_trials=None, exist
     elif device == 'forceframe':
         # ForceFrame uses cursor-based pagination
         # API may return {'tests': [...]} or [...]
-        modified_from = from_date
-        while True:
+        # IMPORTANT: ForceFrame API only allows 6-month date ranges - iterate in chunks
+        start = datetime.fromisoformat(from_date.replace('Z', '+00:00'))
+        end = datetime.now(timezone.utc)
+        chunk_months = 5  # Use 5 months to stay safely under 6-month limit
+
+        current_start = start
+        while current_start < end:
+            current_end = min(current_start + timedelta(days=chunk_months * 30), end)
+
             time.sleep(0.5)  # Rate limit
-            params = {'TenantId': tenant_id, 'ModifiedFromUtc': modified_from}
+            params = {
+                'TenantId': tenant_id,
+                'TestFromUtc': current_start.strftime('%Y-%m-%dT%H:%M:%S.000Z'),
+                'TestToUtc': current_end.strftime('%Y-%m-%dT%H:%M:%S.000Z'),
+                'ModifiedFromUtc': current_start.strftime('%Y-%m-%dT%H:%M:%S.000Z')
+            }
             response = requests.get(url, headers=headers, params=params, timeout=120)
             if response.status_code == 204:
-                print(f"{device}: No more data (204)")
-                break
+                current_start = current_end
+                continue
             if response.status_code != 200:
                 print(f"{device} API error: {response.status_code} - {response.text[:200]}")
-                break
+                current_start = current_end
+                continue
             data = response.json()
             tests = data.get('tests', data) if isinstance(data, dict) else data
-            if not tests or not isinstance(tests, list):
-                print(f"{device}: Empty or invalid response")
-                break
-            all_tests.extend(tests)
-            print(f"{device}: Fetched {len(tests)} tests (total: {len(all_tests)})")
-            if len(tests) < 50:
-                break
-            last_modified = tests[-1].get('modifiedDateUtc')
-            if not last_modified or last_modified == modified_from:
-                break
-            modified_from = last_modified
+            if tests and isinstance(tests, list):
+                all_tests.extend(tests)
+                print(f"{device}: Fetched {len(tests)} tests from {current_start.strftime('%Y-%m')} to {current_end.strftime('%Y-%m')} (total: {len(all_tests)})")
+            current_start = current_end
 
     elif device == 'nordbord':
         # NordBord uses page-based pagination
         # API may return {'tests': [...]} or [...]
-        page = 1
-        while page < 100:
+        # IMPORTANT: NordBord API only allows 6-month date ranges - iterate in chunks
+        start = datetime.fromisoformat(from_date.replace('Z', '+00:00'))
+        end = datetime.now(timezone.utc)
+        chunk_months = 5  # Use 5 months to stay safely under 6-month limit
+
+        current_start = start
+        while current_start < end:
+            current_end = min(current_start + timedelta(days=chunk_months * 30), end)
+
             time.sleep(0.5)  # Rate limit
-            params = {'TenantId': tenant_id, 'Page': page}
+            params = {
+                'TenantId': tenant_id,
+                'TestFromUtc': current_start.strftime('%Y-%m-%dT%H:%M:%S.000Z'),
+                'TestToUtc': current_end.strftime('%Y-%m-%dT%H:%M:%S.000Z'),
+                'ModifiedFromUtc': current_start.strftime('%Y-%m-%dT%H:%M:%S.000Z')
+            }
             response = requests.get(url, headers=headers, params=params, timeout=120)
             if response.status_code == 204:
-                print(f"{device}: No more data (204)")
-                break
+                current_start = current_end
+                continue
             if response.status_code != 200:
                 print(f"{device} API error: {response.status_code} - {response.text[:200]}")
-                break
+                current_start = current_end
+                continue
             data = response.json()
             tests = data.get('tests', data) if isinstance(data, dict) else data
-            if not tests or not isinstance(tests, list):
-                print(f"{device}: Empty or invalid response")
-                break
-            all_tests.extend(tests)
-            print(f"{device}: Fetched {len(tests)} tests (total: {len(all_tests)})")
-            if len(tests) < 50:
-                break
-            page += 1
+            if tests and isinstance(tests, list):
+                all_tests.extend(tests)
+                print(f"{device}: Fetched {len(tests)} tests from {current_start.strftime('%Y-%m')} to {current_end.strftime('%Y-%m')} (total: {len(all_tests)})")
+            current_start = current_end
 
     elif device == 'dynamo':
         # DynaMo uses v2022q2 API with page-based pagination
