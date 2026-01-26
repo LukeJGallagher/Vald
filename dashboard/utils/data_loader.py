@@ -126,6 +126,7 @@ def fetch_from_github_repo(device: str = 'forcedecks') -> pd.DataFrame:
             'forcedecks': ['forcedecks_allsports_with_athletes.csv'],
             'forceframe': ['forceframe_allsports_with_athletes.csv', 'forceframe_allsports.csv'],
             'nordbord': ['nordbord_allsports_with_athletes.csv', 'nordbord_allsports.csv'],
+            'dynamo': ['dynamo_allsports_with_athletes.csv'],
         }
 
         filenames = file_mapping.get(device, [])
@@ -196,6 +197,7 @@ def push_to_github_repo(df: pd.DataFrame, device: str = 'forcedecks') -> bool:
             'forcedecks': 'forcedecks_allsports_with_athletes.csv',
             'forceframe': 'forceframe_allsports.csv',
             'nordbord': 'nordbord_allsports.csv',
+            'dynamo': 'dynamo_allsports_with_athletes.csv',
         }
 
         filename = file_mapping.get(device)
@@ -301,6 +303,7 @@ def fetch_from_vald_api(device: str = 'forcedecks') -> pd.DataFrame:
         'forcedecks': f'https://prd-{region}-api-extforcedecks.valdperformance.com/v2019q3/teams/{tenant_id}/tests',
         'forceframe': f'https://prd-{region}-api-externalforceframe.valdperformance.com/v2020q1/teams/{tenant_id}/tests',
         'nordbord': f'https://prd-{region}-api-externalnordbord.valdperformance.com/v2019q3/teams/{tenant_id}/tests',
+        'dynamo': f'https://prd-{region}-api-extdynamo.valdperformance.com/v2022q2/teams/{tenant_id}/tests',
     }
 
     url = endpoints.get(device)
@@ -428,6 +431,15 @@ def load_vald_data(device: str = 'forcedecks') -> pd.DataFrame:
             '../data/master_files/nordbord_master_with_athletes.csv',
             'nordbord_allsports.csv',
             'data/nordbord_allsports.csv',
+        ],
+        'dynamo': [
+            # Dashboard data directory (local enriched files)
+            os.path.join(dashboard_data_dir, 'dynamo_allsports_with_athletes.csv'),
+            # vald-data repo (primary source)
+            os.path.join(vald_data_dir, 'dynamo_allsports_with_athletes.csv'),
+            # Fallback paths
+            'dynamo_allsports_with_athletes.csv',
+            'data/dynamo_allsports_with_athletes.csv',
         ]
     }
 

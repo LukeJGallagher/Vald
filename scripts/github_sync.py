@@ -318,7 +318,7 @@ def fetch_device_data(token, region, tenant_id, device, fetch_trials=None):
         'forcedecks': f'https://prd-{region}-api-extforcedecks.valdperformance.com/tests',
         'forceframe': f'https://prd-{region}-api-externalforceframe.valdperformance.com/tests',
         'nordbord': f'https://prd-{region}-api-externalnordbord.valdperformance.com/tests',
-        'dynamo': f'https://prd-{region}-api-externaldynamo.valdperformance.com/tests',
+        'dynamo': f'https://prd-{region}-api-extdynamo.valdperformance.com/v2022q2/teams/{tenant_id}/tests',
     }
 
     url = base_urls[device]
@@ -428,11 +428,17 @@ def fetch_device_data(token, region, tenant_id, device, fetch_trials=None):
             page += 1
 
     elif device == 'dynamo':
-        # DynaMo (grip strength) uses cursor-based pagination
-        modified_from = from_date
+        # DynaMo uses v2022q2 API with page-based pagination
+        # Response: {items: [...], currentPage, totalItems, totalPages}
+        page = 1
         while True:
             time.sleep(0.5)  # Rate limit
-            params = {'TenantId': tenant_id, 'ModifiedFromUtc': modified_from}
+            params = {
+                'testFromUTC': from_date,
+                'testToUTC': '2030-12-31T23:59:59Z',
+                'includeRepSummaries': 'true',
+                'page': page
+            }
             response = requests.get(url, headers=headers, params=params, timeout=120)
             if response.status_code == 204:
                 print(f"{device}: No more data (204)")
@@ -441,18 +447,49 @@ def fetch_device_data(token, region, tenant_id, device, fetch_trials=None):
                 print(f"{device} API error: {response.status_code} - {response.text[:200]}")
                 break
             data = response.json()
-            tests = data.get('tests', data) if isinstance(data, dict) else data
-            if not tests or not isinstance(tests, list):
-                print(f"{device}: Empty or invalid response")
+            items = data.get('items', [])
+            total_pages = data.get('totalPages', 1)
+            total_items = data.get('totalItems', 0)
+
+            if not items:
+                print(f"{device}: Empty response on page {page}")
                 break
-            all_tests.extend(tests)
-            print(f"{device}: Fetched {len(tests)} tests (total: {len(all_tests)})")
-            if len(tests) < 50:
+
+            # Flatten each test - extract key metrics from repetitionTypeSummaries
+            for test in items:
+                flat_test = {
+                    'id': test.get('id'),
+                    'athleteId': test.get('athleteId'),
+                    'teamId': test.get('teamId'),
+                    'testCategory': test.get('testCategory'),
+                    'bodyRegion': test.get('bodyRegion'),
+                    'movement': test.get('movement'),
+                    'position': test.get('position'),
+                    'laterality': test.get('laterality'),
+                    'startTimeUTC': test.get('startTimeUTC'),
+                    'durationSeconds': test.get('durationSeconds'),
+                    'analysedDateUTC': test.get('analysedDateUTC'),
+                }
+                # Extract metrics from first rep summary
+                rep_summaries = test.get('repetitionTypeSummaries', [])
+                if rep_summaries:
+                    rep = rep_summaries[0]
+                    flat_test['repCount'] = rep.get('repCount')
+                    flat_test['maxForceNewtons'] = rep.get('maxForceNewtons')
+                    flat_test['avgForceNewtons'] = rep.get('avgForceNewtons')
+                    flat_test['maxImpulseNewtonSeconds'] = rep.get('maxImpulseNewtonSeconds')
+                    flat_test['avgImpulseNewtonSeconds'] = rep.get('avgImpulseNewtonSeconds')
+                    flat_test['maxRFD'] = rep.get('maxRateOfForceDevelopmentNewtonsPerSecond')
+                    flat_test['avgRFD'] = rep.get('avgRateOfForceDevelopmentNewtonsPerSecond')
+                    flat_test['maxROM'] = rep.get('maxRangeOfMotionDegrees')
+                    flat_test['avgROM'] = rep.get('avgRangeOfMotionDegrees')
+                all_tests.append(flat_test)
+
+            print(f"{device}: Page {page}/{total_pages}: {len(items)} tests (total: {len(all_tests)}/{total_items})")
+
+            if page >= total_pages:
                 break
-            last_modified = tests[-1].get('modifiedDateUtc')
-            if not last_modified or last_modified == modified_from:
-                break
-            modified_from = last_modified
+            page += 1
 
     return all_tests
 

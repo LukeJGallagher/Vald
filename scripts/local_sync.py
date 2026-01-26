@@ -455,20 +455,27 @@ def merge_with_existing(new_df, output_file, id_column='id'):
 
 
 def fetch_dynamo(token, region, tenant_id, from_date='2020-01-01T00:00:00.000Z'):
-    """Fetch DynaMo (grip strength) tests from given date.
+    """Fetch DynaMo (grip strength/strength testing) data.
 
-    Note: DynaMo external API may not be available in all regions.
+    Uses the v2022q2 API endpoint with pagination.
+    Flattens repetitionTypeSummaries into columns for easier analysis.
     """
-    url = f'https://prd-{region}-api-externaldynamo.valdperformance.com/tests'
+    # Correct endpoint: extdynamo (not externaldynamo)
+    url = f'https://prd-{region}-api-extdynamo.valdperformance.com/v2022q2/teams/{tenant_id}/tests'
     headers = {'Authorization': f'Bearer {token}'}
 
     all_tests = []
-    modified_from = from_date
+    page = 1
 
     try:
         while True:
             time.sleep(0.5)
-            params = {'TenantId': tenant_id, 'ModifiedFromUtc': modified_from}
+            params = {
+                'testFromUTC': from_date,
+                'testToUTC': '2030-12-31T23:59:59Z',
+                'includeRepSummaries': 'true',
+                'page': page
+            }
             response = requests.get(url, headers=headers, params=params, timeout=30)
 
             if response.status_code == 204:
@@ -478,21 +485,51 @@ def fetch_dynamo(token, region, tenant_id, from_date='2020-01-01T00:00:00.000Z')
                 break
 
             data = response.json()
-            tests = data.get('tests', data) if isinstance(data, dict) else data
+            items = data.get('items', [])
+            total_pages = data.get('totalPages', 1)
+            total_items = data.get('totalItems', 0)
 
-            if not tests or not isinstance(tests, list):
+            if not items:
                 break
 
-            all_tests.extend(tests)
-            print(f"    Fetched {len(tests)} tests (total: {len(all_tests)})")
+            # Flatten each test - extract key metrics from repetitionTypeSummaries
+            for test in items:
+                flat_test = {
+                    'id': test.get('id'),
+                    'athleteId': test.get('athleteId'),
+                    'teamId': test.get('teamId'),
+                    'testCategory': test.get('testCategory'),
+                    'bodyRegion': test.get('bodyRegion'),
+                    'movement': test.get('movement'),
+                    'position': test.get('position'),
+                    'laterality': test.get('laterality'),
+                    'startTimeUTC': test.get('startTimeUTC'),
+                    'durationSeconds': test.get('durationSeconds'),
+                    'analysedDateUTC': test.get('analysedDateUTC'),
+                }
 
-            if len(tests) < 50:
-                break
+                # Extract metrics from first rep summary (primary metric)
+                rep_summaries = test.get('repetitionTypeSummaries', [])
+                if rep_summaries:
+                    rep = rep_summaries[0]
+                    flat_test['repCount'] = rep.get('repCount')
+                    flat_test['maxForceNewtons'] = rep.get('maxForceNewtons')
+                    flat_test['avgForceNewtons'] = rep.get('avgForceNewtons')
+                    flat_test['maxImpulseNewtonSeconds'] = rep.get('maxImpulseNewtonSeconds')
+                    flat_test['avgImpulseNewtonSeconds'] = rep.get('avgImpulseNewtonSeconds')
+                    flat_test['maxRFD'] = rep.get('maxRateOfForceDevelopmentNewtonsPerSecond')
+                    flat_test['avgRFD'] = rep.get('avgRateOfForceDevelopmentNewtonsPerSecond')
+                    flat_test['maxROM'] = rep.get('maxRangeOfMotionDegrees')
+                    flat_test['avgROM'] = rep.get('avgRangeOfMotionDegrees')
 
-            last_modified = tests[-1].get('modifiedDateUtc')
-            if not last_modified or last_modified == modified_from:
+                all_tests.append(flat_test)
+
+            print(f"    Page {page}/{total_pages}: {len(items)} tests (total: {len(all_tests)}/{total_items})")
+
+            if page >= total_pages:
                 break
-            modified_from = last_modified
+            page += 1
+
     except requests.exceptions.ConnectionError:
         print("    DynaMo API not available (connection failed)")
     except Exception as e:
