@@ -1292,8 +1292,8 @@ def create_group_report(df: pd.DataFrame,
 
     with col1:
         if not dynamo_df.empty and 'maxForceNewtons' in dynamo_df.columns and 'full_name' in dynamo_df.columns:
-            # Filter for Left hand using laterality column
-            left_df = dynamo_df[dynamo_df['laterality'].str.upper() == 'LEFT'] if 'laterality' in dynamo_df.columns else pd.DataFrame()
+            # Filter for Left hand using laterality column - match 'LEFT', 'LeftSide', 'LeftThenRight', etc.
+            left_df = dynamo_df[dynamo_df['laterality'].str.contains('Left', case=False, na=False)] if 'laterality' in dynamo_df.columns else pd.DataFrame()
 
             if not left_df.empty:
                 latest = left_df.groupby('full_name')['maxForceNewtons'].last().reset_index()
@@ -1327,8 +1327,8 @@ def create_group_report(df: pd.DataFrame,
 
     with col2:
         if not dynamo_df.empty and 'maxForceNewtons' in dynamo_df.columns and 'full_name' in dynamo_df.columns:
-            # Filter for Right hand using laterality column
-            right_df = dynamo_df[dynamo_df['laterality'].str.upper() == 'RIGHT'] if 'laterality' in dynamo_df.columns else pd.DataFrame()
+            # Filter for Right hand using laterality column - match 'RIGHT', 'RightSide', 'RightThenLeft', etc.
+            right_df = dynamo_df[dynamo_df['laterality'].str.contains('Right', case=False, na=False)] if 'laterality' in dynamo_df.columns else pd.DataFrame()
 
             if not right_df.empty:
                 latest = right_df.groupby('full_name')['maxForceNewtons'].last().reset_index()
