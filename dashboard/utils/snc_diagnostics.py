@@ -80,6 +80,38 @@ def export_to_excel(df: pd.DataFrame, sheet_name: str = "Data") -> bytes:
     return output.getvalue()
 
 
+def get_persisted_athlete_selection(key: str, available_athletes: List[str]) -> List[str]:
+    """
+    Get athlete selection with session state persistence.
+
+    Prevents page resets by:
+    1. Checking for previous selection in session_state
+    2. Filtering to only athletes still in current filtered list
+    3. Only defaulting to first athlete if no valid previous selection
+
+    Args:
+        key: Unique session state key for this multiselect
+        available_athletes: List of athletes available in current filtered data
+
+    Returns:
+        List of athlete names to use as default
+    """
+    if not available_athletes:
+        return []
+
+    # Check for previous selection
+    prev_selection = st.session_state.get(key, [])
+
+    if prev_selection:
+        # Filter to only athletes still in the available list
+        valid_selection = [a for a in prev_selection if a in available_athletes]
+        if valid_selection:
+            return valid_selection
+
+    # No valid previous selection, default to first athlete
+    return [available_athletes[0]]
+
+
 def export_group_summary(df: pd.DataFrame, metric_col: str, name_col: str = 'Name',
                          test_name: str = "Test") -> bytes:
     """
@@ -1809,7 +1841,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                     selected_athletes = st.multiselect(
                         "Select Athletes:",
                         options=athletes,
-                        default=[athletes[0]] if athletes else [],
+                        default=get_persisted_athlete_selection("imtp_athlete_select", athletes),
                         key="imtp_athlete_select"
                     )
 
@@ -1900,7 +1932,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                     selected_athletes = st.multiselect(
                         "Select Athletes:",
                         options=athletes,
-                        default=[athletes[0]] if athletes else [],
+                        default=get_persisted_athlete_selection("cmj_athlete_select", athletes),
                         key="cmj_athlete_select"
                     )
 
@@ -2031,7 +2063,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                     selected_athletes = st.multiselect(
                         "Select Athletes:",
                         options=athletes,
-                        default=[athletes[0]] if athletes else [],
+                        default=get_persisted_athlete_selection("sl_athlete_select", athletes),
                         key="sl_athlete_select"
                     )
 
@@ -2120,7 +2152,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                     selected_athletes = st.multiselect(
                         "Select Athletes:",
                         options=athletes,
-                        default=[athletes[0]] if athletes else [],
+                        default=get_persisted_athlete_selection("nordbord_athlete_select", athletes),
                         key="nordbord_athlete_select"
                     )
 
@@ -2210,7 +2242,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                     selected_athletes = st.multiselect(
                         "Select Athletes:",
                         options=athletes,
-                        default=[athletes[0]] if athletes else [],
+                        default=get_persisted_athlete_selection("hop_athlete_select", athletes),
                         key="hop_athlete_select"
                     )
 
@@ -2452,7 +2484,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                             selected_athletes_rm = st.multiselect(
                                 "Select Athletes:",
                                 options=athletes_rm,
-                                default=[athletes_rm[0]] if athletes_rm else [],
+                                default=get_persisted_athlete_selection("strength_athlete_select", athletes_rm),
                                 key="strength_athlete_select"
                             )
 
@@ -2486,7 +2518,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                         export_athletes = st.multiselect(
                             "Select Athletes for Individual Export:",
                             options=athletes_rm,
-                            default=athletes_rm[:3] if len(athletes_rm) >= 3 else athletes_rm,
+                            default=get_persisted_athlete_selection("strength_export_athletes", athletes_rm),
                             key="strength_export_athletes"
                         )
 
@@ -2573,7 +2605,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                             selected_athletes = st.multiselect(
                                 "Select Athletes:",
                                 options=athletes,
-                                default=[athletes[0]] if athletes else [],
+                                default=get_persisted_athlete_selection("broad_jump_athlete_select", athletes),
                                 key="broad_jump_athlete_select"
                             )
 
@@ -2667,7 +2699,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                                 selected_athletes = st.multiselect(
                                     "Select Athletes:",
                                     options=athletes,
-                                    default=[athletes[0]] if athletes else [],
+                                    default=get_persisted_athlete_selection("fitness_athlete_select", athletes),
                                     key="fitness_athlete_select"
                                 )
 
@@ -2784,7 +2816,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                     selected_athletes = st.multiselect(
                         "Select Athletes:",
                         options=athletes,
-                        default=[athletes[0]] if athletes else [],
+                        default=get_persisted_athlete_selection("plyo_pushup_athlete_select", athletes),
                         key="plyo_pushup_athlete_select"
                     )
 
@@ -2908,7 +2940,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                                 selected_athletes = st.multiselect(
                                     "Select Athletes:",
                                     options=athletes,
-                                    default=[athletes[0]] if athletes else [],
+                                    default=get_persisted_athlete_selection("dynamo_athlete_select", athletes),
                                     key="dynamo_athlete_select"
                                 )
 
@@ -3017,7 +3049,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                         selected_athletes = st.multiselect(
                             "Select Athletes:",
                             options=athletes,
-                            default=[athletes[0]] if athletes else [],
+                            default=get_persisted_athlete_selection("balance_athlete_select", athletes),
                             key="balance_athlete_select"
                         )
 
