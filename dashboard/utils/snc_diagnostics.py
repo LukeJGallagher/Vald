@@ -112,6 +112,33 @@ def get_persisted_athlete_selection(key: str, available_athletes: List[str]) -> 
     return [available_athletes[0]]
 
 
+def get_persisted_selectbox_index(key: str, options: List[str], default_index: int = 0) -> int:
+    """
+    Get selectbox index with persistence across filter changes.
+
+    Prevents page resets by preserving the previously selected option
+    if it still exists in the current options list.
+
+    Args:
+        key: Unique session state key for tracking selection
+        options: List of available options
+        default_index: Default index if no valid previous selection
+
+    Returns:
+        Index of the option to select
+    """
+    if not options:
+        return default_index
+
+    # Check for previous selection
+    prev_value = st.session_state.get(key)
+
+    if prev_value is not None and prev_value in options:
+        return options.index(prev_value)
+
+    return min(default_index, len(options) - 1)
+
+
 def export_group_summary(df: pd.DataFrame, metric_col: str, name_col: str = 'Name',
                          test_name: str = "Test") -> bytes:
     """
@@ -805,23 +832,26 @@ def render_filters(df: pd.DataFrame, key_prefix: str = "snc") -> Tuple[pd.DataFr
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        # Sport/Group filter
+        # Sport/Group filter with state persistence
         sports = ['All']
         if 'athlete_sport' in df.columns:
             sports += sorted([s for s in df['athlete_sport'].dropna().unique()])
-        selected_sport = st.selectbox("Sport/Group:", sports, key=f"{key_prefix}_sport")
+        sport_idx = get_persisted_selectbox_index(f"{key_prefix}_sport", sports, 0)
+        selected_sport = st.selectbox("Sport/Group:", sports, index=sport_idx, key=f"{key_prefix}_sport")
 
     with col2:
-        # Gender filter
+        # Gender filter with state persistence
         genders = ['All']
         if 'athlete_sex' in df.columns:
             genders += sorted([g for g in df['athlete_sex'].dropna().unique() if g])
-        selected_gender = st.selectbox("Gender:", genders, key=f"{key_prefix}_gender")
+        gender_idx = get_persisted_selectbox_index(f"{key_prefix}_gender", genders, 0)
+        selected_gender = st.selectbox("Gender:", genders, index=gender_idx, key=f"{key_prefix}_gender")
 
     with col3:
-        # Date filter
+        # Date filter with state persistence
         date_options = ['Most Recent', 'Last 7 Days', 'Last 30 Days', 'Last 90 Days', 'All Time', 'Custom Range']
-        selected_date = st.selectbox("Date Range:", date_options, key=f"{key_prefix}_date")
+        date_idx = get_persisted_selectbox_index(f"{key_prefix}_date", date_options, 0)
+        selected_date = st.selectbox("Date Range:", date_options, index=date_idx, key=f"{key_prefix}_date")
 
     # Apply filters
     filtered_df = df.copy()
@@ -2478,24 +2508,36 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                 athlete_sport_map = forcedecks_df.drop_duplicates('full_name').set_index('full_name')['athlete_sport'].to_dict() if 'athlete_sport' in forcedecks_df.columns else {}
                 strength_df['athlete_sport'] = strength_df['Name'].map(athlete_sport_map).fillna('Unknown')
 
-            # Sport filter
+            # Sport filter with state persistence
             if 'athlete_sport' in strength_df.columns:
                 sports = ['All Sports'] + sorted(strength_df['athlete_sport'].dropna().unique().tolist())
-                selected_sport_rm = st.selectbox("Filter by Sport:", sports, key="strength_sport_filter")
+                sport_idx = get_persisted_selectbox_index("strength_sport_filter", sports, 0)
+                selected_sport_rm = st.selectbox("Filter by Sport:", sports, index=sport_idx, key="strength_sport_filter")
                 if selected_sport_rm != "All Sports":
                     strength_df = strength_df[strength_df['athlete_sport'] == selected_sport_rm]
 
             if not strength_df.empty:
-                # Exercise filter
-                exercises = sorted(strength_df['exercise'].unique()) if 'exercise' in strength_df.columns else []
+                # Exercise filter with state persistence
                 col1, col2, col3 = st.columns([2, 2, 1])
 
                 with col1:
-                    body_region = st.selectbox("Body Region:", ["All", "Lower Body", "Upper Body"], key="strength_body_region")
+                    body_region_options = ["All", "Lower Body", "Upper Body"]
+                    body_region_idx = get_persisted_selectbox_index("strength_body_region", body_region_options, 0)
+                    body_region = st.selectbox("Body Region:", body_region_options, index=body_region_idx, key="strength_body_region")
+
+                # Get exercises based on body region filter
+                if body_region != "All":
+                    exercises = sorted(strength_df[strength_df['body_region'] == body_region]['exercise'].unique())
+                else:
+                    exercises = sorted(strength_df['exercise'].unique()) if 'exercise' in strength_df.columns else []
+
                 with col2:
-                    if body_region != "All":
-                        exercises = sorted(strength_df[strength_df['body_region'] == body_region]['exercise'].unique())
-                    selected_exercise = st.selectbox("Exercise:", exercises, key="strength_exercise_select") if exercises else None
+                    if exercises:
+                        exercise_idx = get_persisted_selectbox_index("strength_exercise_select", exercises, 0)
+                        selected_exercise = st.selectbox("Exercise:", exercises, index=exercise_idx, key="strength_exercise_select")
+                    else:
+                        selected_exercise = None
+                        st.info("No exercises available for selected filter.")
                 with col3:
                     benchmark = render_benchmark_input('Strength_RM', 'strength_rm')
 
