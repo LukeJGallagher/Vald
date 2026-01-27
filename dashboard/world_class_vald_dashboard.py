@@ -2190,27 +2190,12 @@ with tabs[4]:  # Data Entry
     if st.session_state.sc_lower_body.empty:
         st.session_state.sc_lower_body = load_sc_lower_body()
 
-    # Entry type selector (persists across form submissions via session_state key)
-    entry_type_options = [
+    # Create sub-tabs for different entry types
+    entry_tabs = st.tabs([
         "🥏 Throws Distance", "💪 S&C Upper Body", "🦵 S&C Lower Body",
         "🏋️ Trunk Endurance", "🏃 Aerobic Tests", "🦘 Broad Jump",
         "⚡ Power Tests", "📊 View Data", "📈 Charts"
-    ]
-
-    # Use radio buttons for persistent navigation (survives form reruns)
-    selected_entry_type = st.radio(
-        "Select Entry Type:",
-        options=entry_type_options,
-        key="data_entry_type_selector",
-        horizontal=True,
-        label_visibility="collapsed"
-    )
-
-    st.divider()
-
-    # Create sub-tabs for different entry types (visual only)
-    # The radio above persists state across form submissions
-    entry_tabs = st.tabs(entry_type_options)
+    ])
 
     # -------------------------------------------------------------------------
     # SUB-TAB: Throws Distance Entry Form
@@ -2461,18 +2446,62 @@ with tabs[4]:  # Data Entry
         </div>
         """, unsafe_allow_html=True)
 
+        # Sport/Group filter OUTSIDE form for interactivity
+        # Get sports and athletes from VALD data
+        vald_sports = ['All Sports']
+        athlete_sport_map = {}
+        if 'athlete_sport' in filtered_df.columns and 'full_name' in filtered_df.columns:
+            vald_sports += sorted([s for s in filtered_df['athlete_sport'].dropna().unique() if s != 'Unknown'])
+            for _, row in filtered_df[['full_name', 'athlete_sport']].drop_duplicates().iterrows():
+                if pd.notna(row['full_name']) and pd.notna(row['athlete_sport']):
+                    athlete_sport_map[row['full_name']] = row['athlete_sport']
+        elif 'athlete_sport' in filtered_df.columns and 'Name' in filtered_df.columns:
+            vald_sports += sorted([s for s in filtered_df['athlete_sport'].dropna().unique() if s != 'Unknown'])
+            for _, row in filtered_df[['Name', 'athlete_sport']].drop_duplicates().iterrows():
+                if pd.notna(row['Name']) and pd.notna(row['athlete_sport']):
+                    athlete_sport_map[row['Name']] = row['athlete_sport']
+
+        ub_filter_col1, ub_filter_col2 = st.columns(2)
+        with ub_filter_col1:
+            ub_selected_sport = st.selectbox(
+                "Filter by Sport/Group:",
+                options=vald_sports,
+                key="ub_sport_filter"
+            )
+
+        # Filter athletes by selected sport
+        if ub_selected_sport == 'All Sports':
+            ub_athletes_list = sorted(athlete_sport_map.keys()) if athlete_sport_map else []
+        else:
+            ub_athletes_list = sorted([a for a, s in athlete_sport_map.items() if s == ub_selected_sport])
+
+        # Add manual entry option
+        ub_athletes_list = ub_athletes_list + ["-- Enter manually --"] if ub_athletes_list else ["-- Enter manually --"]
+
+        with ub_filter_col2:
+            ub_selected_athlete_choice = st.selectbox(
+                "Select Athlete:",
+                options=ub_athletes_list,
+                key="ub_athlete_filter"
+            )
+
+        # Show manual entry field if selected
+        if ub_selected_athlete_choice == "-- Enter manually --":
+            ub_manual_athlete = st.text_input("Enter Athlete Name:", key="ub_manual_athlete_name")
+            sc_athletes_list = [ub_manual_athlete] if ub_manual_athlete else []
+        else:
+            sc_athletes_list = [ub_selected_athlete_choice]
+
+        st.divider()
+
         with st.form("sc_upper_body_form", clear_on_submit=True):
             sc_col1, sc_col2 = st.columns(2)
 
             with sc_col1:
-                # Get athlete list from existing data
-                sc_athletes_list = []
-                if 'Name' in filtered_df.columns:
-                    sc_athletes_list = sorted([a for a in filtered_df['Name'].unique() if pd.notna(a)])
-
+                # Pre-selected athlete from filter above
                 sc_selected_athlete = st.selectbox(
                     "Athlete *",
-                    options=sc_athletes_list if sc_athletes_list else ["No athletes loaded"],
+                    options=sc_athletes_list if sc_athletes_list else ["No athlete selected"],
                     key="sc_entry_athlete"
                 )
 
@@ -2710,18 +2739,60 @@ with tabs[4]:  # Data Entry
         </div>
         """, unsafe_allow_html=True)
 
+        # Sport/Group filter OUTSIDE form for interactivity
+        lb_vald_sports = ['All Sports']
+        lb_athlete_sport_map = {}
+        if 'athlete_sport' in filtered_df.columns and 'full_name' in filtered_df.columns:
+            lb_vald_sports += sorted([s for s in filtered_df['athlete_sport'].dropna().unique() if s != 'Unknown'])
+            for _, row in filtered_df[['full_name', 'athlete_sport']].drop_duplicates().iterrows():
+                if pd.notna(row['full_name']) and pd.notna(row['athlete_sport']):
+                    lb_athlete_sport_map[row['full_name']] = row['athlete_sport']
+        elif 'athlete_sport' in filtered_df.columns and 'Name' in filtered_df.columns:
+            lb_vald_sports += sorted([s for s in filtered_df['athlete_sport'].dropna().unique() if s != 'Unknown'])
+            for _, row in filtered_df[['Name', 'athlete_sport']].drop_duplicates().iterrows():
+                if pd.notna(row['Name']) and pd.notna(row['athlete_sport']):
+                    lb_athlete_sport_map[row['Name']] = row['athlete_sport']
+
+        lb_filter_col1, lb_filter_col2 = st.columns(2)
+        with lb_filter_col1:
+            lb_selected_sport = st.selectbox(
+                "Filter by Sport/Group:",
+                options=lb_vald_sports,
+                key="lb_sport_filter"
+            )
+
+        # Filter athletes by selected sport
+        if lb_selected_sport == 'All Sports':
+            lb_athletes_filtered = sorted(lb_athlete_sport_map.keys()) if lb_athlete_sport_map else []
+        else:
+            lb_athletes_filtered = sorted([a for a, s in lb_athlete_sport_map.items() if s == lb_selected_sport])
+
+        lb_athletes_filtered = lb_athletes_filtered + ["-- Enter manually --"] if lb_athletes_filtered else ["-- Enter manually --"]
+
+        with lb_filter_col2:
+            lb_selected_athlete_choice = st.selectbox(
+                "Select Athlete:",
+                options=lb_athletes_filtered,
+                key="lb_athlete_filter"
+            )
+
+        # Show manual entry field if selected
+        if lb_selected_athlete_choice == "-- Enter manually --":
+            lb_manual_athlete = st.text_input("Enter Athlete Name:", key="lb_manual_athlete_name")
+            lb_athletes_list = [lb_manual_athlete] if lb_manual_athlete else []
+        else:
+            lb_athletes_list = [lb_selected_athlete_choice]
+
+        st.divider()
+
         with st.form("sc_lower_body_form", clear_on_submit=True):
             lb_col1, lb_col2 = st.columns(2)
 
             with lb_col1:
-                # Get athlete list from existing data
-                lb_athletes_list = []
-                if 'Name' in filtered_df.columns:
-                    lb_athletes_list = sorted([a for a in filtered_df['Name'].unique() if pd.notna(a)])
-
+                # Pre-selected athlete from filter above
                 lb_selected_athlete = st.selectbox(
                     "Athlete *",
-                    options=lb_athletes_list if lb_athletes_list else ["No athletes loaded"],
+                    options=lb_athletes_list if lb_athletes_list else ["No athlete selected"],
                     key="lb_entry_athlete"
                 )
 
