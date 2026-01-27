@@ -2270,117 +2270,167 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
     with test_tabs[5]:
         st.markdown("### Quadrant Tests (ForceFrame)")
 
-        quadrant_test_options = [
-            'Trunk Profile (Supine/Prone/Lateral)',
-            '4-Way Neck Profile',
-            'Shoulder IR/ER',
-            'Hip Adduction/Abduction'
-        ]
-        selected_quadrant_test = st.selectbox("Select Test:", quadrant_test_options, key="quadrant_test_select")
-
         # Use ForceFrame data if available
         if forceframe_df is not None and not forceframe_df.empty:
-            filtered_df, sport, gender = render_filters(forceframe_df, "quadrant")
+            # Get available test types from actual data
+            available_tests = forceframe_df['testTypeName'].dropna().unique().tolist() if 'testTypeName' in forceframe_df.columns else []
 
-            # Define metric columns based on selected test
-            # These column names may need adjustment based on actual ForceFrame data structure
-            if 'Trunk' in selected_quadrant_test:
-                metric_cols = {
-                    'Supine': 'supine_force',
-                    'Prone': 'prone_force',
-                    'Lateral_Left': 'lateral_left_force',
-                    'Lateral_Right': 'lateral_right_force'
-                }
-                metric_name = 'Force'
-                unit = 'N'
-            elif 'Neck' in selected_quadrant_test:
-                metric_cols = {
-                    'Flexion': 'neck_flexion_force',
-                    'Extension': 'neck_extension_force',
-                    'Left': 'neck_left_force',
-                    'Right': 'neck_right_force'
-                }
-                metric_name = 'Force'
-                unit = 'N'
-            elif 'Shoulder' in selected_quadrant_test:
-                metric_cols = {
-                    'IR': 'shoulder_ir_force',
-                    'ER': 'shoulder_er_force'
-                }
-                metric_name = 'Force'
-                unit = 'N'
-            else:  # Hip
-                metric_cols = {
-                    'Adduction': 'hip_adduction_force',
-                    'Abduction': 'hip_abduction_force'
-                }
-                metric_name = 'Force'
-                unit = 'N'
+            if available_tests:
+                selected_test_type = st.selectbox(
+                    "Select Test Type:",
+                    options=sorted(available_tests),
+                    key="quadrant_test_select"
+                )
 
-            view_tabs = st.tabs(["👥 Group View", "🏃 Individual View"])
+                # Filter to selected test type
+                test_df = forceframe_df[forceframe_df['testTypeName'] == selected_test_type].copy()
 
-            with view_tabs[0]:
-                # Check if we have the required columns
-                available_cols = {k: v for k, v in metric_cols.items() if v in filtered_df.columns}
+                # Add Name column if missing (use full_name)
+                if 'Name' not in test_df.columns and 'full_name' in test_df.columns:
+                    test_df['Name'] = test_df['full_name']
 
-                if available_cols:
-                    # Vertical orientation toggle
-                    vertical = st.checkbox("Vertical Layout", value=True, key="quadrant_vertical")
+                # Apply filters
+                filtered_df, sport, gender = render_filters(test_df, "quadrant")
 
-                    fig = create_stacked_quadrant_chart(
-                        filtered_df,
-                        metric_cols,
-                        metric_name,
-                        unit,
-                        f'{selected_quadrant_test} - Group Profile',
-                        vertical
-                    )
-                    if fig:
-                        st.plotly_chart(fig, use_container_width=True, key="quadrant_group_chart")
-
-                    # Summary table with flagging
-                    st.markdown("### Summary Table")
-                    summary_table = create_quadrant_summary_table(filtered_df, metric_cols, unit)
-                    if not summary_table.empty:
-                        st.dataframe(summary_table, use_container_width=True, hide_index=True)
+                if filtered_df.empty:
+                    st.warning(f"No data found for {selected_test_type} with current filters.")
                 else:
-                    st.info(f"No {selected_quadrant_test} data found. ForceFrame quadrant test columns not detected in the data.")
-                    st.markdown("""
-                    **Expected data structure for quadrant tests:**
-                    - Trunk: supine_force, prone_force, lateral_left_force, lateral_right_force
-                    - Neck: neck_flexion_force, neck_extension_force, neck_left_force, neck_right_force
-                    - Shoulder: shoulder_ir_force, shoulder_er_force
-                    - Hip: hip_adduction_force, hip_abduction_force
+                    # ForceFrame uses inner/outer for bilateral measurements
+                    # Inner = Adduction/Internal Rotation, Outer = Abduction/External Rotation
+                    metric_cols = {
+                        'Inner Left': 'innerLeftMaxForce',
+                        'Inner Right': 'innerRightMaxForce',
+                        'Outer Left': 'outerLeftMaxForce',
+                        'Outer Right': 'outerRightMaxForce'
+                    }
 
-                    *Note: Column names may vary based on ForceFrame export settings.*
-                    """)
+                    # Check which columns are available
+                    available_cols = {k: v for k, v in metric_cols.items() if v in filtered_df.columns}
 
-            with view_tabs[1]:
-                athletes = sorted(filtered_df['Name'].dropna().unique()) if 'Name' in filtered_df.columns else []
+                    if not available_cols:
+                        st.info("No force metrics found in data.")
+                    else:
+                        view_tabs = st.tabs(["👥 Group View", "🏃 Individual View"])
 
-                if athletes:
-                    selected_athlete = st.selectbox(
-                        "Select Athlete:",
-                        options=athletes,
-                        key="quadrant_athlete_select"
-                    )
+                        with view_tabs[0]:
+                            st.markdown(f"**{selected_test_type}** - Latest values per athlete")
 
-                    if selected_athlete:
-                        # Get all data for this athlete over time
-                        fig = create_stacked_individual_trend_chart(
-                            forceframe_df,
-                            selected_athlete,
-                            metric_cols,
-                            metric_name,
-                            unit,
-                            f'{selected_athlete} - {selected_quadrant_test} Progression'
-                        )
-                        if fig:
-                            st.plotly_chart(fig, use_container_width=True, key="quadrant_ind_chart")
-                        else:
-                            st.info("Not enough data points to show progression.")
-                else:
-                    st.info("No athletes found in filtered data.")
+                            # Get latest test for each athlete
+                            if 'testDateUtc' in filtered_df.columns:
+                                filtered_df['testDateUtc'] = pd.to_datetime(filtered_df['testDateUtc'], errors='coerce')
+                                latest_df = filtered_df.sort_values('testDateUtc').groupby('Name').last().reset_index()
+                            else:
+                                latest_df = filtered_df.groupby('Name').last().reset_index()
+
+                            if not latest_df.empty and 'Name' in latest_df.columns:
+                                # Create grouped bar chart for Inner vs Outer comparison
+                                fig = go.Figure()
+
+                                athletes_list = latest_df['Name'].tolist()
+
+                                # Add bars for each metric
+                                colors = {'Inner Left': TEAL_PRIMARY, 'Inner Right': TEAL_LIGHT,
+                                         'Outer Left': GOLD_ACCENT, 'Outer Right': '#FFB800'}
+
+                                for label, col in available_cols.items():
+                                    if col in latest_df.columns:
+                                        values = latest_df[col].fillna(0).tolist()
+                                        fig.add_trace(go.Bar(
+                                            name=label,
+                                            x=athletes_list,
+                                            y=values,
+                                            marker_color=colors.get(label, GRAY_BLUE)
+                                        ))
+
+                                fig.update_layout(
+                                    barmode='group',
+                                    title=f'{selected_test_type} - Group Comparison',
+                                    xaxis_title='Athlete',
+                                    yaxis_title='Max Force (N)',
+                                    plot_bgcolor='white',
+                                    paper_bgcolor='white',
+                                    font=dict(family='Inter, sans-serif', color='#333'),
+                                    legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1)
+                                )
+                                fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor='lightgray', tickangle=45)
+                                fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
+
+                                st.plotly_chart(fig, use_container_width=True, key="quadrant_group_chart")
+
+                                # Summary table
+                                st.markdown("### Summary Table")
+                                summary_cols = ['Name'] + [v for v in available_cols.values() if v in latest_df.columns]
+                                if 'testDateUtc' in latest_df.columns:
+                                    summary_cols.append('testDateUtc')
+                                summary_df = latest_df[summary_cols].copy()
+
+                                # Rename columns for display
+                                rename_map = {v: k for k, v in available_cols.items()}
+                                if 'testDateUtc' in summary_df.columns:
+                                    rename_map['testDateUtc'] = 'Date'
+                                summary_df = summary_df.rename(columns=rename_map)
+
+                                # Round numeric columns
+                                for col in summary_df.columns:
+                                    if summary_df[col].dtype in ['float64', 'float32']:
+                                        summary_df[col] = summary_df[col].round(1)
+
+                                st.dataframe(summary_df, use_container_width=True, hide_index=True)
+                            else:
+                                st.info("No athlete data available for display.")
+
+                        with view_tabs[1]:
+                            athletes = sorted(filtered_df['Name'].dropna().unique()) if 'Name' in filtered_df.columns else []
+
+                            if athletes:
+                                selected_athlete = st.selectbox(
+                                    "Select Athlete:",
+                                    options=athletes,
+                                    key="quadrant_athlete_select"
+                                )
+
+                                if selected_athlete:
+                                    # Get all data for this athlete over time
+                                    athlete_df = test_df[test_df['Name'] == selected_athlete].copy()
+
+                                    if not athlete_df.empty and 'testDateUtc' in athlete_df.columns:
+                                        athlete_df['testDateUtc'] = pd.to_datetime(athlete_df['testDateUtc'], errors='coerce')
+                                        athlete_df = athlete_df.sort_values('testDateUtc')
+
+                                        fig = go.Figure()
+
+                                        colors = {'Inner Left': TEAL_PRIMARY, 'Inner Right': TEAL_LIGHT,
+                                                 'Outer Left': GOLD_ACCENT, 'Outer Right': '#FFB800'}
+
+                                        for label, col in available_cols.items():
+                                            if col in athlete_df.columns:
+                                                fig.add_trace(go.Scatter(
+                                                    x=athlete_df['testDateUtc'],
+                                                    y=athlete_df[col],
+                                                    mode='lines+markers',
+                                                    name=label,
+                                                    line=dict(color=colors.get(label, GRAY_BLUE))
+                                                ))
+
+                                        fig.update_layout(
+                                            title=f'{selected_athlete} - {selected_test_type} Progression',
+                                            xaxis_title='Date',
+                                            yaxis_title='Max Force (N)',
+                                            plot_bgcolor='white',
+                                            paper_bgcolor='white',
+                                            font=dict(family='Inter, sans-serif', color='#333'),
+                                            legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1)
+                                        )
+                                        fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
+                                        fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
+
+                                        st.plotly_chart(fig, use_container_width=True, key="quadrant_ind_chart")
+                                    else:
+                                        st.info("Not enough data points to show progression.")
+                            else:
+                                st.info("No athletes found in filtered data.")
+            else:
+                st.warning("No test types found in ForceFrame data.")
         else:
             st.warning("No ForceFrame data available for quadrant tests.")
 

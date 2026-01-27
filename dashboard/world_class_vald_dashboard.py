@@ -2190,12 +2190,27 @@ with tabs[4]:  # Data Entry
     if st.session_state.sc_lower_body.empty:
         st.session_state.sc_lower_body = load_sc_lower_body()
 
-    # Create sub-tabs for different entry types
-    entry_tabs = st.tabs([
+    # Entry type selector (persists across form submissions via session_state key)
+    entry_type_options = [
         "🥏 Throws Distance", "💪 S&C Upper Body", "🦵 S&C Lower Body",
         "🏋️ Trunk Endurance", "🏃 Aerobic Tests", "🦘 Broad Jump",
         "⚡ Power Tests", "📊 View Data", "📈 Charts"
-    ])
+    ]
+
+    # Use radio buttons for persistent navigation (survives form reruns)
+    selected_entry_type = st.radio(
+        "Select Entry Type:",
+        options=entry_type_options,
+        key="data_entry_type_selector",
+        horizontal=True,
+        label_visibility="collapsed"
+    )
+
+    st.divider()
+
+    # Create sub-tabs for different entry types (visual only)
+    # The radio above persists state across form submissions
+    entry_tabs = st.tabs(entry_type_options)
 
     # -------------------------------------------------------------------------
     # SUB-TAB: Throws Distance Entry Form
