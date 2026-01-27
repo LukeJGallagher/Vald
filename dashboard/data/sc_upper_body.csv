@@ -1,32 +1,32 @@
-date,athlete,exercise,weight_kg,reps,sets,rpe,test_type,equipment,estimated_1rm,location,notes,created_at
-2025-09-15,Luke Gallagher,Bench Press,80.0,5,3,7,Working Set,Barbell,92.0,SAOC Gym,Good depth,2025-09-15T10:00:00
-2025-10-01,Luke Gallagher,Bench Press,82.5,5,3,7,Working Set,Barbell,94.9,SAOC Gym,Felt strong,2025-10-01T10:00:00
-2025-10-15,Luke Gallagher,Bench Press,85.0,4,3,8,Working Set,Barbell,94.4,SAOC Gym,,2025-10-15T10:00:00
-2025-11-01,Luke Gallagher,Bench Press,87.5,5,3,8,Working Set,Barbell,100.6,SAOC Gym,New PB feel,2025-11-01T10:00:00
-2025-11-15,Luke Gallagher,Bench Press,90.0,4,3,8,Working Set,Barbell,100.0,SAOC Gym,,2025-11-15T10:00:00
-2025-12-01,Luke Gallagher,Bench Press,92.5,5,3,8,Working Set,Barbell,106.4,SAOC Gym,Strong session,2025-12-01T10:00:00
-2025-09-15,Luke Gallagher,Pull Up,0.0,12,3,7,Working Set,Bodyweight,0.0,SAOC Gym,Strict form,2025-09-15T10:30:00
-2025-10-01,Luke Gallagher,Pull Up,0.0,14,3,7,Working Set,Bodyweight,0.0,SAOC Gym,,2025-10-01T10:30:00
-2025-10-15,Luke Gallagher,Weighted Pull Up,10.0,8,3,8,Working Set,Bodyweight,12.0,SAOC Gym,Added weight,2025-10-15T10:30:00
-2025-11-01,Luke Gallagher,Weighted Pull Up,12.5,8,3,8,Working Set,Bodyweight,15.0,SAOC Gym,,2025-11-01T10:30:00
-2025-11-15,Luke Gallagher,Weighted Pull Up,15.0,6,3,8,Working Set,Bodyweight,17.6,SAOC Gym,,2025-11-15T10:30:00
-2025-12-01,Luke Gallagher,Weighted Pull Up,17.5,6,3,9,Working Set,Bodyweight,20.6,SAOC Gym,Good progress,2025-12-01T10:30:00
-2025-09-15,Luke Gallagher,Overhead Press,50.0,6,3,7,Working Set,Barbell,58.8,SAOC Gym,,2025-09-15T11:00:00
-2025-10-01,Luke Gallagher,Overhead Press,52.5,6,3,7,Working Set,Barbell,61.8,SAOC Gym,,2025-10-01T11:00:00
-2025-10-15,Luke Gallagher,Overhead Press,55.0,5,3,8,Working Set,Barbell,63.2,SAOC Gym,,2025-10-15T11:00:00
-2025-11-01,Luke Gallagher,Overhead Press,57.5,5,3,8,Working Set,Barbell,66.1,SAOC Gym,,2025-11-01T11:00:00
-2025-11-15,Luke Gallagher,Overhead Press,60.0,4,3,8,Working Set,Barbell,66.7,SAOC Gym,,2025-11-15T11:00:00
-2025-12-01,Luke Gallagher,Overhead Press,62.5,5,3,9,Working Set,Barbell,71.9,SAOC Gym,New PB,2025-12-01T11:00:00
-2025-09-15,Paul Stretch,Bench Press,70.0,5,3,7,Working Set,Barbell,80.5,SAOC Gym,Good form,2025-09-15T10:00:00
-2025-10-01,Paul Stretch,Bench Press,72.5,5,3,7,Working Set,Barbell,83.4,SAOC Gym,,2025-10-01T10:00:00
-2025-10-15,Paul Stretch,Bench Press,75.0,5,3,8,Working Set,Barbell,86.2,SAOC Gym,Strong,2025-10-15T10:00:00
-2025-11-01,Paul Stretch,Bench Press,77.5,5,3,8,Working Set,Barbell,89.1,SAOC Gym,,2025-11-01T10:00:00
-2025-11-15,Paul Stretch,Bench Press,80.0,4,3,8,Working Set,Barbell,88.9,SAOC Gym,,2025-11-15T10:00:00
-2025-12-01,Paul Stretch,Bench Press,82.5,5,3,8,Working Set,Barbell,94.9,SAOC Gym,New PB,2025-12-01T10:00:00
-2025-09-15,Paul Stretch,Pull Up,0.0,15,3,7,Working Set,Bodyweight,0.0,SAOC Gym,Easy,2025-09-15T10:30:00
-2025-10-01,Paul Stretch,Weighted Pull Up,10.0,10,3,7,Working Set,Bodyweight,12.0,SAOC Gym,,2025-10-01T10:30:00
-2025-11-01,Paul Stretch,Weighted Pull Up,15.0,8,3,8,Working Set,Bodyweight,17.6,SAOC Gym,Good,2025-11-01T10:30:00
-2025-12-01,Paul Stretch,Weighted Pull Up,20.0,6,3,9,Working Set,Bodyweight,23.5,SAOC Gym,New PB,2025-12-01T10:30:00
-2025-09-15,Paul Stretch,Overhead Press,45.0,6,3,7,Working Set,Barbell,52.9,SAOC Gym,,2025-09-15T11:00:00
-2025-10-15,Paul Stretch,Overhead Press,50.0,5,3,8,Working Set,Barbell,57.5,SAOC Gym,,2025-10-15T11:00:00
-2025-12-01,Paul Stretch,Overhead Press,55.0,5,3,8,Working Set,Barbell,63.2,SAOC Gym,Good lift,2025-12-01T11:00:00
+date,athlete,exercise,weight_kg,reps,sets,rpe,test_type,equipment,estimated_1rm,location,notes,created_at,athlete_sport,Name,recordedDateUtc
+2025-09-15,Luke Gallagher,Bench Press,80.0,5,3,7,Working Set,Barbell,92.0,SAOC Gym,Good depth,2025-09-15T10:00:00,Staff,Luke Gallagher,2025-09-15
+2025-10-01,Luke Gallagher,Bench Press,82.5,5,3,7,Working Set,Barbell,94.9,SAOC Gym,Felt strong,2025-10-01T10:00:00,Staff,Luke Gallagher,2025-10-01
+2025-10-15,Luke Gallagher,Bench Press,85.0,4,3,8,Working Set,Barbell,94.4,SAOC Gym,,2025-10-15T10:00:00,Staff,Luke Gallagher,2025-10-15
+2025-11-01,Luke Gallagher,Bench Press,87.5,5,3,8,Working Set,Barbell,100.6,SAOC Gym,New PB feel,2025-11-01T10:00:00,Staff,Luke Gallagher,2025-11-01
+2025-11-15,Luke Gallagher,Bench Press,90.0,4,3,8,Working Set,Barbell,100.0,SAOC Gym,,2025-11-15T10:00:00,Staff,Luke Gallagher,2025-11-15
+2025-12-01,Luke Gallagher,Bench Press,92.5,5,3,8,Working Set,Barbell,106.4,SAOC Gym,Strong session,2025-12-01T10:00:00,Staff,Luke Gallagher,2025-12-01
+2025-09-15,Luke Gallagher,Pull Up,0.0,12,3,7,Working Set,Bodyweight,0.0,SAOC Gym,Strict form,2025-09-15T10:30:00,Staff,Luke Gallagher,2025-09-15
+2025-10-01,Luke Gallagher,Pull Up,0.0,14,3,7,Working Set,Bodyweight,0.0,SAOC Gym,,2025-10-01T10:30:00,Staff,Luke Gallagher,2025-10-01
+2025-10-15,Luke Gallagher,Weighted Pull Up,10.0,8,3,8,Working Set,Bodyweight,12.0,SAOC Gym,Added weight,2025-10-15T10:30:00,Staff,Luke Gallagher,2025-10-15
+2025-11-01,Luke Gallagher,Weighted Pull Up,12.5,8,3,8,Working Set,Bodyweight,15.0,SAOC Gym,,2025-11-01T10:30:00,Staff,Luke Gallagher,2025-11-01
+2025-11-15,Luke Gallagher,Weighted Pull Up,15.0,6,3,8,Working Set,Bodyweight,17.6,SAOC Gym,,2025-11-15T10:30:00,Staff,Luke Gallagher,2025-11-15
+2025-12-01,Luke Gallagher,Weighted Pull Up,17.5,6,3,9,Working Set,Bodyweight,20.6,SAOC Gym,Good progress,2025-12-01T10:30:00,Staff,Luke Gallagher,2025-12-01
+2025-09-15,Luke Gallagher,Overhead Press,50.0,6,3,7,Working Set,Barbell,58.8,SAOC Gym,,2025-09-15T11:00:00,Staff,Luke Gallagher,2025-09-15
+2025-10-01,Luke Gallagher,Overhead Press,52.5,6,3,7,Working Set,Barbell,61.8,SAOC Gym,,2025-10-01T11:00:00,Staff,Luke Gallagher,2025-10-01
+2025-10-15,Luke Gallagher,Overhead Press,55.0,5,3,8,Working Set,Barbell,63.2,SAOC Gym,,2025-10-15T11:00:00,Staff,Luke Gallagher,2025-10-15
+2025-11-01,Luke Gallagher,Overhead Press,57.5,5,3,8,Working Set,Barbell,66.1,SAOC Gym,,2025-11-01T11:00:00,Staff,Luke Gallagher,2025-11-01
+2025-11-15,Luke Gallagher,Overhead Press,60.0,4,3,8,Working Set,Barbell,66.7,SAOC Gym,,2025-11-15T11:00:00,Staff,Luke Gallagher,2025-11-15
+2025-12-01,Luke Gallagher,Overhead Press,62.5,5,3,9,Working Set,Barbell,71.9,SAOC Gym,New PB,2025-12-01T11:00:00,Staff,Luke Gallagher,2025-12-01
+2025-09-15,Paul Stretch,Bench Press,70.0,5,3,7,Working Set,Barbell,80.5,SAOC Gym,Good form,2025-09-15T10:00:00,Staff,Paul Stretch,2025-09-15
+2025-10-01,Paul Stretch,Bench Press,72.5,5,3,7,Working Set,Barbell,83.4,SAOC Gym,,2025-10-01T10:00:00,Staff,Paul Stretch,2025-10-01
+2025-10-15,Paul Stretch,Bench Press,75.0,5,3,8,Working Set,Barbell,86.2,SAOC Gym,Strong,2025-10-15T10:00:00,Staff,Paul Stretch,2025-10-15
+2025-11-01,Paul Stretch,Bench Press,77.5,5,3,8,Working Set,Barbell,89.1,SAOC Gym,,2025-11-01T10:00:00,Staff,Paul Stretch,2025-11-01
+2025-11-15,Paul Stretch,Bench Press,80.0,4,3,8,Working Set,Barbell,88.9,SAOC Gym,,2025-11-15T10:00:00,Staff,Paul Stretch,2025-11-15
+2025-12-01,Paul Stretch,Bench Press,82.5,5,3,8,Working Set,Barbell,94.9,SAOC Gym,New PB,2025-12-01T10:00:00,Staff,Paul Stretch,2025-12-01
+2025-09-15,Paul Stretch,Pull Up,0.0,15,3,7,Working Set,Bodyweight,0.0,SAOC Gym,Easy,2025-09-15T10:30:00,Staff,Paul Stretch,2025-09-15
+2025-10-01,Paul Stretch,Weighted Pull Up,10.0,10,3,7,Working Set,Bodyweight,12.0,SAOC Gym,,2025-10-01T10:30:00,Staff,Paul Stretch,2025-10-01
+2025-11-01,Paul Stretch,Weighted Pull Up,15.0,8,3,8,Working Set,Bodyweight,17.6,SAOC Gym,Good,2025-11-01T10:30:00,Staff,Paul Stretch,2025-11-01
+2025-12-01,Paul Stretch,Weighted Pull Up,20.0,6,3,9,Working Set,Bodyweight,23.5,SAOC Gym,New PB,2025-12-01T10:30:00,Staff,Paul Stretch,2025-12-01
+2025-09-15,Paul Stretch,Overhead Press,45.0,6,3,7,Working Set,Barbell,52.9,SAOC Gym,,2025-09-15T11:00:00,Staff,Paul Stretch,2025-09-15
+2025-10-15,Paul Stretch,Overhead Press,50.0,5,3,8,Working Set,Barbell,57.5,SAOC Gym,,2025-10-15T11:00:00,Staff,Paul Stretch,2025-10-15
+2025-12-01,Paul Stretch,Overhead Press,55.0,5,3,8,Working Set,Barbell,63.2,SAOC Gym,Good lift,2025-12-01T11:00:00,Staff,Paul Stretch,2025-12-01
