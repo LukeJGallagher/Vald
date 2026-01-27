@@ -189,15 +189,22 @@ df = merge_with_existing(...)           # Old rows keep "Unknown"
 
 Located in `dashboard/data/`:
 
-| File | Content | Columns |
-|------|---------|---------|
+| File | Content | Key Columns |
+|------|---------|-------------|
 | `broad_jump.csv` | Broad jump distances | date, athlete, distance_cm, attempt, session_type, notes |
 | `sc_lower_body.csv` | Lower body strength (Squat, Deadlift, Front Squat) | date, athlete, exercise, weight_kg, reps, sets, rpe, estimated_1rm |
 | `sc_upper_body.csv` | Upper body strength (Bench, Pull Up, OHP) | date, athlete, exercise, weight_kg, reps, sets, rpe, estimated_1rm |
 | `power_tests.csv` | Power tests (Peak, Repeat, Glycolytic) | date, athlete, test_type, peak_wattage, avg_wattage, body_mass_kg |
 | `aerobic_tests.csv` | Aerobic capacity | date, athlete, avg_wattage, body_mass_kg, avg_relative_wattage |
-| `trunk_endurance.csv` | Trunk endurance tests | (varies) |
-| `training_distances.csv` | Training load | (varies) |
+| `trunk_endurance.csv` | Trunk endurance tests | date, athlete, supine_sec, prone_sec, lateral_left_sec, lateral_right_sec |
+| `training_distances.csv` | Training load (throws) | date, athlete, event, implement_kg, distance_m |
+
+**Required Filtering Columns** (added to all manual test files for dashboard compatibility):
+- `athlete_sport` - Sport category for filtering (e.g., "Staff", "Athletics", "Fencing")
+- `Name` - Full athlete name (matches VALD profile name format)
+- `recordedDateUtc` - Date for time-based filtering (same as `date` column)
+
+These columns enable consistent filtering across VALD data and manual test data in S&C Diagnostics tabs.
 
 ## S&C Diagnostics Tab Structure
 
