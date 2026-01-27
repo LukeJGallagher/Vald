@@ -2659,8 +2659,11 @@ with tabs[4]:  # Data Entry
         sc_df = st.session_state.sc_upper_body
 
         if not sc_df.empty:
+            # Ensure date column is datetime for proper sorting
+            if 'date' in sc_df.columns:
+                sc_df['date'] = pd.to_datetime(sc_df['date'], errors='coerce')
             # Show last 10 entries
-            recent_sc = sc_df.sort_values('date', ascending=False).head(10)
+            recent_sc = sc_df.sort_values('date', ascending=False, na_position='last').head(10)
 
             # Display columns
             display_cols = ['date', 'athlete', 'exercise', 'weight_kg', 'reps', 'sets', 'estimated_1rm', 'rpe', 'test_type']
@@ -2907,8 +2910,11 @@ with tabs[4]:  # Data Entry
         lb_df = st.session_state.sc_lower_body
 
         if not lb_df.empty:
+            # Ensure date column is datetime for proper sorting
+            if 'date' in lb_df.columns:
+                lb_df['date'] = pd.to_datetime(lb_df['date'], errors='coerce')
             # Show last 10 entries
-            recent_lb = lb_df.sort_values('date', ascending=False).head(10)
+            recent_lb = lb_df.sort_values('date', ascending=False, na_position='last').head(10)
 
             # Display columns
             display_cols = ['date', 'athlete', 'exercise', 'weight_kg', 'reps', 'sets', 'estimated_1rm', 'rpe', 'test_type']
@@ -3101,7 +3107,8 @@ with tabs[4]:  # Data Entry
 
             # Get latest test per athlete for chart
             if 'date' in te_df.columns:
-                latest_te = te_df.sort_values('date').groupby('athlete').last().reset_index()
+                te_df['date'] = pd.to_datetime(te_df['date'], errors='coerce')
+                latest_te = te_df.sort_values('date', na_position='last').groupby('athlete').last().reset_index()
             else:
                 latest_te = te_df.groupby('athlete').last().reset_index()
 
