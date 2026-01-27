@@ -358,6 +358,26 @@ Production: Streamlit Cloud Secrets dashboard
 - **Balance tab**: Filter by `testType.isin(['QSB', 'SLSB'])`
   - Primarily for Shooting (10m Pistol) athletes
 
+## Current Data State (Jan 2026)
+
+### VALD Device Data (after full sync)
+| Device | Tests | Key Sports |
+|--------|-------|------------|
+| ForceDecks | 2,102 | Fencing (643), Taekwondo (255), Karate (217), Wrestling (190), Weightlifting (178) |
+| ForceFrame | 203 | Karate (52), Fencing (32), Athletics (22), Jiu-Jitsu (19), Para Athletics (12) |
+| NordBord | 165 | Various sports |
+| DynaMo | 837 | Fencing (280), Weightlifting (109), TKD (91), Wrestling (68), Karate (29) |
+
+### Sport Athlete Counts (650 profiles)
+- Fencing: 142 | Karate: 75 | Athletics: 61 | Taekwondo: 48 | Para Athletics: 45
+- Judo: 40 | Weightlifting: 34 | Jiu-Jitsu: 32 | Wrestling: 31 | Shooting: 22
+- Swimming: 17 | Rowing: 17 | Equestrian: 7 | Snow Sports: 4
+
+### Manual Test Data (Staff only)
+- `sc_lower_body.csv`, `sc_upper_body.csv` - Luke Gallagher, Paul Stretch strength data
+- `broad_jump.csv`, `power_tests.csv`, `aerobic_tests.csv`, `trunk_endurance.csv`
+- All files have `athlete_sport`, `Name`, `recordedDateUtc` columns for filtering
+
 ## S&C Diagnostics Canvas Overview
 
 ### Tier 1 Tests (Primary)
