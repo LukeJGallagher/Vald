@@ -176,7 +176,7 @@ except ImportError:
             if os.path.exists(file_path):
                 df = pd.read_csv(file_path, low_memory=False)
                 if 'recordedDateUtc' in df.columns:
-                    df['recordedDateUtc'] = pd.to_datetime(df['recordedDateUtc'])
+                    df['recordedDateUtc'] = pd.to_datetime(df['recordedDateUtc'], errors='coerce')
                 if 'testDateUtc' in df.columns:
                     df['testDateUtc'] = pd.to_datetime(df['testDateUtc'], errors='coerce')
                 # Create Name column from full_name if missing
@@ -1878,15 +1878,36 @@ if selected_sport:
     else:
         filtered_df = df.copy()
 
+    # Filter ForceFrame: first try athlete_sport, then fall back to matching athletes from main data
     if 'athlete_sport' in df_forceframe.columns:
         filtered_forceframe = df_forceframe[df_forceframe['athlete_sport'].str.contains(selected_sport.split()[0], case=False, na=False)].copy()
     else:
         filtered_forceframe = df_forceframe.copy()
 
+    # If no ForceFrame data found by sport, try matching by athlete names/IDs from filtered_df
+    if filtered_forceframe.empty and not df_forceframe.empty and not filtered_df.empty:
+        # Get athlete IDs or names from filtered main data
+        if 'profileId' in filtered_df.columns and 'athleteId' in df_forceframe.columns:
+            sport_athlete_ids = filtered_df['profileId'].dropna().unique()
+            filtered_forceframe = df_forceframe[df_forceframe['athleteId'].isin(sport_athlete_ids)].copy()
+        elif 'Name' in filtered_df.columns and 'Name' in df_forceframe.columns:
+            sport_athlete_names = filtered_df['Name'].dropna().unique()
+            filtered_forceframe = df_forceframe[df_forceframe['Name'].isin(sport_athlete_names)].copy()
+
+    # Filter NordBord: first try athlete_sport, then fall back to matching athletes from main data
     if 'athlete_sport' in df_nordbord.columns:
         filtered_nordbord = df_nordbord[df_nordbord['athlete_sport'].str.contains(selected_sport.split()[0], case=False, na=False)].copy()
     else:
         filtered_nordbord = df_nordbord.copy()
+
+    # If no NordBord data found by sport, try matching by athlete names/IDs from filtered_df
+    if filtered_nordbord.empty and not df_nordbord.empty and not filtered_df.empty:
+        if 'profileId' in filtered_df.columns and 'athleteId' in df_nordbord.columns:
+            sport_athlete_ids = filtered_df['profileId'].dropna().unique()
+            filtered_nordbord = df_nordbord[df_nordbord['athleteId'].isin(sport_athlete_ids)].copy()
+        elif 'Name' in filtered_df.columns and 'Name' in df_nordbord.columns:
+            sport_athlete_names = filtered_df['Name'].dropna().unique()
+            filtered_nordbord = df_nordbord[df_nordbord['Name'].isin(sport_athlete_names)].copy()
 else:
     filtered_df = df.copy()
     filtered_forceframe = df_forceframe.copy()
@@ -2156,7 +2177,7 @@ with tabs[4]:  # Data Entry
         if os.path.exists(training_data_path):
             df = pd.read_csv(training_data_path)
             if 'date' in df.columns:
-                df['date'] = pd.to_datetime(df['date'])
+                df['date'] = pd.to_datetime(df['date'], errors='coerce')
             return df
         return pd.DataFrame()
 
@@ -2166,7 +2187,7 @@ with tabs[4]:  # Data Entry
         if os.path.exists(sc_upper_body_path):
             df = pd.read_csv(sc_upper_body_path)
             if 'date' in df.columns:
-                df['date'] = pd.to_datetime(df['date'])
+                df['date'] = pd.to_datetime(df['date'], errors='coerce')
             return df
         return pd.DataFrame()
 
@@ -2176,7 +2197,7 @@ with tabs[4]:  # Data Entry
         if os.path.exists(sc_lower_body_path):
             df = pd.read_csv(sc_lower_body_path)
             if 'date' in df.columns:
-                df['date'] = pd.to_datetime(df['date'])
+                df['date'] = pd.to_datetime(df['date'], errors='coerce')
             return df
         return pd.DataFrame()
 
@@ -5998,7 +6019,7 @@ with tabs[1]:
                         try:
                             trunk_df = pd.read_csv(trunk_csv_path)
                             if 'date' in trunk_df.columns:
-                                trunk_df['date'] = pd.to_datetime(trunk_df['date'])
+                                trunk_df['date'] = pd.to_datetime(trunk_df['date'], errors='coerce')
 
                             if selected_report_sport and selected_report_sport != "All Sports":
                                 if 'Name' in sport_data.columns:
@@ -6064,7 +6085,7 @@ with tabs[1]:
                         try:
                             bj_df = pd.read_csv(broad_jump_path)
                             if 'date' in bj_df.columns:
-                                bj_df['date'] = pd.to_datetime(bj_df['date'])
+                                bj_df['date'] = pd.to_datetime(bj_df['date'], errors='coerce')
 
                             if selected_report_sport and selected_report_sport != "All Sports" and 'Name' in sport_data.columns:
                                 sport_athletes = sport_data['Name'].dropna().unique()

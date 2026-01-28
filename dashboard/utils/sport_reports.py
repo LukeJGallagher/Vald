@@ -1088,9 +1088,18 @@ def create_group_report(df: pd.DataFrame,
         try:
             sc_df = pd.read_csv(sc_upper_body_path)
             if 'date' in sc_df.columns:
-                sc_df['date'] = pd.to_datetime(sc_df['date'])
+                sc_df['date'] = pd.to_datetime(sc_df['date'], errors='coerce')
         except Exception:
             pass
+
+    # Filter S&C data by sport athletes (use Name or athlete column)
+    if not sc_df.empty and 'Name' in sport_df.columns:
+        sport_athletes = sport_df['Name'].dropna().unique().tolist()
+        # Try to match by athlete column first, then Name
+        if 'athlete' in sc_df.columns:
+            sc_df = sc_df[sc_df['athlete'].isin(sport_athletes)]
+        elif 'Name' in sc_df.columns:
+            sc_df = sc_df[sc_df['Name'].isin(sport_athletes)]
 
     # Row 1: Bench Press and Pull Up
     col1, col2 = st.columns(2)
