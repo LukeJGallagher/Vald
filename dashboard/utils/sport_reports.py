@@ -1531,7 +1531,7 @@ def create_group_report(df: pd.DataFrame,
         try:
             sc_df = pd.read_csv(sc_upper_path)
             if 'date' in sc_df.columns:
-                sc_df['date'] = pd.to_datetime(sc_df['date'])
+                sc_df['date'] = pd.to_datetime(sc_df['date'], errors='coerce')
         except Exception:
             pass
 
@@ -1546,7 +1546,7 @@ def create_group_report(df: pd.DataFrame,
         try:
             sc_lower = pd.read_csv(sc_lower_path)
             if 'date' in sc_lower.columns:
-                sc_lower['date'] = pd.to_datetime(sc_lower['date'])
+                sc_lower['date'] = pd.to_datetime(sc_lower['date'], errors='coerce')
             if not sc_df.empty:
                 sc_df = pd.concat([sc_df, sc_lower], ignore_index=True)
             else:
@@ -2074,7 +2074,7 @@ def create_individual_report(df: pd.DataFrame,
             athlete_str = strength_df[strength_df['athlete'] == athlete_name].copy()
             if not athlete_str.empty and 'date' in athlete_str.columns and 'estimated_1rm' in athlete_str.columns:
                 st.markdown("### Strength RM (Manual Entry)")
-                athlete_str['date'] = pd.to_datetime(athlete_str['date'])
+                athlete_str['date'] = pd.to_datetime(athlete_str['date'], errors='coerce')
 
                 exercises = athlete_str['exercise'].unique() if 'exercise' in athlete_str.columns else []
                 if len(exercises) > 0:
@@ -2097,7 +2097,7 @@ def create_individual_report(df: pd.DataFrame,
                 athlete_bj = bj_df[bj_df['athlete'] == athlete_name].copy()
                 if not athlete_bj.empty and 'date' in athlete_bj.columns and 'distance_cm' in athlete_bj.columns:
                     st.markdown("### Broad Jump (Manual Entry)")
-                    athlete_bj['date'] = pd.to_datetime(athlete_bj['date'])
+                    athlete_bj['date'] = pd.to_datetime(athlete_bj['date'], errors='coerce')
                     athlete_bj = athlete_bj.sort_values('date')
                     fig = go.Figure()
                     fig.add_trace(go.Scatter(x=athlete_bj['date'], y=athlete_bj['distance_cm'],
@@ -3611,7 +3611,7 @@ def create_group_report_v3(df: pd.DataFrame,
         try:
             sc_df_v3 = pd.read_csv(sc_upper_body_path_v3)
             if 'date' in sc_df_v3.columns:
-                sc_df_v3['date'] = pd.to_datetime(sc_df_v3['date'])
+                sc_df_v3['date'] = pd.to_datetime(sc_df_v3['date'], errors='coerce')
         except Exception:
             pass
 
@@ -4109,7 +4109,7 @@ def create_shooting_group_report(df: pd.DataFrame, sport: str = "Shooting"):
         return
 
     if 'recordedDateUtc' in qsb_df.columns:
-        qsb_df['recordedDateUtc'] = pd.to_datetime(qsb_df['recordedDateUtc'])
+        qsb_df['recordedDateUtc'] = pd.to_datetime(qsb_df['recordedDateUtc'], errors='coerce')
         # Filter out NaN dates before groupby
         valid_dates = qsb_df[qsb_df['recordedDateUtc'].notna()]
         if not valid_dates.empty:
@@ -4372,7 +4372,7 @@ def create_shooting_individual_report(df: pd.DataFrame, athlete_name: str, sport
 
     # Sort by date
     if 'recordedDateUtc' in athlete_df.columns:
-        athlete_df['recordedDateUtc'] = pd.to_datetime(athlete_df['recordedDateUtc'])
+        athlete_df['recordedDateUtc'] = pd.to_datetime(athlete_df['recordedDateUtc'], errors='coerce')
         athlete_df = athlete_df.sort_values('recordedDateUtc')
 
     # Latest metrics

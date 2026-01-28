@@ -1398,7 +1398,7 @@ def create_stacked_individual_trend_chart(
         return None
 
     # Sort by date
-    athlete_df['recordedDateUtc'] = pd.to_datetime(athlete_df['recordedDateUtc'])
+    athlete_df['recordedDateUtc'] = pd.to_datetime(athlete_df['recordedDateUtc'], errors='coerce')
     athlete_df = athlete_df.sort_values('recordedDateUtc')
 
     # Format dates for display
@@ -1687,7 +1687,7 @@ def create_multi_line_strength_chart(
 
     # Ensure date column is datetime
     if 'date' in athlete_df.columns:
-        athlete_df['date'] = pd.to_datetime(athlete_df['date'])
+        athlete_df['date'] = pd.to_datetime(athlete_df['date'], errors='coerce')
 
     # Determine value column (prefer estimated_1rm, fallback to weight_kg)
     value_col = 'estimated_1rm' if 'estimated_1rm' in athlete_df.columns else 'weight_kg'
@@ -2499,7 +2499,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
             if 'athlete' in strength_df.columns and 'Name' not in strength_df.columns:
                 strength_df['Name'] = strength_df['athlete']
             if 'date' in strength_df.columns:
-                strength_df['date'] = pd.to_datetime(strength_df['date'])
+                strength_df['date'] = pd.to_datetime(strength_df['date'], errors='coerce')
 
             # Add sport filter for manual entry data
             # Try to match athletes to sports from ForceDecks data if available
@@ -2666,7 +2666,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
             try:
                 bj_df = pd.read_csv(broad_jump_path)
                 if 'date' in bj_df.columns:
-                    bj_df['date'] = pd.to_datetime(bj_df['date'])
+                    bj_df['date'] = pd.to_datetime(bj_df['date'], errors='coerce')
 
                 if not bj_df.empty:
                     filtered_df, sport, gender = render_filters(bj_df, "broad_jump")
@@ -2749,7 +2749,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
             try:
                 fitness_df = pd.read_csv(fitness_path)
                 if 'date' in fitness_df.columns:
-                    fitness_df['date'] = pd.to_datetime(fitness_df['date'])
+                    fitness_df['date'] = pd.to_datetime(fitness_df['date'], errors='coerce')
 
                 if not fitness_df.empty and 'test_type' in fitness_df.columns:
                     test_df = fitness_df[fitness_df['test_type'] == selected_fitness_test].copy()
@@ -2957,7 +2957,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                     if 'full_name' in dynamo_df.columns and 'Name' not in dynamo_df.columns:
                         dynamo_df['Name'] = dynamo_df['full_name']
                     if 'startTimeUTC' in dynamo_df.columns:
-                        dynamo_df['recordedDateUtc'] = pd.to_datetime(dynamo_df['startTimeUTC'])
+                        dynamo_df['recordedDateUtc'] = pd.to_datetime(dynamo_df['startTimeUTC'], errors='coerce')
                     if 'athlete_sport' in dynamo_df.columns and 'athlete_sport' not in dynamo_df.columns:
                         pass  # Already has it
                     break
