@@ -2221,17 +2221,41 @@ with tabs[4]:  # Data Entry
     if st.session_state.sc_lower_body.empty:
         st.session_state.sc_lower_body = load_sc_lower_body()
 
-    # Create sub-tabs for different entry types
-    entry_tabs = st.tabs([
+    # Tab selection with persistence (st.tabs doesn't persist on rerun)
+    entry_tab_options = [
         "🥏 Throws Distance", "💪 S&C Upper Body", "🦵 S&C Lower Body",
         "🏋️ Trunk Endurance", "🏃 Aerobic Tests", "🦘 Broad Jump",
         "⚡ Power Tests", "📊 View Data", "📈 Charts"
-    ])
+    ]
+
+    # Initialize session state for active entry tab
+    if 'active_entry_tab' not in st.session_state:
+        st.session_state.active_entry_tab = entry_tab_options[0]
+
+    # Ensure active tab is valid
+    if st.session_state.active_entry_tab not in entry_tab_options:
+        st.session_state.active_entry_tab = entry_tab_options[0]
+
+    # Get current index for the selectbox
+    current_tab_idx = entry_tab_options.index(st.session_state.active_entry_tab)
+
+    # Use selectbox for tab navigation (persists across reruns)
+    selected_entry_tab = st.selectbox(
+        "Select Entry Type:",
+        entry_tab_options,
+        index=current_tab_idx,
+        key="entry_tab_selector"
+    )
+
+    # Update session state
+    st.session_state.active_entry_tab = selected_entry_tab
+
+    st.markdown("---")
 
     # -------------------------------------------------------------------------
     # SUB-TAB: Throws Distance Entry Form
     # -------------------------------------------------------------------------
-    with entry_tabs[0]:
+    if selected_entry_tab == "🥏 Throws Distance":
         st.markdown("### 🥏 Record Throw Distance")
 
         st.markdown("""
@@ -2460,7 +2484,7 @@ with tabs[4]:  # Data Entry
     # -------------------------------------------------------------------------
     # SUB-TAB: S&C Upper Body (Bench Press, Pull Ups, etc.)
     # -------------------------------------------------------------------------
-    with entry_tabs[1]:
+    elif selected_entry_tab == "💪 S&C Upper Body":
         st.markdown("### 💪 S&C Upper Body Strength & Power")
 
         st.markdown("""
@@ -2753,7 +2777,7 @@ with tabs[4]:  # Data Entry
     # -------------------------------------------------------------------------
     # SUB-TAB: S&C Lower Body (Squats, Deadlifts, etc.)
     # -------------------------------------------------------------------------
-    with entry_tabs[2]:
+    elif selected_entry_tab == "🦵 S&C Lower Body":
         st.markdown("### 🦵 S&C Lower Body Strength & Power")
 
         st.markdown("""
@@ -3046,7 +3070,7 @@ with tabs[4]:  # Data Entry
     # -------------------------------------------------------------------------
     # SUB-TAB: Trunk Endurance (Quadrant Test - Manual Entry)
     # -------------------------------------------------------------------------
-    with entry_tabs[3]:
+    elif selected_entry_tab == "🏋️ Trunk Endurance":
         st.markdown("### 🏋️ Trunk Endurance (Quadrant Test)")
 
         st.markdown("""
@@ -3288,7 +3312,7 @@ with tabs[4]:  # Data Entry
     # -------------------------------------------------------------------------
     # SUB-TAB: Aerobic Tests (6 Min Test - Manual Entry)
     # -------------------------------------------------------------------------
-    with entry_tabs[4]:
+    elif selected_entry_tab == "🏃 Aerobic Tests":
         st.markdown("### 🏃 Aerobic Tests (6 Minute Test)")
 
         st.markdown("""
@@ -3422,7 +3446,7 @@ with tabs[4]:  # Data Entry
     # -------------------------------------------------------------------------
     # SUB-TAB: Broad Jump (Manual Entry)
     # -------------------------------------------------------------------------
-    with entry_tabs[5]:
+    elif selected_entry_tab == "🦘 Broad Jump":
         st.markdown("### 🦘 Broad Jump (Standing Long Jump)")
 
         st.markdown("""
@@ -3557,7 +3581,7 @@ with tabs[4]:  # Data Entry
     # -------------------------------------------------------------------------
     # SUB-TAB: Power Tests (Peak Power, Repeat Power, Glycolytic Power)
     # -------------------------------------------------------------------------
-    with entry_tabs[6]:
+    elif selected_entry_tab == "⚡ Power Tests":
         st.markdown("### ⚡ Power Tests")
 
         st.markdown("""
@@ -3718,7 +3742,7 @@ with tabs[4]:  # Data Entry
     # -------------------------------------------------------------------------
     # SUB-TAB: View Data (with Edit/Delete) - Now with sub-tabs
     # -------------------------------------------------------------------------
-    with entry_tabs[7]:
+    elif selected_entry_tab == "📊 View Data":
         st.markdown("### 📊 Recorded Training Data")
 
         # Create sub-tabs for different data types
@@ -4156,7 +4180,7 @@ with tabs[4]:  # Data Entry
     # -------------------------------------------------------------------------
     # SUB-TAB: Charts - Now with sub-tabs
     # -------------------------------------------------------------------------
-    with entry_tabs[8]:
+    elif selected_entry_tab == "📈 Charts":
         st.markdown("### 📈 Training Charts")
 
         # Create sub-tabs for different chart types
