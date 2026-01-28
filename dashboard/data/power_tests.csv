@@ -1,0 +1,11 @@
+date,athlete,test_type,peak_wattage,avg_wattage,body_mass_kg,peak_relative_wattage,avg_relative_wattage,session_type,notes,athlete_sport,Name,recordedDateUtc
+2025-01-12,Luke Gallagher,Peak Power (10s),850,780,85.0,10.0,9.18,Testing,Good effort,Staff,Luke Gallagher,2025-01-12
+2025-01-12,Luke Gallagher,Repeat Power (10x6s),720,650,85.0,8.47,7.65,Testing,Fatigue in last 3 reps,Staff,Luke Gallagher,2025-01-12
+2025-01-12,Luke Gallagher,Glycolytic Power (3min),520,420,85.0,6.12,4.94,Testing,Tough finish,Staff,Luke Gallagher,2025-01-12
+2025-01-19,Luke Gallagher,Peak Power (10s),870,800,84.5,10.3,9.47,Testing,Improved from baseline,Staff,Luke Gallagher,2025-01-19
+2025-01-19,Luke Gallagher,Repeat Power (10x6s),735,670,84.5,8.7,7.93,Testing,Better pacing,Staff,Luke Gallagher,2025-01-19
+2025-01-12,Paul Stretch,Peak Power (10s),920,840,78.0,11.79,10.77,Testing,Excellent peak power,Staff,Paul Stretch,2025-01-12
+2025-01-12,Paul Stretch,Repeat Power (10x6s),780,700,78.0,10.0,8.97,Testing,Strong repeatability,Staff,Paul Stretch,2025-01-12
+2025-01-12,Paul Stretch,Glycolytic Power (3min),580,480,78.0,7.44,6.15,Testing,Good sustained effort,Staff,Paul Stretch,2025-01-12
+2025-01-19,Paul Stretch,Peak Power (10s),940,860,77.5,12.13,11.1,Testing,New PB peak,Staff,Paul Stretch,2025-01-19
+2025-01-19,Paul Stretch,Repeat Power (10x6s),800,720,77.5,10.32,9.29,Testing,Consistent power output,Staff,Paul Stretch,2025-01-19

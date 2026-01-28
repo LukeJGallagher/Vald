@@ -1,0 +1,11 @@
+date,athlete,supine_sec,prone_sec,lateral_left_sec,lateral_right_sec,total_sec,session_type,notes,athlete_sport,Name,recordedDateUtc
+2024-12-10,Luke Gallagher,145,128,95,102,470,Testing,Baseline assessment,Staff,Luke Gallagher,2024-12-10
+2024-12-17,Luke Gallagher,148,135,98,105,486,Training,Week 1 follow-up,Staff,Luke Gallagher,2024-12-17
+2025-01-07,Luke Gallagher,152,140,102,108,502,Testing,Post-holiday reassessment,Staff,Luke Gallagher,2025-01-07
+2025-01-15,Luke Gallagher,155,145,108,112,520,Training,Good progress,Staff,Luke Gallagher,2025-01-15
+2025-01-22,Luke Gallagher,158,148,110,115,531,Testing,Current PB,Staff,Luke Gallagher,2025-01-22
+2024-12-10,Paul Stretch,168,155,125,128,576,Testing,Initial assessment,Staff,Paul Stretch,2024-12-10
+2024-12-19,Paul Stretch,172,160,128,130,590,Training,Strong core endurance,Staff,Paul Stretch,2024-12-19
+2025-01-08,Paul Stretch,175,162,132,135,604,Testing,Consistent improvements,Staff,Paul Stretch,2025-01-08
+2025-01-16,Paul Stretch,178,165,135,138,616,Training,Excellent prone hold,Staff,Paul Stretch,2025-01-16
+2025-01-23,Paul Stretch,180,168,138,140,626,Testing,Setting benchmark,Staff,Paul Stretch,2025-01-23

@@ -53,7 +53,14 @@ _TO_DELETE/
 # Data files - Contains PII, excluded from git
 data/master_files/*.csv
 dashboard/data/*.csv
+# Exceptions: Manual entry files (track these for team sync)
 !dashboard/data/training_distances.csv
+!dashboard/data/sc_upper_body.csv
+!dashboard/data/sc_lower_body.csv
+!dashboard/data/broad_jump.csv
+!dashboard/data/power_tests.csv
+!dashboard/data/aerobic_tests.csv
+!dashboard/data/trunk_endurance.csv
 dashboard/data/*.json
 
 # Windows artifacts
