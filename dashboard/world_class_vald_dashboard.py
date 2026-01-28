@@ -1858,7 +1858,17 @@ available_sports = sorted(set(ALL_KNOWN_SPORTS + data_sports))
 st.sidebar.markdown("---")
 st.sidebar.markdown("### 🏅 Select Sport")
 sport_options = ['All Sports'] + available_sports
-selected_sport_dropdown = st.sidebar.selectbox("Sport:", sport_options, key="sport_filter", label_visibility="collapsed")
+
+# Helper function to persist sport selection across reruns
+def get_sport_filter_index(key: str, options: List[str]) -> int:
+    """Preserve sport filter selection when page reruns."""
+    prev_value = st.session_state.get(key)
+    if prev_value is not None and prev_value in options:
+        return options.index(prev_value)
+    return 0  # Default to 'All Sports'
+
+sport_filter_idx = get_sport_filter_index("sport_filter", sport_options)
+selected_sport_dropdown = st.sidebar.selectbox("Sport:", sport_options, index=sport_filter_idx, key="sport_filter", label_visibility="collapsed")
 
 # Store selection in session state for consistency
 if 'selected_sport_icon' not in st.session_state:
@@ -4159,7 +4169,7 @@ with tabs[4]:  # Data Entry
             throws_chart_df = st.session_state.training_distances
 
             if not throws_chart_df.empty and 'date' in throws_chart_df.columns:
-                throws_chart_df['date'] = pd.to_datetime(throws_chart_df['date'])
+                throws_chart_df['date'] = pd.to_datetime(throws_chart_df['date'], errors='coerce')
 
                 # Chart filters - Row 1: Athlete and Event
                 tc_col1, tc_col2 = st.columns(2)
