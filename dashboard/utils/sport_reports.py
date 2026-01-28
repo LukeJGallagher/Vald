@@ -1564,9 +1564,25 @@ def create_group_report(df: pd.DataFrame,
                     sc_df = sc_df_filtered
 
         # Tab view like Canvas
-        strength_tabs = st.tabs(["👥 Group View", "🏃 Individual View"])
+        # Use selectbox + session state for persistence
+        strength_tab_options = ["👥 Group View", "🏃 Individual View"]
 
-        with strength_tabs[0]:
+        if 'active_strength_view_tab' not in st.session_state:
+            st.session_state.active_strength_view_tab = strength_tab_options[0]
+
+        current_strength_idx = 0
+        if st.session_state.active_strength_view_tab in strength_tab_options:
+            current_strength_idx = strength_tab_options.index(st.session_state.active_strength_view_tab)
+
+        selected_strength_view = st.selectbox(
+            "View:",
+            strength_tab_options,
+            index=current_strength_idx,
+            key="strength_view_selector_classic"
+        )
+        st.session_state.active_strength_view_tab = selected_strength_view
+
+        if selected_strength_view == "👥 Group View":
             # Group View - Ranked bar chart for each exercise
             if 'exercise' in sc_df.columns and 'estimated_1rm' in sc_df.columns:
                 exercises = sorted(sc_df['exercise'].dropna().unique().tolist())
@@ -1605,7 +1621,7 @@ def create_group_report(df: pd.DataFrame,
             else:
                 st.info("Required columns not found in S&C data.")
 
-        with strength_tabs[1]:
+        elif selected_strength_view == "🏃 Individual View":
             # Individual View - Multi-line progression
             sc_athletes = sorted(sc_df['athlete'].dropna().unique().tolist())
 

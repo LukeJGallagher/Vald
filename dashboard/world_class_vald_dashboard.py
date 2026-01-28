@@ -1943,16 +1943,36 @@ st.sidebar.metric("Sports", filtered_df['athlete_sport'].nunique() if 'athlete_s
 
 # New tab order: Home, Reports, ForceFrame, NordBord, Data Entry, Trace, Data
 # Throws moved under Reports tab
-# New indices:      0=Home, 1=Reports, 2=ForceFrame, 3=NordBord, 4=Data Entry, 5=Trace, 6=Data
-tabs = st.tabs([
+# Use selectbox + session state for persistence (st.tabs resets on filter changes)
+main_tab_options = [
     "🏠 Home", "📊 Reports", "🔲 ForceFrame", "🦵 NordBord", "✏️ Data Entry", "📉 Trace", "📋 Data"
-])
+]
+
+# Initialize session state for main tab
+if 'active_main_tab' not in st.session_state:
+    st.session_state.active_main_tab = main_tab_options[0]
+
+# Get current tab index from session state
+current_main_idx = 0
+if st.session_state.active_main_tab in main_tab_options:
+    current_main_idx = main_tab_options.index(st.session_state.active_main_tab)
+
+selected_main_tab = st.selectbox(
+    "Navigate to:",
+    main_tab_options,
+    index=current_main_idx,
+    key="main_tab_selector",
+    label_visibility="collapsed"
+)
+st.session_state.active_main_tab = selected_main_tab
+
+st.markdown("---")
 
 # ============================================================================
 # PAGE: OVERVIEW
 # ============================================================================
 
-with tabs[0]:
+if selected_main_tab == "🏠 Home":
     st.markdown("## 🏠 Performance Overview")
 
     # KPI Cards
@@ -2161,7 +2181,7 @@ with tabs[0]:
 # TAB 4: DATA ENTRY - Training Distances & External Data
 # ============================================================================
 
-with tabs[4]:  # Data Entry
+elif selected_main_tab == "✏️ Data Entry":
     st.markdown("## ✏️ Data Entry")
     st.markdown("*Record training distances, S&C metrics, and other external data*")
 
@@ -3746,12 +3766,28 @@ with tabs[4]:  # Data Entry
         st.markdown("### 📊 Recorded Training Data")
 
         # Create sub-tabs for different data types
-        view_data_tabs = st.tabs(["🥏 Throws", "💪 S&C Upper Body", "🦵 S&C Lower Body"])
+        # Use selectbox + session state for persistence
+        view_data_tab_options = ["🥏 Throws", "💪 S&C Upper Body", "🦵 S&C Lower Body"]
+
+        if 'active_view_data_tab' not in st.session_state:
+            st.session_state.active_view_data_tab = view_data_tab_options[0]
+
+        current_view_data_idx = 0
+        if st.session_state.active_view_data_tab in view_data_tab_options:
+            current_view_data_idx = view_data_tab_options.index(st.session_state.active_view_data_tab)
+
+        selected_view_data_tab = st.selectbox(
+            "Data Type:",
+            view_data_tab_options,
+            index=current_view_data_idx,
+            key="view_data_tab_selector"
+        )
+        st.session_state.active_view_data_tab = selected_view_data_tab
 
         # -----------------------------------------------------------------
         # VIEW DATA SUB-TAB: Throws
         # -----------------------------------------------------------------
-        with view_data_tabs[0]:
+        if selected_view_data_tab == "🥏 Throws":
             training_df = st.session_state.training_distances
 
             if not training_df.empty:
@@ -4000,7 +4036,7 @@ with tabs[4]:  # Data Entry
         # -----------------------------------------------------------------
         # VIEW DATA SUB-TAB: S&C Upper Body
         # -----------------------------------------------------------------
-        with view_data_tabs[1]:
+        elif selected_view_data_tab == "💪 S&C Upper Body":
             upper_df = st.session_state.sc_upper_body
 
             if not upper_df.empty:
@@ -4090,7 +4126,7 @@ with tabs[4]:  # Data Entry
         # -----------------------------------------------------------------
         # VIEW DATA SUB-TAB: S&C Lower Body
         # -----------------------------------------------------------------
-        with view_data_tabs[2]:
+        elif selected_view_data_tab == "🦵 S&C Lower Body":
             lower_df = st.session_state.sc_lower_body
 
             if not lower_df.empty:
@@ -4184,12 +4220,28 @@ with tabs[4]:  # Data Entry
         st.markdown("### 📈 Training Charts")
 
         # Create sub-tabs for different chart types
-        chart_sub_tabs = st.tabs(["🥏 Throws", "💪 S&C Upper Body", "🦵 S&C Lower Body"])
+        # Use selectbox + session state for persistence
+        chart_sub_tab_options = ["🥏 Throws", "💪 S&C Upper Body", "🦵 S&C Lower Body"]
+
+        if 'active_chart_sub_tab' not in st.session_state:
+            st.session_state.active_chart_sub_tab = chart_sub_tab_options[0]
+
+        current_chart_sub_idx = 0
+        if st.session_state.active_chart_sub_tab in chart_sub_tab_options:
+            current_chart_sub_idx = chart_sub_tab_options.index(st.session_state.active_chart_sub_tab)
+
+        selected_chart_sub_tab = st.selectbox(
+            "Chart Type:",
+            chart_sub_tab_options,
+            index=current_chart_sub_idx,
+            key="chart_sub_tab_selector"
+        )
+        st.session_state.active_chart_sub_tab = selected_chart_sub_tab
 
         # -----------------------------------------------------------------
         # CHARTS SUB-TAB: Throws
         # -----------------------------------------------------------------
-        with chart_sub_tabs[0]:
+        if selected_chart_sub_tab == "🥏 Throws":
             throws_chart_df = st.session_state.training_distances
 
             if not throws_chart_df.empty and 'date' in throws_chart_df.columns:
@@ -4359,7 +4411,7 @@ with tabs[4]:  # Data Entry
         # -----------------------------------------------------------------
         # CHARTS SUB-TAB: S&C Upper Body
         # -----------------------------------------------------------------
-        with chart_sub_tabs[1]:
+        elif selected_chart_sub_tab == "💪 S&C Upper Body":
             upper_chart_df = st.session_state.sc_upper_body
 
             if not upper_chart_df.empty and 'date' in upper_chart_df.columns:
@@ -4460,7 +4512,7 @@ with tabs[4]:  # Data Entry
         # -----------------------------------------------------------------
         # CHARTS SUB-TAB: S&C Lower Body
         # -----------------------------------------------------------------
-        with chart_sub_tabs[2]:
+        elif selected_chart_sub_tab == "🦵 S&C Lower Body":
             lower_chart_df = st.session_state.sc_lower_body
 
             if not lower_chart_df.empty and 'date' in lower_chart_df.columns:
@@ -4562,9 +4614,7 @@ with tabs[4]:  # Data Entry
 # TAB 11: FORCE TRACE ANALYSIS
 # ============================================================================
 
-
-
-with tabs[5]:  # Trace
+elif selected_main_tab == "📉 Trace":
     st.markdown("## 📉 Force Trace Analysis")
     st.markdown("""
     <div style="background: linear-gradient(135deg, #255035 0%, #1C3D28 100%); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
@@ -5754,9 +5804,7 @@ Tenant: {env_creds['tenant_id']}
 # TAB 14: DATA TABLE
 # ============================================================================
 
-
-
-with tabs[6]:  # Data
+elif selected_main_tab == "📋 Data":
     st.markdown("## 📋 Data Table View")
     st.markdown("Browse and export all testing data in table format")
 
@@ -5878,7 +5926,7 @@ with tabs[6]:  # Data
 # PAGE: SPORT REPORTS (NEW)
 # ============================================================================
 
-with tabs[1]:
+elif selected_main_tab == "📊 Reports":
     st.markdown("## 📊 Sport Reports")
     st.markdown("""
     <div style="background: linear-gradient(135deg, #255035 0%, #1C3D28 100%); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
@@ -5933,7 +5981,25 @@ with tabs[1]:
 
             # Report type tabs - Strength Diagnostics (with Canvas/Classic/Group V2/Individual), Shooting, Throws, and Benchmark Settings
             # Note: Group v2 and Individual moved inside Strength Diagnostics tab, Group v3 hidden
-            report_tabs = st.tabs(["💪 Strength Diagnostics", "🎯 Shooting Balance", "🥏 Throws", "⚙️ Benchmark Settings"])
+            # Use selectbox + session state for persistence (st.tabs resets on filter changes)
+            report_tab_options = ["💪 Strength Diagnostics", "🎯 Shooting Balance", "🥏 Throws", "⚙️ Benchmark Settings"]
+
+            # Initialize session state for report tab
+            if 'active_report_tab' not in st.session_state:
+                st.session_state.active_report_tab = report_tab_options[0]
+
+            # Get current tab index from session state
+            current_report_idx = 0
+            if st.session_state.active_report_tab in report_tab_options:
+                current_report_idx = report_tab_options.index(st.session_state.active_report_tab)
+
+            selected_report_tab = st.selectbox(
+                "Report Type:",
+                report_tab_options,
+                index=current_report_idx,
+                key="report_tab_selector"
+            )
+            st.session_state.active_report_tab = selected_report_tab
 
             # Render benchmark legend
             render_benchmark_legend()
@@ -6017,11 +6083,31 @@ with tabs[1]:
                     if not filtered_nb.empty:
                         sport_nb = filtered_nb
 
-            with report_tabs[0]:
-                # View toggle - Canvas vs Classic vs Group V2 vs Individual layout (using tabs)
-                view_tabs = st.tabs(["📊 S&C Canvas (12 Tests)", "📋 Classic Layout", "👥 Group V2 (Summary)", "🏃 Individual"])
+            if selected_report_tab == "💪 Strength Diagnostics":
+                # View toggle - Canvas vs Classic vs Group V2 vs Individual layout
+                # Use selectbox + session state for persistence (st.tabs resets on widget changes)
+                view_tab_options = ["📊 S&C Canvas (12 Tests)", "📋 Classic Layout", "👥 Group V2 (Summary)", "🏃 Individual"]
 
-                with view_tabs[0]:
+                # Initialize session state for view tab
+                if 'active_view_tab' not in st.session_state:
+                    st.session_state.active_view_tab = view_tab_options[0]
+
+                # Get current tab index from session state
+                current_view_idx = 0
+                if st.session_state.active_view_tab in view_tab_options:
+                    current_view_idx = view_tab_options.index(st.session_state.active_view_tab)
+
+                selected_view_tab = st.selectbox(
+                    "Select View:",
+                    view_tab_options,
+                    index=current_view_idx,
+                    key="view_tab_selector"
+                )
+                st.session_state.active_view_tab = selected_view_tab
+
+                st.markdown("---")
+
+                if selected_view_tab == "📊 S&C Canvas (12 Tests)":
                     # S&C Diagnostics Canvas - Full 12-tab system
                     # Includes: IMTP, CMJ, SL Tests, NordBord, 10:5 Hop, Quadrant Tests,
                     #           Strength RM, Broad Jump, Fitness Tests, Plyo Pushup, DynaMo, Balance
@@ -6034,7 +6120,7 @@ with tabs[1]:
                     else:
                         st.warning("S&C Diagnostics module not available.")
 
-                with view_tabs[1]:
+                elif selected_view_tab == "📋 Classic Layout":
                     # Classic Strength Diagnostics layout
                     create_group_report(
                         sport_data,
@@ -6218,7 +6304,7 @@ with tabs[1]:
                     else:
                         st.info("📭 No fitness test data. Use ✏️ Data Entry to add.")
 
-                with view_tabs[2]:
+                elif selected_view_tab == "👥 Group V2 (Summary)":
                     # Group Report v2 - Summary table with RAG status
                     st.markdown("### Team Summary View")
                     st.caption("Summary table with RAG status indicators")
@@ -6230,7 +6316,7 @@ with tabs[1]:
                         nordbord_df=sport_nb if not sport_nb.empty else None
                     )
 
-                with view_tabs[3]:
+                elif selected_view_tab == "🏃 Individual":
                     # Individual Report - Single athlete analysis
                     st.markdown("### Individual Athlete Analysis")
 
@@ -6256,20 +6342,36 @@ with tabs[1]:
                     else:
                         st.info("No athletes found for the selected sport")
 
-            with report_tabs[1]:
+            elif selected_report_tab == "🎯 Shooting Balance":
                 # Shooting Balance Report - 10m Pistol
                 # Note: Uses original df, not filtered_df, so shooting athletes show regardless of sport filter
                 st.markdown("### 🎯 10m Pistol - Balance Analysis")
                 st.caption("Quiet Standing Balance tests for shooting athletes")
 
                 # Create sub-tabs for Group and Individual
-                shooting_tabs = st.tabs(["👥 Group Report", "🏃 Individual Report"])
+                # Use selectbox + session state for persistence
+                shooting_tab_options = ["👥 Group Report", "🏃 Individual Report"]
 
-                with shooting_tabs[0]:
+                if 'active_shooting_tab' not in st.session_state:
+                    st.session_state.active_shooting_tab = shooting_tab_options[0]
+
+                current_shooting_idx = 0
+                if st.session_state.active_shooting_tab in shooting_tab_options:
+                    current_shooting_idx = shooting_tab_options.index(st.session_state.active_shooting_tab)
+
+                selected_shooting_tab = st.selectbox(
+                    "View:",
+                    shooting_tab_options,
+                    index=current_shooting_idx,
+                    key="shooting_tab_selector"
+                )
+                st.session_state.active_shooting_tab = selected_shooting_tab
+
+                if selected_shooting_tab == "👥 Group Report":
                     # Group Shooting Report - use original df to always show shooting athletes
                     create_shooting_group_report(df, "Shooting")
 
-                with shooting_tabs[1]:
+                elif selected_shooting_tab == "🏃 Individual Report":
                     # Individual Shooting Report
                     # Use original df so shooting athletes always appear
                     # Get athletes who have QSB data (flexible matching)
@@ -6324,7 +6426,7 @@ with tabs[1]:
                                 if len(available_sports) > 20:
                                     st.write(f"... and {len(available_sports) - 20} more")
 
-            with report_tabs[2]:
+            elif selected_report_tab == "🥏 Throws":
                 # Throws Report - Athletics throws analysis using ThrowsTrainingModule
                 st.markdown("### 🥏 Throws Analysis")
                 st.caption("Shot Put, Discus, Javelin, and Hammer performance tracking")
@@ -6388,7 +6490,7 @@ with tabs[1]:
                 else:
                     st.info("No throws athletes found. Looking for Athletics athletes or those with 'Throw', 'Shot', 'Discus', 'Javelin', or 'Hammer' in their sport.")
 
-            with report_tabs[3]:
+            elif selected_report_tab == "⚙️ Benchmark Settings":
                 # Benchmark Settings - S&C staff can edit VALD norms
                 try:
                     from dashboard.utils.benchmark_database import render_benchmark_editor
@@ -6409,7 +6511,7 @@ with tabs[1]:
 # PAGE: FORCEFRAME
 # ============================================================================
 
-with tabs[2]:
+elif selected_main_tab == "🔲 ForceFrame":
     st.markdown("## 🔲 ForceFrame Isometric Strength Analysis")
     st.markdown("""
     <div style="background: linear-gradient(135deg, #255035 0%, #2d6a5a 100%); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
@@ -6434,9 +6536,25 @@ with tabs[2]:
         st.warning("No ForceFrame data available. Upload data or check data/forceframe_allsports.csv")
     else:
         # Create subtabs for ForceFrame - reorganized for better workflow
-        ff_tabs = st.tabs(["📊 Overview", "🦴 Body Region", "🏃 Individual Athlete", "⚖️ Asymmetry Dashboard", "📈 Progression"])
+        # Use selectbox + session state for persistence
+        ff_tab_options = ["📊 Overview", "🦴 Body Region", "🏃 Individual Athlete", "⚖️ Asymmetry Dashboard", "📈 Progression"]
 
-        with ff_tabs[0]:
+        if 'active_ff_tab' not in st.session_state:
+            st.session_state.active_ff_tab = ff_tab_options[0]
+
+        current_ff_idx = 0
+        if st.session_state.active_ff_tab in ff_tab_options:
+            current_ff_idx = ff_tab_options.index(st.session_state.active_ff_tab)
+
+        selected_ff_tab = st.selectbox(
+            "View:",
+            ff_tab_options,
+            index=current_ff_idx,
+            key="ff_tab_selector"
+        )
+        st.session_state.active_ff_tab = selected_ff_tab
+
+        if selected_ff_tab == "📊 Overview":
             # Overview metrics
             col1, col2, col3, col4 = st.columns(4)
 
@@ -6517,7 +6635,7 @@ with tabs[2]:
                               f"forceframe_data_{datetime.now().strftime('%Y%m%d')}.csv", "text/csv")
 
         # ========== BODY REGION TAB ==========
-        with ff_tabs[1]:
+        elif selected_ff_tab == "🦴 Body Region":
             st.markdown("### 🦴 Body Region Analysis")
             st.markdown("*Grouped by anatomical region - Lower Body, Upper Body, Core/Neck*")
 
@@ -6646,7 +6764,7 @@ with tabs[2]:
                 st.warning("Test type information not available for body region grouping.")
 
         # ========== INDIVIDUAL ATHLETE TAB ==========
-        with ff_tabs[2]:
+        elif selected_ff_tab == "🏃 Individual Athlete":
             st.markdown("### 🏃 Individual Athlete Analysis")
             st.markdown("*Select an athlete and test type to view their ForceFrame performance profile with traffic light indicators*")
 
@@ -6908,7 +7026,7 @@ with tabs[2]:
                 st.info("No athlete names available in ForceFrame data.")
 
         # ========== YEARLY PROGRESSION TAB ==========
-        with ff_tabs[4]:
+        elif selected_ff_tab == "📈 Progression":
             st.markdown("### 📈 Yearly Progression Analysis")
             st.markdown("*Track force development across the year*")
 
@@ -6982,7 +7100,7 @@ with tabs[2]:
                 st.info("Date or athlete information not available for progression analysis.")
 
         # ========== ASYMMETRY DASHBOARD TAB ==========
-        with ff_tabs[3]:
+        elif selected_ff_tab == "⚖️ Asymmetry Dashboard":
             st.markdown("### ⚖️ Bilateral Asymmetry Dashboard")
             st.markdown("""
             **Asymmetry Risk Thresholds:**
@@ -7135,7 +7253,7 @@ with tabs[2]:
 # PAGE: NORDBORD
 # ============================================================================
 
-with tabs[3]:
+elif selected_main_tab == "🦵 NordBord":
     st.markdown("## 🦵 NordBord Hamstring Analysis")
     st.markdown("""
     <div style="background: linear-gradient(135deg, #c0392b 0%, #e74c3c 100%); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
@@ -7163,9 +7281,25 @@ with tabs[3]:
         st.warning("No NordBord data available. Upload data or check data/nordbord_allsports.csv")
     else:
         # Create subtabs for NordBord - enhanced structure
-        nb_tabs = st.tabs(["📊 Overview", "🎯 Strength Benchmarks", "🏃 Individual Athlete", "⚖️ Asymmetry Dashboard", "📈 Progression"])
+        # Use selectbox + session state for persistence
+        nb_tab_options = ["📊 Overview", "🎯 Strength Benchmarks", "🏃 Individual Athlete", "⚖️ Asymmetry Dashboard", "📈 Progression"]
 
-        with nb_tabs[0]:
+        if 'active_nb_tab' not in st.session_state:
+            st.session_state.active_nb_tab = nb_tab_options[0]
+
+        current_nb_idx = 0
+        if st.session_state.active_nb_tab in nb_tab_options:
+            current_nb_idx = nb_tab_options.index(st.session_state.active_nb_tab)
+
+        selected_nb_tab = st.selectbox(
+            "View:",
+            nb_tab_options,
+            index=current_nb_idx,
+            key="nb_tab_selector"
+        )
+        st.session_state.active_nb_tab = selected_nb_tab
+
+        if selected_nb_tab == "📊 Overview":
             # Overview metrics
             col1, col2, col3, col4 = st.columns(4)
 
@@ -7223,7 +7357,7 @@ with tabs[3]:
                               f"nordbord_data_{datetime.now().strftime('%Y%m%d')}.csv", "text/csv")
 
         # ========== STRENGTH BENCHMARKS TAB ==========
-        with nb_tabs[1]:
+        elif selected_nb_tab == "🎯 Strength Benchmarks":
             st.markdown("### 🎯 Hamstring Strength Benchmarks")
             st.markdown("""
             **Research-Based Injury Risk Thresholds:**
@@ -7431,7 +7565,7 @@ with tabs[3]:
                 st.warning("Force data columns not available for benchmarking.")
 
         # ========== INDIVIDUAL ATHLETE TAB ==========
-        with nb_tabs[2]:
+        elif selected_nb_tab == "🏃 Individual Athlete":
             st.markdown("### 🏃 Individual Athlete Analysis")
             st.markdown("*Select an athlete to view their Nordic hamstring profile with risk assessment*")
 
@@ -7641,7 +7775,7 @@ with tabs[3]:
                 st.info("No athlete names available in NordBord data.")
 
         # ========== YEARLY PROGRESSION TAB ==========
-        with nb_tabs[4]:
+        elif selected_nb_tab == "📈 Progression":
             st.markdown("### 📈 Yearly Progression Analysis")
             st.markdown("*Track hamstring strength development across the year*")
 
@@ -7710,7 +7844,7 @@ with tabs[3]:
                 st.info("Date or athlete information not available.")
 
         # ========== ASYMMETRY ANALYSIS TAB ==========
-        with nb_tabs[3]:
+        elif selected_nb_tab == "⚖️ Asymmetry Dashboard":
             st.markdown("### ⚖️ Bilateral Hamstring Asymmetry")
             st.markdown("""
             **Hamstring Injury Risk Thresholds:**
