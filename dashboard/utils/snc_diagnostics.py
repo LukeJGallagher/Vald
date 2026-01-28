@@ -2470,13 +2470,19 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
     with test_tabs[6]:
         st.markdown("### Strength RM (Manual Entry)")
 
-        # Load strength data from manual entry files
+        # Load strength data - check session state first, then files
         data_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data')
         lower_body_path = os.path.join(data_dir, 'sc_lower_body.csv')
         upper_body_path = os.path.join(data_dir, 'sc_upper_body.csv')
 
         strength_dfs = []
-        if os.path.exists(lower_body_path):
+
+        # Try session state first for lower body (captures recent entries)
+        if hasattr(st, 'session_state') and 'sc_lower_body' in st.session_state and not st.session_state.sc_lower_body.empty:
+            lb_df = st.session_state.sc_lower_body.copy()
+            lb_df['body_region'] = 'Lower Body'
+            strength_dfs.append(lb_df)
+        elif os.path.exists(lower_body_path):
             try:
                 lb_df = pd.read_csv(lower_body_path)
                 lb_df['body_region'] = 'Lower Body'
@@ -2484,7 +2490,12 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
             except Exception as e:
                 st.warning(f"Could not load lower body data: {e}")
 
-        if os.path.exists(upper_body_path):
+        # Try session state first for upper body (captures recent entries)
+        if hasattr(st, 'session_state') and 'sc_upper_body' in st.session_state and not st.session_state.sc_upper_body.empty:
+            ub_df = st.session_state.sc_upper_body.copy()
+            ub_df['body_region'] = 'Upper Body'
+            strength_dfs.append(ub_df)
+        elif os.path.exists(upper_body_path):
             try:
                 ub_df = pd.read_csv(upper_body_path)
                 ub_df['body_region'] = 'Upper Body'
