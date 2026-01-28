@@ -1806,8 +1806,8 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
     </div>
     """, unsafe_allow_html=True)
 
-    # Test type selector (Canvas Overview: Ranked Bar, Side-by-Side, Stacked)
-    test_tabs = st.tabs([
+    # Test type selector with persistence (st.tabs doesn't persist on rerun)
+    test_tab_options = [
         "📊 IMTP",           # Ranked Bar
         "🦘 CMJ",            # Ranked Bar
         "🦵 SL Tests",       # Side-by-Side (includes Ash Test)
@@ -1820,12 +1820,36 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
         "💥 Plyo Pushup",    # Ranked Bar (Upper Body Power)
         "✊ DynaMo",          # Ranked Bar
         "⚖️ Balance"         # Ranked Bar (Shooting)
-    ])
+    ]
+
+    # Initialize session state for active test tab
+    if 'active_snc_tab' not in st.session_state:
+        st.session_state.active_snc_tab = test_tab_options[0]
+
+    # Ensure active tab is valid
+    if st.session_state.active_snc_tab not in test_tab_options:
+        st.session_state.active_snc_tab = test_tab_options[0]
+
+    # Get current index for the selectbox
+    current_tab_idx = test_tab_options.index(st.session_state.active_snc_tab)
+
+    # Use selectbox for tab navigation (persists across reruns)
+    selected_test_tab = st.selectbox(
+        "Select Test:",
+        test_tab_options,
+        index=current_tab_idx,
+        key="snc_test_tab_selector"
+    )
+
+    # Update session state
+    st.session_state.active_snc_tab = selected_test_tab
+
+    st.markdown("---")
 
     # =====================
     # IMTP Tab
     # =====================
-    with test_tabs[0]:
+    if selected_test_tab == "📊 IMTP":
         st.markdown("### Isometric Mid-Thigh Pull (IMTP)")
 
         # Filter for IMTP tests
@@ -1901,7 +1925,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
     # =====================
     # CMJ Tab
     # =====================
-    with test_tabs[1]:
+    elif selected_test_tab == "🦘 CMJ":
         st.markdown("### Counter Movement Jump (CMJ)")
 
         cmj_df = forcedecks_df[forcedecks_df['testType'] == 'CMJ'].copy() if 'testType' in forcedecks_df.columns else pd.DataFrame()
@@ -1989,7 +2013,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
     # =====================
     # SL Tests Tab
     # =====================
-    with test_tabs[2]:
+    elif selected_test_tab == "🦵 SL Tests":
         st.markdown("### Single Leg Tests")
 
         # Map display names to actual VALD test type codes
@@ -2123,7 +2147,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
     # =====================
     # NordBord Tab
     # =====================
-    with test_tabs[3]:
+    elif selected_test_tab == "💪 NordBord":
         st.markdown("### NordBord - Hamstring Strength")
 
         if nordbord_df is None or nordbord_df.empty:
@@ -2205,7 +2229,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
     # =====================
     # 10:5 Hop Test Tab
     # =====================
-    with test_tabs[4]:
+    elif selected_test_tab == "🏃 10:5 Hop":
         st.markdown("### 10:5 Hop Test")
 
         # Filter for hop/reactive strength tests: HJ, SLHJ, RSHIP, RSKIP, RSAIP
@@ -2297,7 +2321,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
     # =====================
     # Quadrant Tests Tab (ForceFrame)
     # =====================
-    with test_tabs[5]:
+    elif selected_test_tab == "🔄 Quadrant Tests":
         st.markdown("### Quadrant Tests (ForceFrame)")
 
         # Use ForceFrame data if available
@@ -2467,7 +2491,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
     # =====================
     # Strength RM Tab (Manual Entry)
     # =====================
-    with test_tabs[6]:
+    elif selected_test_tab == "🏋️ Strength RM":
         st.markdown("### Strength RM (Manual Entry)")
 
         # Load strength data - check session state first, then files
@@ -2666,7 +2690,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
     # =====================
     # Broad Jump Tab (Manual Entry)
     # =====================
-    with test_tabs[7]:
+    elif selected_test_tab == "🦘 Broad Jump":
         st.markdown("### Broad Jump (Manual Entry)")
         st.info("Broad Jump data comes from manual entry. Enter data through the Data Entry tab.")
 
@@ -2741,7 +2765,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
     # =====================
     # Fitness Tests Tab (6 Min Aerobic, etc.)
     # =====================
-    with test_tabs[8]:
+    elif selected_test_tab == "🏃 Fitness Tests":
         st.markdown("### Fitness Testing")
         st.markdown("*Aerobic capacity and endurance tests*")
 
@@ -2842,7 +2866,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
     # =====================
     # Plyo Pushup Tab (Upper Body Power)
     # =====================
-    with test_tabs[9]:
+    elif selected_test_tab == "💥 Plyo Pushup":
         st.markdown("### Plyo Pushup (Upper Body Power)")
 
         # Filter for Plyo Pushup tests - VALD test type is PPU
@@ -2948,7 +2972,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
     # =====================
     # DynaMo Tab (Grip Strength)
     # =====================
-    with test_tabs[10]:
+    elif selected_test_tab == "✊ DynaMo":
         st.markdown("### DynaMo (Grip Strength)")
 
         # Load DynaMo data
@@ -3074,7 +3098,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
     # =====================
     # Balance Tab (QSB/SLSB for Shooting)
     # =====================
-    with test_tabs[11]:
+    elif selected_test_tab == "⚖️ Balance":
         st.markdown("### Balance Testing (QSB / SLSB)")
         st.markdown("*Quiet Static Balance & Single Leg Static Balance - primarily used by Shooting athletes*")
 
