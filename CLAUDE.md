@@ -32,6 +32,10 @@ python vald_production_system.py --verify
 
 # Push to both GitHub repos (main and master branches)
 git push origin main && git push origin main:master
+
+# Run E2E tests (requires dashboard running on port 8504/8505)
+python tests/test_snc_coach_flow.py      # S&C coach user flow
+python tests/test_filter_navigation.py   # Filter state persistence tests
 ```
 
 ## GitHub Actions
@@ -206,25 +210,6 @@ Located in `dashboard/data/`:
 
 These columns enable consistent filtering across VALD data and manual test data in S&C Diagnostics tabs.
 
-## S&C Diagnostics Tab Structure
-
-```python
-test_tabs = st.tabs([
-    "📊 IMTP",           # Ranked Bar - ForceDecks IMTP tests
-    "🦘 CMJ",            # Ranked Bar - ForceDecks CMJ tests
-    "🦵 SL Tests",       # Side-by-Side - SL ISO Squat, SL IMTP, SL CMJ, SL DJ, SL Jump, SL Hop, Ash Test
-    "💪 NordBord",       # Side-by-Side - Nordic hamstring (Left/Right)
-    "🏃 10:5 Hop",       # Ranked Bar - HJ, SLHJ, RSHIP, RSKIP, RSAIP
-    "🔄 Quadrant Tests", # Stacked - Trunk, Neck, Shoulder, Hip (ForceFrame)
-    "🏋️ Strength RM",    # Ranked Bar - Manual Entry (sc_lower_body.csv, sc_upper_body.csv)
-    "🦘 Broad Jump",     # Ranked Bar - Manual Entry (broad_jump.csv)
-    "🏃 Fitness Tests",  # Ranked Bar - 6 Min Aerobic, VO2 Max, Yo-Yo, 30-15 IFT
-    "💥 Plyo Pushup",    # Ranked Bar - ForceDecks PPU tests (upper body power)
-    "✊ DynaMo",          # Ranked Bar - Grip strength
-    "⚖️ Balance"         # Ranked Bar - QSB, SLSB for Shooting
-])
-```
-
 ### VALD Test Type Codes (ForceDecks)
 - **IMTP**: Isometric Mid-Thigh Pull
 - **CMJ**: Countermovement Jump
@@ -250,6 +235,54 @@ except AttributeError:
 
 ### Streamlit Deprecations
 `use_container_width` is deprecated (remove after 2025-12-31). Use `width='stretch'` instead.
+
+### Date Column Type Safety
+Always convert date columns before sorting to prevent TypeError on mixed types:
+```python
+if 'date' in df.columns:
+    df['date'] = pd.to_datetime(df['date'], errors='coerce')
+df = df.sort_values('date', ascending=False, na_position='last')
+```
+
+## Streamlit Widget State Persistence (CRITICAL)
+
+Changing filter selections (sport, gender, date) can reset pages when widget defaults change dynamically. Use these helper functions from `snc_diagnostics.py`:
+
+### Multiselect Persistence
+```python
+def get_persisted_athlete_selection(key: str, available_athletes: List[str]) -> List[str]:
+    """Prevents page reset by preserving athlete selection across filter changes."""
+    if not available_athletes:
+        return []
+    prev_selection = st.session_state.get(key, [])
+    if prev_selection:
+        valid_selection = [a for a in prev_selection if a in available_athletes]
+        if valid_selection:
+            return valid_selection
+    return [available_athletes[0]]
+
+# Usage
+default_athletes = get_persisted_athlete_selection("imtp_athletes", athletes)
+selected = st.multiselect("Athletes:", athletes, default=default_athletes, key="imtp_athletes")
+```
+
+### Selectbox Persistence
+```python
+def get_persisted_selectbox_index(key: str, options: List[str], default_index: int = 0) -> int:
+    """Preserves selectbox selection when options list changes."""
+    if not options:
+        return default_index
+    prev_value = st.session_state.get(key)
+    if prev_value is not None and prev_value in options:
+        return options.index(prev_value)
+    return min(default_index, len(options) - 1)
+
+# Usage
+idx = get_persisted_selectbox_index("sport_filter", sport_options)
+sport = st.selectbox("Sport:", sport_options, index=idx, key="sport_filter")
+```
+
+**Root Cause**: Streamlit reruns when a widget's `default` value changes. If `athletes[0]` changes due to filtering, the page reruns and loses state.
 
 ## Key Analytics Methods
 
@@ -307,6 +340,12 @@ Production: Streamlit Cloud Secrets dashboard
 - System auto-handles with 12 calls per 5 seconds
 - Adjust in `config/vald_config.py` if needed
 
+**Page resets when changing filters/selecting athletes:**
+- Root cause: Widget `default` values changing causes Streamlit rerun
+- Fix: Use `get_persisted_athlete_selection()` for multiselects
+- Fix: Use `get_persisted_selectbox_index()` for selectboxes
+- See "Streamlit Widget State Persistence" section above
+
 ## Sport-Specific Test Types
 
 ### Shooting (10m Pistol)
@@ -352,6 +391,32 @@ Production: Streamlit Cloud Secrets dashboard
   - Ellipse Area: multiply by 1,000,000 (m² → mm²)
 - **RSI metrics**: Some stored as 0-100 scale, display as 0-1 scale (divide by 100 if median > 10)
 
+### ForceFrame Data Structure (Quadrant Tests)
+ForceFrame API returns different column names than expected. Actual structure:
+```python
+# Actual ForceFrame columns (use these!)
+metric_cols = {
+    'Inner Left': 'innerLeftMaxForce',      # Adduction / Internal Rotation
+    'Inner Right': 'innerRightMaxForce',
+    'Outer Left': 'outerLeftMaxForce',      # Abduction / External Rotation
+    'Outer Right': 'outerRightMaxForce'
+}
+
+# Test type column
+'testTypeName'  # e.g., "Shoulder Internal/External Rotation", "Hip Adduction/Abduction"
+
+# Date column
+'testDateUtc'   # Not 'recordedDateUtc' like ForceDecks
+
+# Do NOT use: supine_force, prone_force, etc. - these don't exist
+```
+
+ForceFrame test types (from `testTypeName`):
+- Shoulder Internal/External Rotation
+- Hip Adduction/Abduction
+- Trunk Flexion/Extension
+- 4-Way Neck
+
 ### S&C Diagnostics Tab Filters
 - **10:5 Hop tab**: Filter by `testType.isin(['HJ', 'SLHJ', 'RSHIP', 'RSKIP', 'RSAIP'])`
   - NOT `str.contains('Hop')` - that misses HJ, RSHIP codes
@@ -377,6 +442,22 @@ Production: Streamlit Cloud Secrets dashboard
 - `sc_lower_body.csv`, `sc_upper_body.csv` - Luke Gallagher, Paul Stretch strength data
 - `broad_jump.csv`, `power_tests.csv`, `aerobic_tests.csv`, `trunk_endurance.csv`
 - All files have `athlete_sport`, `Name`, `recordedDateUtc` columns for filtering
+
+### Manual Entry Forms (Data Entry Tab)
+S&C Upper Body and Lower Body forms include sport/athlete dropdowns that:
+- Pull sports from VALD profiles (`athlete_sport` column from ForceDecks data)
+- Filter athlete list based on selected sport
+- Map to VALD data structure for consistent filtering across tabs
+
+```python
+# Sport filter loads from VALD data
+sports = sorted(vald_df['athlete_sport'].dropna().unique())
+selected_sport = st.selectbox("Filter by Sport:", ['All'] + sports)
+
+# Athlete list filtered by sport
+if selected_sport != 'All':
+    athletes = vald_df[vald_df['athlete_sport'] == selected_sport]['Name'].unique()
+```
 
 ## S&C Diagnostics Canvas Overview
 
