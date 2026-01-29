@@ -841,9 +841,8 @@ def render_filters(df: pd.DataFrame, key_prefix: str = "snc") -> Tuple[pd.DataFr
 
     with col2:
         # Gender filter with state persistence
-        genders = ['All']
-        if 'athlete_sex' in df.columns:
-            genders += sorted([g for g in df['athlete_sex'].dropna().unique() if g])
+        # Hardcode options since athlete_sex may not exist in data
+        genders = ['All', 'Male', 'Female']
         gender_idx = get_persisted_selectbox_index(f"{key_prefix}_gender", genders, 0)
         selected_gender = st.selectbox("Gender:", genders, index=gender_idx, key=f"{key_prefix}_gender")
 
@@ -865,6 +864,10 @@ def render_filters(df: pd.DataFrame, key_prefix: str = "snc") -> Tuple[pd.DataFr
     # Date filtering
     if 'recordedDateUtc' in filtered_df.columns:
         filtered_df['recordedDateUtc'] = pd.to_datetime(filtered_df['recordedDateUtc'], errors='coerce')
+
+        # Remove timezone info for comparison (avoids timezone-aware vs naive errors)
+        if filtered_df['recordedDateUtc'].dt.tz is not None:
+            filtered_df['recordedDateUtc'] = filtered_df['recordedDateUtc'].dt.tz_localize(None)
 
         if selected_date == 'Most Recent':
             # Get most recent test per athlete
