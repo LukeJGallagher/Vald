@@ -5982,24 +5982,7 @@ elif selected_main_tab == "📊 Reports":
             # Report type tabs - Strength Diagnostics (with Canvas/Classic/Group V2/Individual), Shooting, Throws, and Benchmark Settings
             # Note: Group v2 and Individual moved inside Strength Diagnostics tab, Group v3 hidden
             # Use selectbox + session state for persistence (st.tabs resets on filter changes)
-            report_tab_options = ["💪 Strength Diagnostics", "🎯 Shooting Balance", "🥏 Throws", "⚙️ Benchmark Settings"]
-
-            # Initialize session state for report tab
-            if 'active_report_tab' not in st.session_state:
-                st.session_state.active_report_tab = report_tab_options[0]
-
-            # Get current tab index from session state
-            current_report_idx = 0
-            if st.session_state.active_report_tab in report_tab_options:
-                current_report_idx = report_tab_options.index(st.session_state.active_report_tab)
-
-            selected_report_tab = st.selectbox(
-                "Report Type:",
-                report_tab_options,
-                index=current_report_idx,
-                key="report_tab_selector"
-            )
-            st.session_state.active_report_tab = selected_report_tab
+            report_tabs = st.tabs(["💪 Strength Diagnostics", "🎯 Shooting Balance", "🥏 Throws", "⚙️ Benchmark Settings"])
 
             # Render benchmark legend
             render_benchmark_legend()
@@ -6083,31 +6066,11 @@ elif selected_main_tab == "📊 Reports":
                     if not filtered_nb.empty:
                         sport_nb = filtered_nb
 
-            if selected_report_tab == "💪 Strength Diagnostics":
+            with report_tabs[0]:  # Strength Diagnostics
                 # View toggle - Canvas vs Classic vs Group V2 vs Individual layout
-                # Use selectbox + session state for persistence (st.tabs resets on widget changes)
-                view_tab_options = ["📊 S&C Canvas (12 Tests)", "📋 Classic Layout", "👥 Group V2 (Summary)", "🏃 Individual"]
+                view_tabs = st.tabs(["📊 S&C Canvas (12 Tests)", "📋 Classic Layout", "👥 Group V2 (Summary)", "🏃 Individual"])
 
-                # Initialize session state for view tab
-                if 'active_view_tab' not in st.session_state:
-                    st.session_state.active_view_tab = view_tab_options[0]
-
-                # Get current tab index from session state
-                current_view_idx = 0
-                if st.session_state.active_view_tab in view_tab_options:
-                    current_view_idx = view_tab_options.index(st.session_state.active_view_tab)
-
-                selected_view_tab = st.selectbox(
-                    "Select View:",
-                    view_tab_options,
-                    index=current_view_idx,
-                    key="view_tab_selector"
-                )
-                st.session_state.active_view_tab = selected_view_tab
-
-                st.markdown("---")
-
-                if selected_view_tab == "📊 S&C Canvas (12 Tests)":
+                with view_tabs[0]:  # S&C Canvas
                     # S&C Diagnostics Canvas - Full 12-tab system
                     # Includes: IMTP, CMJ, SL Tests, NordBord, 10:5 Hop, Quadrant Tests,
                     #           Strength RM, Broad Jump, Fitness Tests, Plyo Pushup, DynaMo, Balance
@@ -6120,7 +6083,7 @@ elif selected_main_tab == "📊 Reports":
                     else:
                         st.warning("S&C Diagnostics module not available.")
 
-                elif selected_view_tab == "📋 Classic Layout":
+                with view_tabs[1]:  # Classic Layout
                     # Classic Strength Diagnostics layout
                     create_group_report(
                         sport_data,
@@ -6304,7 +6267,7 @@ elif selected_main_tab == "📊 Reports":
                     else:
                         st.info("📭 No fitness test data. Use ✏️ Data Entry to add.")
 
-                elif selected_view_tab == "👥 Group V2 (Summary)":
+                with view_tabs[2]:  # Group V2 (Summary)
                     # Group Report v2 - Summary table with RAG status
                     st.markdown("### Team Summary View")
                     st.caption("Summary table with RAG status indicators")
@@ -6316,7 +6279,7 @@ elif selected_main_tab == "📊 Reports":
                         nordbord_df=sport_nb if not sport_nb.empty else None
                     )
 
-                elif selected_view_tab == "🏃 Individual":
+                with view_tabs[3]:  # Individual
                     # Individual Report - Single athlete analysis
                     st.markdown("### Individual Athlete Analysis")
 
@@ -6342,36 +6305,20 @@ elif selected_main_tab == "📊 Reports":
                     else:
                         st.info("No athletes found for the selected sport")
 
-            elif selected_report_tab == "🎯 Shooting Balance":
+            with report_tabs[1]:  # Shooting Balance
                 # Shooting Balance Report - 10m Pistol
                 # Note: Uses original df, not filtered_df, so shooting athletes show regardless of sport filter
                 st.markdown("### 🎯 10m Pistol - Balance Analysis")
                 st.caption("Quiet Standing Balance tests for shooting athletes")
 
                 # Create sub-tabs for Group and Individual
-                # Use selectbox + session state for persistence
-                shooting_tab_options = ["👥 Group Report", "🏃 Individual Report"]
+                shooting_tabs = st.tabs(["👥 Group Report", "🏃 Individual Report"])
 
-                if 'active_shooting_tab' not in st.session_state:
-                    st.session_state.active_shooting_tab = shooting_tab_options[0]
-
-                current_shooting_idx = 0
-                if st.session_state.active_shooting_tab in shooting_tab_options:
-                    current_shooting_idx = shooting_tab_options.index(st.session_state.active_shooting_tab)
-
-                selected_shooting_tab = st.selectbox(
-                    "View:",
-                    shooting_tab_options,
-                    index=current_shooting_idx,
-                    key="shooting_tab_selector"
-                )
-                st.session_state.active_shooting_tab = selected_shooting_tab
-
-                if selected_shooting_tab == "👥 Group Report":
+                with shooting_tabs[0]:  # Group Report
                     # Group Shooting Report - use original df to always show shooting athletes
                     create_shooting_group_report(df, "Shooting")
 
-                elif selected_shooting_tab == "🏃 Individual Report":
+                with shooting_tabs[1]:  # Individual Report
                     # Individual Shooting Report
                     # Use original df so shooting athletes always appear
                     # Get athletes who have QSB data (flexible matching)
@@ -6426,7 +6373,7 @@ elif selected_main_tab == "📊 Reports":
                                 if len(available_sports) > 20:
                                     st.write(f"... and {len(available_sports) - 20} more")
 
-            elif selected_report_tab == "🥏 Throws":
+            with report_tabs[2]:  # Throws
                 # Throws Report - Athletics throws analysis using ThrowsTrainingModule
                 st.markdown("### 🥏 Throws Analysis")
                 st.caption("Shot Put, Discus, Javelin, and Hammer performance tracking")
@@ -6490,7 +6437,7 @@ elif selected_main_tab == "📊 Reports":
                 else:
                     st.info("No throws athletes found. Looking for Athletics athletes or those with 'Throw', 'Shot', 'Discus', 'Javelin', or 'Hammer' in their sport.")
 
-            elif selected_report_tab == "⚙️ Benchmark Settings":
+            with report_tabs[3]:  # Benchmark Settings
                 # Benchmark Settings - S&C staff can edit VALD norms
                 try:
                     from dashboard.utils.benchmark_database import render_benchmark_editor
