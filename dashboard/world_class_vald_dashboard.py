@@ -1954,6 +1954,13 @@ tabs = st.tabs([
 with tabs[0]:  # Home
     st.markdown("## 🏠 Performance Overview")
 
+    # Refresh data button
+    refresh_col1, refresh_col2 = st.columns([6, 1])
+    with refresh_col2:
+        if st.button("🔄 Refresh", help="Clear cache and reload latest data"):
+            st.cache_data.clear()
+            st.rerun()
+
     # KPI Cards
     col1, col2, col3, col4 = st.columns(4)
 
