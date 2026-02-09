@@ -88,6 +88,7 @@ def _fetch_athlete_profiles(token: str, region: str, tenant_id: str) -> Dict[str
                     profile_map[pid] = {
                         'Name': full_name,
                         'athlete_sport': p.get('sport') or p.get('primarySport') or 'Unknown',
+                        'athlete_sex': p.get('sex') or p.get('gender') or '',
                         'Groups': p.get('groups', []),
                     }
             return profile_map
@@ -357,6 +358,7 @@ def fetch_from_vald_api(device: str = 'forcedecks') -> pd.DataFrame:
         if 'profileId' in df.columns and profile_map:
             df['Name'] = df['profileId'].map(lambda pid: profile_map.get(pid, {}).get('Name', 'Unknown'))
             df['athlete_sport'] = df['profileId'].map(lambda pid: profile_map.get(pid, {}).get('athlete_sport', 'Unknown'))
+            df['athlete_sex'] = df['profileId'].map(lambda pid: profile_map.get(pid, {}).get('athlete_sex', ''))
 
         # Parse dates
         date_columns = ['recordedDateUtc', 'testDateUtc', 'modifiedDateUtc']

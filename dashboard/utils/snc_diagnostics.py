@@ -24,7 +24,7 @@ import plotly.graph_objects as go
 import plotly.express as px
 from plotly.subplots import make_subplots
 from typing import Dict, List, Optional, Tuple
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import os
 import io
 
@@ -617,7 +617,7 @@ TEST_CONFIG = {
         'unit2': 'cm',
         'metric2_multiplier': 1,  # Already in cm from local_sync
         'source': 'VALD',
-        'test_type_filter': ['CMJ']
+        'test_type_filter': ['CMJ', 'ABCMJ']
     },
     '6_Min_Aerobic': {
         'tier': 1,
@@ -875,13 +875,13 @@ def render_filters(df: pd.DataFrame, key_prefix: str = "snc") -> Tuple[pd.DataFr
                 idx = filtered_df.groupby('Name')['recordedDateUtc'].idxmax()
                 filtered_df = filtered_df.loc[idx]
         elif selected_date == 'Last 7 Days':
-            cutoff = datetime.now() - timedelta(days=7)
+            cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=7)
             filtered_df = filtered_df[filtered_df['recordedDateUtc'] >= cutoff]
         elif selected_date == 'Last 30 Days':
-            cutoff = datetime.now() - timedelta(days=30)
+            cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=30)
             filtered_df = filtered_df[filtered_df['recordedDateUtc'] >= cutoff]
         elif selected_date == 'Last 90 Days':
-            cutoff = datetime.now() - timedelta(days=90)
+            cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=90)
             filtered_df = filtered_df[filtered_df['recordedDateUtc'] >= cutoff]
 
     return filtered_df, selected_sport, selected_gender
@@ -1931,7 +1931,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
     elif selected_test_tab == "🦘 CMJ":
         st.markdown("### Counter Movement Jump (CMJ)")
 
-        cmj_df = forcedecks_df[forcedecks_df['testType'] == 'CMJ'].copy() if 'testType' in forcedecks_df.columns else pd.DataFrame()
+        cmj_df = forcedecks_df[forcedecks_df['testType'].isin(['CMJ', 'ABCMJ'])].copy() if 'testType' in forcedecks_df.columns else pd.DataFrame()
 
         if cmj_df.empty:
             st.warning("No CMJ test data available.")
@@ -1994,7 +1994,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                     )
 
                     if selected_athletes:
-                        all_cmj = forcedecks_df[forcedecks_df['testType'] == 'CMJ'].copy()
+                        all_cmj = forcedecks_df[forcedecks_df['testType'].isin(['CMJ', 'ABCMJ'])].copy()
 
                         if sport != 'All' and 'athlete_sport' in all_cmj.columns:
                             all_cmj = all_cmj[all_cmj['athlete_sport'] == sport]

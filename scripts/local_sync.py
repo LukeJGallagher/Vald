@@ -170,7 +170,8 @@ def fetch_profiles(token, region, tenant_id):
             given = p.get('givenName', '') or ''
             family = p.get('familyName', '') or ''
             full_name = f"{given} {family}".strip() or 'Unknown'
-            result[pid] = {'full_name': full_name, 'athlete_sport': 'Unknown', 'groupIds': []}
+            sex = p.get('sex') or p.get('gender') or ''
+            result[pid] = {'full_name': full_name, 'athlete_sport': 'Unknown', 'athlete_sex': sex, 'groupIds': []}
         return result, profiles
     print(f"    Profiles API error: {response.status_code} - {response.text[:200]}")
     return {}, []
@@ -689,6 +690,7 @@ def main():
         # Re-enrich ALL rows after merge (fixes "Unknown" sport for old data)
         df['full_name'] = df[id_col].map(lambda pid: profiles.get(pid, {}).get('full_name', f'Athlete_{str(pid)[:8]}'))
         df['athlete_sport'] = df[id_col].map(lambda pid: profiles.get(pid, {}).get('athlete_sport', 'Unknown'))
+        df['athlete_sex'] = df[id_col].map(lambda pid: profiles.get(pid, {}).get('athlete_sex', ''))
 
         df.to_csv(output_file, index=False)
         print(f"    Saved: {output_file}")
@@ -714,6 +716,7 @@ def main():
         # Re-enrich ALL rows after merge (fixes "Unknown" sport for old data)
         df['full_name'] = df[id_col].map(lambda pid: profiles.get(pid, {}).get('full_name', f'Athlete_{str(pid)[:8]}'))
         df['athlete_sport'] = df[id_col].map(lambda pid: profiles.get(pid, {}).get('athlete_sport', 'Unknown'))
+        df['athlete_sex'] = df[id_col].map(lambda pid: profiles.get(pid, {}).get('athlete_sex', ''))
 
         df.to_csv(output_file, index=False)
         print(f"    Saved: {output_file}")
@@ -732,6 +735,7 @@ def main():
         # Re-enrich ALL rows after merge (fixes "Unknown" sport for old data)
         df['full_name'] = df[id_col].map(lambda pid: profiles.get(pid, {}).get('full_name', f'Athlete_{str(pid)[:8]}'))
         df['athlete_sport'] = df[id_col].map(lambda pid: profiles.get(pid, {}).get('athlete_sport', 'Unknown'))
+        df['athlete_sex'] = df[id_col].map(lambda pid: profiles.get(pid, {}).get('athlete_sex', ''))
 
         df.to_csv(output_file, index=False)
         print(f"    Saved: {output_file}")
@@ -750,6 +754,7 @@ def main():
         # Re-enrich ALL rows after merge (fixes "Unknown" sport for old data)
         df['full_name'] = df[id_col].map(lambda pid: profiles.get(pid, {}).get('full_name', f'Athlete_{str(pid)[:8]}'))
         df['athlete_sport'] = df[id_col].map(lambda pid: profiles.get(pid, {}).get('athlete_sport', 'Unknown'))
+        df['athlete_sex'] = df[id_col].map(lambda pid: profiles.get(pid, {}).get('athlete_sex', ''))
 
         df.to_csv(output_file, index=False)
         print(f"    Saved: {output_file}")

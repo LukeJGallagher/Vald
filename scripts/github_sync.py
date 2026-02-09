@@ -164,9 +164,11 @@ def fetch_profiles(token, region, tenant_id):
             full_name = f"{given} {family}".strip() or p.get('fullName') or 'Unknown'
             # Note: bulk profiles endpoint does NOT return sport
             # Sport is derived from group membership in enrich_with_groups()
+            sex = p.get('sex') or p.get('gender') or ''
             result[pid] = {
                 'full_name': full_name,
                 'athlete_sport': 'Unknown',  # Will be enriched later from groups
+                'athlete_sex': sex,
                 'groupIds': []  # Will be populated if available
             }
         return result, profiles  # Return raw profiles too for group lookup
@@ -724,6 +726,9 @@ def main():
                 )
                 df['athlete_sport'] = df[id_col].map(
                     lambda pid: profiles.get(pid, {}).get('athlete_sport', 'Unknown')
+                )
+                df['athlete_sex'] = df[id_col].map(
+                    lambda pid: profiles.get(pid, {}).get('athlete_sex', '')
                 )
 
             # Report sport distribution
