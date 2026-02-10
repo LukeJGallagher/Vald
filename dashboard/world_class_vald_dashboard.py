@@ -1674,9 +1674,15 @@ def load_nordbord_data():
     """Load NordBord data from CSV or API. Cached for 1 hour."""
     return load_vald_data('nordbord')
 
-# Load ForceFrame and NordBord
+@st.cache_data(ttl=3600)
+def load_dynamo_data():
+    """Load DynaMo data from CSV or API. Cached for 1 hour."""
+    return load_vald_data('dynamo')
+
+# Load ForceFrame, NordBord, and DynaMo
 df_forceframe = load_forceframe_data()
 df_nordbord = load_nordbord_data()
+df_dynamo = load_dynamo_data()
 
 # Normalize all dataframes to ensure required columns exist
 # Try to load athlete names from JSON mapping file first (faster and more reliable)
@@ -5974,9 +5980,10 @@ with tabs[1]:  # Reports
                     for _, row in filtered_df[['profileId', 'Name']].dropna().drop_duplicates().iterrows():
                         athlete_id_to_name[row['profileId']] = row['Name']
 
-            # Filter ForceFrame and NordBord for sport
+            # Filter ForceFrame, NordBord, and DynaMo for sport
             sport_ff = filtered_forceframe.copy() if not filtered_forceframe.empty else pd.DataFrame()
             sport_nb = filtered_nordbord.copy() if not filtered_nordbord.empty else pd.DataFrame()
+            sport_dynamo = df_dynamo.copy() if df_dynamo is not None and not df_dynamo.empty else pd.DataFrame()
 
             # Enrich ForceFrame with Name from athleteId mapping (required for reports)
             if not sport_ff.empty and 'athleteId' in sport_ff.columns and 'Name' not in sport_ff.columns:
@@ -6018,6 +6025,16 @@ with tabs[1]:  # Reports
                     if not filtered_nb.empty:
                         sport_nb = filtered_nb
 
+            # Enrich DynaMo with Name and sport from athlete mapping
+            if not sport_dynamo.empty:
+                if 'full_name' in sport_dynamo.columns and 'Name' not in sport_dynamo.columns:
+                    sport_dynamo['Name'] = sport_dynamo['full_name']
+                if 'athleteId' in sport_dynamo.columns and 'Name' not in sport_dynamo.columns:
+                    sport_dynamo['Name'] = sport_dynamo['athleteId'].map(athlete_id_to_name)
+                if 'Name' in sport_dynamo.columns:
+                    if 'athlete_sport' not in sport_dynamo.columns:
+                        sport_dynamo['athlete_sport'] = sport_dynamo['Name'].map(athlete_sport_map)
+
             with report_tabs[0]:  # Strength Diagnostics
                 # View toggle - Canvas vs Classic vs Group V2 vs Individual layout
                 view_tabs = st.tabs(["📊 S&C Canvas (12 Tests)", "📋 Classic Layout", "👥 Group V2 (Summary)", "🏃 Individual"])
@@ -6030,7 +6047,8 @@ with tabs[1]:  # Reports
                         render_snc_diagnostics_tab(
                             sport_data,
                             nordbord_df=sport_nb if not sport_nb.empty else None,
-                            forceframe_df=sport_ff if not sport_ff.empty else None
+                            forceframe_df=sport_ff if not sport_ff.empty else None,
+                            dynamo_df=sport_dynamo if not sport_dynamo.empty else None
                         )
                     else:
                         st.warning("S&C Diagnostics module not available.")
