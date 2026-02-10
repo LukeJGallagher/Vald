@@ -703,15 +703,29 @@ def main():
                     new_only_ids = new_ids - existing_ids
                     existing_only_ids = existing_ids - new_ids
 
+                    # For overlapping tests: if we skipped trial fetching (test was in
+                    # existing_test_ids), keep the EXISTING version which has trial data.
+                    # Only use the new API version if we actually fetched new trials for it.
+                    overlap_keep_existing = overlap_ids & set(str(x) for x in existing_test_ids)
+                    overlap_keep_new = overlap_ids - overlap_keep_existing
+
                     print(f"  New tests: {len(new_only_ids)}")
                     print(f"  Existing tests to keep: {len(existing_only_ids)}")
-                    print(f"  Overlapping tests (using new): {len(overlap_ids)}")
+                    print(f"  Overlapping - keep existing (has metrics): {len(overlap_keep_existing)}")
+                    print(f"  Overlapping - use new (has fresh trials): {len(overlap_keep_new)}")
 
-                    # Keep existing tests that aren't in new data (preserve their metrics)
-                    existing_to_keep = existing_df[existing_df[test_id_col].astype(str).isin(existing_only_ids)]
+                    # Keep existing tests that aren't in new data + overlapping tests
+                    # where we skipped trial fetching (preserve their trial metrics)
+                    ids_to_keep_from_existing = existing_only_ids | overlap_keep_existing
+                    existing_to_keep = existing_df[existing_df[test_id_col].astype(str).isin(ids_to_keep_from_existing)]
 
-                    # Combine: new data + existing data not in new
-                    df = pd.concat([df, existing_to_keep], ignore_index=True)
+                    # From new data: only keep truly new tests + overlapping tests
+                    # where we actually fetched new trial data
+                    ids_to_keep_from_new = new_only_ids | overlap_keep_new
+                    new_to_keep = df[df[test_id_col].astype(str).isin(ids_to_keep_from_new)]
+
+                    # Combine: new data (with trials) + existing data (with preserved trials)
+                    df = pd.concat([new_to_keep, existing_to_keep], ignore_index=True)
                     df = df.drop_duplicates(subset=[test_id_col], keep='first')
 
                     print(f"  After merge: {len(df)} total rows")
