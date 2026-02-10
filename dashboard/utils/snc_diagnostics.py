@@ -1802,6 +1802,315 @@ def create_multi_line_strength_chart(
     return fig
 
 
+# =====================
+# Hip Diagnostics Helpers
+# =====================
+
+def prepare_hip_diagnostics_data(
+    forceframe_df: pd.DataFrame,
+    forcedecks_df: pd.DataFrame = None
+) -> Dict[str, pd.DataFrame]:
+    """
+    Prepare hip diagnostics data from ForceFrame and ForceDecks.
+
+    Returns dict with keys: 'adab', 'flexion', 'extension'
+    Each DataFrame has standardized Name, L/R metric columns, and recordedDateUtc.
+    """
+    result = {'adab': pd.DataFrame(), 'flexion': pd.DataFrame(), 'extension': pd.DataFrame()}
+
+    if forceframe_df is None or forceframe_df.empty:
+        return result
+
+    ff = forceframe_df.copy()
+
+    # Standardize Name column
+    if 'Name' not in ff.columns and 'full_name' in ff.columns:
+        ff['Name'] = ff['full_name']
+    # Add recordedDateUtc from testDateUtc for filter compatibility
+    if 'recordedDateUtc' not in ff.columns and 'testDateUtc' in ff.columns:
+        ff['recordedDateUtc'] = ff['testDateUtc']
+
+    # Build body mass lookup from ForceDecks
+    bm_map = {}
+    if forcedecks_df is not None and not forcedecks_df.empty and 'weight' in forcedecks_df.columns:
+        fd = forcedecks_df.copy()
+        if 'Name' not in fd.columns and 'full_name' in fd.columns:
+            fd['Name'] = fd['full_name']
+        fd_valid = fd[fd['weight'] > 0].copy()
+        if not fd_valid.empty and 'recordedDateUtc' in fd_valid.columns:
+            fd_valid['recordedDateUtc'] = pd.to_datetime(fd_valid['recordedDateUtc'], errors='coerce')
+            bm_map = fd_valid.sort_values('recordedDateUtc').groupby('Name')['weight'].last().to_dict()
+
+    def _normalize_nkg(df, cols):
+        """Add N/kg columns using body mass lookup."""
+        df['body_mass'] = df['Name'].map(bm_map)
+        for col in cols:
+            nkg_col = f'{col}_nkg'
+            df[nkg_col] = np.where(
+                df['body_mass'] > 0,
+                df[col] / df['body_mass'],
+                np.nan
+            )
+        return df
+
+    # --- Hip AD/AB (ForceFrame) ---
+    if 'testTypeName' in ff.columns:
+        adab_mask = ff['testTypeName'].str.contains('Hip AD/AB', case=False, na=False)
+        if adab_mask.any():
+            adab = ff[adab_mask].copy()
+            # Extract position (e.g., "60" from "Hip AD/AB - 60")
+            adab['position'] = adab['testTypeName'].str.extract(r'(\d+)').fillna('')
+            # Map inner->Adduction, outer->Abduction
+            adab['Add_Left'] = pd.to_numeric(adab.get('innerLeftMaxForce'), errors='coerce')
+            adab['Add_Right'] = pd.to_numeric(adab.get('innerRightMaxForce'), errors='coerce')
+            adab['Abd_Left'] = pd.to_numeric(adab.get('outerLeftMaxForce'), errors='coerce')
+            adab['Abd_Right'] = pd.to_numeric(adab.get('outerRightMaxForce'), errors='coerce')
+            adab = _normalize_nkg(adab, ['Add_Left', 'Add_Right', 'Abd_Left', 'Abd_Right'])
+            result['adab'] = adab
+
+    # --- Hip Flexion (ForceFrame) ---
+    if 'testTypeName' in ff.columns:
+        flex_mask = ff['testTypeName'].str.contains('Hip Flexion', case=False, na=False)
+        if flex_mask.any():
+            flex = ff[flex_mask].copy()
+            # Flexion uses outer columns (inner is ~0)
+            flex['Flx_Left'] = pd.to_numeric(flex.get('outerLeftMaxForce'), errors='coerce')
+            flex['Flx_Right'] = pd.to_numeric(flex.get('outerRightMaxForce'), errors='coerce')
+            flex = _normalize_nkg(flex, ['Flx_Left', 'Flx_Right'])
+            result['flexion'] = flex
+
+    # --- Hip Extension (ForceDecks SLISOT "Hip Thrust") ---
+    if forcedecks_df is not None and not forcedecks_df.empty and 'testType' in forcedecks_df.columns:
+        fd = forcedecks_df.copy()
+        if 'Name' not in fd.columns and 'full_name' in fd.columns:
+            fd['Name'] = fd['full_name']
+
+        # Filter for SLISOT tests tagged as hip thrust
+        slisot_mask = fd['testType'] == 'SLISOT'
+        hip_thrust_mask = pd.Series(False, index=fd.index)
+        for col_name in ['notes', 'testTypeName']:
+            if col_name in fd.columns:
+                hip_thrust_mask = hip_thrust_mask | fd[col_name].str.contains('hip thrust', case=False, na=False)
+
+        ext_mask = slisot_mask & hip_thrust_mask
+        if ext_mask.any():
+            ext = fd[ext_mask].copy()
+            ext['recordedDateUtc'] = pd.to_datetime(ext['recordedDateUtc'], errors='coerce')
+
+            # Prefer NET_PEAK_VERTICAL_FORCE (net of BW), fallback to PEAK_VERTICAL_FORCE
+            left_col = None
+            right_col = None
+            for prefix in ['NET_PEAK_VERTICAL_FORCE', 'PEAK_VERTICAL_FORCE']:
+                if f'{prefix}_Left' in ext.columns and f'{prefix}_Right' in ext.columns:
+                    left_col = f'{prefix}_Left'
+                    right_col = f'{prefix}_Right'
+                    break
+
+            if left_col and right_col:
+                ext[left_col] = pd.to_numeric(ext[left_col], errors='coerce')
+                ext[right_col] = pd.to_numeric(ext[right_col], errors='coerce')
+
+                # Determine which side each row tests
+                ext['side'] = np.where(
+                    ext[left_col].notna() & (ext[left_col] != 0), 'Left',
+                    np.where(ext[right_col].notna() & (ext[right_col] != 0), 'Right', None)
+                )
+                ext['force_value'] = ext[left_col].fillna(ext[right_col])
+
+                # Also get body mass for N/kg
+                if 'weight' in ext.columns:
+                    ext['body_mass'] = pd.to_numeric(ext['weight'], errors='coerce')
+                    ext.loc[ext['body_mass'] <= 0, 'body_mass'] = np.nan
+                    ext['force_value_nkg'] = ext['force_value'] / ext['body_mass']
+
+                # Carry athlete_sport and athlete_sex
+                result['extension'] = ext
+
+    return result
+
+
+def pivot_extension_lr(ext_df: pd.DataFrame, use_nkg: bool = False) -> pd.DataFrame:
+    """
+    Pivot single-limb ForceDecks extension tests into one row per athlete with Left & Right columns.
+    """
+    if ext_df is None or ext_df.empty or 'side' not in ext_df.columns:
+        return pd.DataFrame()
+
+    val_col = 'force_value_nkg' if use_nkg and 'force_value_nkg' in ext_df.columns else 'force_value'
+
+    # Get latest test per athlete per side
+    valid = ext_df.dropna(subset=['Name', 'side', val_col]).copy()
+    if valid.empty:
+        return pd.DataFrame()
+
+    valid = valid.sort_values('recordedDateUtc')
+    latest = valid.groupby(['Name', 'side']).agg({
+        val_col: 'last',
+        'recordedDateUtc': 'last'
+    }).reset_index()
+
+    # Pivot to get Left and Right columns
+    pivot = latest.pivot(index='Name', columns='side', values=val_col).reset_index()
+    pivot.columns.name = None
+
+    # Rename to standard format
+    rename = {}
+    if 'Left' in pivot.columns:
+        rename['Left'] = 'Ext_Left'
+    if 'Right' in pivot.columns:
+        rename['Right'] = 'Ext_Right'
+    pivot = pivot.rename(columns=rename)
+
+    # Carry over athlete_sport and athlete_sex from ext_df
+    meta_cols = {}
+    for meta in ['athlete_sport', 'athlete_sex']:
+        if meta in ext_df.columns:
+            meta_map = ext_df.dropna(subset=['Name', meta]).drop_duplicates('Name').set_index('Name')[meta].to_dict()
+            meta_cols[meta] = pivot['Name'].map(meta_map)
+    for k, v in meta_cols.items():
+        pivot[k] = v
+
+    return pivot
+
+
+def create_hip_summary_table(
+    adab_df: pd.DataFrame,
+    flex_df: pd.DataFrame,
+    ext_pivot_df: pd.DataFrame,
+    unit: str = 'N/kg'
+) -> pd.DataFrame:
+    """
+    Create comprehensive hip diagnostics summary table.
+
+    Merges latest values from all hip metrics per athlete,
+    calculates L/R asymmetry and Add/Abd & Flx/Ext ratios.
+    """
+    dfs_to_merge = []
+
+    # --- Adduction & Abduction (from same ForceFrame Hip AD/AB tests) ---
+    if adab_df is not None and not adab_df.empty and 'Name' in adab_df.columns:
+        adab = adab_df.copy()
+        if 'testDateUtc' in adab.columns:
+            adab['testDateUtc'] = pd.to_datetime(adab['testDateUtc'], errors='coerce')
+            adab = adab.sort_values('testDateUtc').groupby('Name').last().reset_index()
+        else:
+            adab = adab.groupby('Name').last().reset_index()
+
+        suffix = '_nkg' if 'N/kg' in unit else ''
+        cols = {f'Add_Left{suffix}': 'Add L', f'Add_Right{suffix}': 'Add R',
+                f'Abd_Left{suffix}': 'Abd L', f'Abd_Right{suffix}': 'Abd R'}
+        keep = ['Name'] + [c for c in cols.keys() if c in adab.columns]
+        if len(keep) > 1:
+            adab_summary = adab[keep].rename(columns=cols)
+            dfs_to_merge.append(adab_summary)
+
+    # --- Flexion ---
+    if flex_df is not None and not flex_df.empty and 'Name' in flex_df.columns:
+        flex = flex_df.copy()
+        if 'testDateUtc' in flex.columns:
+            flex['testDateUtc'] = pd.to_datetime(flex['testDateUtc'], errors='coerce')
+            flex = flex.sort_values('testDateUtc').groupby('Name').last().reset_index()
+        else:
+            flex = flex.groupby('Name').last().reset_index()
+
+        suffix = '_nkg' if 'N/kg' in unit else ''
+        cols = {f'Flx_Left{suffix}': 'Flx L', f'Flx_Right{suffix}': 'Flx R'}
+        keep = ['Name'] + [c for c in cols.keys() if c in flex.columns]
+        if len(keep) > 1:
+            flex_summary = flex[keep].rename(columns=cols)
+            dfs_to_merge.append(flex_summary)
+
+    # --- Extension (already pivoted) ---
+    if ext_pivot_df is not None and not ext_pivot_df.empty and 'Name' in ext_pivot_df.columns:
+        ext = ext_pivot_df.rename(columns={'Ext_Left': 'Ext L', 'Ext_Right': 'Ext R'}).copy()
+        keep = ['Name'] + [c for c in ['Ext L', 'Ext R'] if c in ext.columns]
+        if len(keep) > 1:
+            dfs_to_merge.append(ext[keep])
+
+    if not dfs_to_merge:
+        return pd.DataFrame()
+
+    # Merge all by athlete Name
+    summary = dfs_to_merge[0]
+    for df in dfs_to_merge[1:]:
+        summary = summary.merge(df, on='Name', how='outer')
+
+    # --- Calculate asymmetry percentages ---
+    def calc_asym(row, left_col, right_col):
+        l, r = row.get(left_col), row.get(right_col)
+        if pd.isna(l) or pd.isna(r) or (l + r) == 0:
+            return np.nan
+        return abs(l - r) / ((l + r) / 2) * 100
+
+    for metric in ['Add', 'Abd', 'Flx', 'Ext']:
+        l_col, r_col = f'{metric} L', f'{metric} R'
+        if l_col in summary.columns and r_col in summary.columns:
+            summary[f'{metric} Asym%'] = summary.apply(lambda row: calc_asym(row, l_col, r_col), axis=1)
+
+    # --- Calculate ratios ---
+    # Add/Abd ratio per limb
+    for side in ['L', 'R']:
+        add_col, abd_col = f'Add {side}', f'Abd {side}'
+        if add_col in summary.columns and abd_col in summary.columns:
+            summary[f'Add/Abd {side}'] = np.where(
+                summary[abd_col] > 0,
+                summary[add_col] / summary[abd_col],
+                np.nan
+            )
+    # Flx/Ext ratio per limb
+    for side in ['L', 'R']:
+        flx_col, ext_col = f'Flx {side}', f'Ext {side}'
+        if flx_col in summary.columns and ext_col in summary.columns:
+            summary[f'Flx/Ext {side}'] = np.where(
+                summary[ext_col] > 0,
+                summary[flx_col] / summary[ext_col],
+                np.nan
+            )
+
+    # --- Format status flags ---
+    def asym_flag(val):
+        if pd.isna(val):
+            return ''
+        if val <= 5:
+            return '🟢'
+        elif val <= 10:
+            return '🟡'
+        return '🔴'
+
+    for metric in ['Add', 'Abd', 'Flx', 'Ext']:
+        asym_col = f'{metric} Asym%'
+        if asym_col in summary.columns:
+            summary[f'{metric} Flag'] = summary[asym_col].apply(asym_flag)
+            summary[asym_col] = summary[asym_col].apply(lambda x: f"{x:.1f}%" if pd.notna(x) else '--')
+
+    # Round metric values
+    for col in summary.columns:
+        if summary[col].dtype in ['float64', 'float32']:
+            summary[col] = summary[col].round(2)
+
+    # Reorder columns
+    ordered = ['Name']
+    for metric in ['Add', 'Abd']:
+        for c in [f'{metric} L', f'{metric} R', f'{metric} Asym%', f'{metric} Flag']:
+            if c in summary.columns:
+                ordered.append(c)
+    for c in ['Add/Abd L', 'Add/Abd R']:
+        if c in summary.columns:
+            ordered.append(c)
+    for metric in ['Flx', 'Ext']:
+        for c in [f'{metric} L', f'{metric} R', f'{metric} Asym%', f'{metric} Flag']:
+            if c in summary.columns:
+                ordered.append(c)
+    for c in ['Flx/Ext L', 'Flx/Ext R']:
+        if c in summary.columns:
+            ordered.append(c)
+
+    remaining = [c for c in summary.columns if c not in ordered]
+    ordered.extend(remaining)
+
+    return summary[[c for c in ordered if c in summary.columns]]
+
+
 def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.DataFrame = None, forceframe_df: pd.DataFrame = None):
     """
     Main function to render the S&C Diagnostics Canvas tab.
@@ -1826,6 +2135,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
         "💪 NordBord",       # Side-by-Side (Nordic)
         "🏃 10:5 Hop",       # Ranked Bar
         "🔄 Quadrant Tests", # Stacked Multi-Variable
+        "🦴 Hip Diagnostics", # ForceFrame + ForceDecks hip assessment
         "🏋️ Strength RM",    # Ranked Bar (Manual Entry)
         "🦘 Broad Jump",     # Ranked Bar (Manual Entry)
         "🏃 Fitness Tests",  # Ranked Bar (6 Min Aerobic, etc.)
@@ -2499,6 +2809,353 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                 st.warning("No test types found in ForceFrame data.")
         else:
             st.warning("No ForceFrame data available for quadrant tests.")
+
+    # =====================
+    # Hip Diagnostics Tab (ForceFrame + ForceDecks)
+    # =====================
+    elif selected_test_tab == "🦴 Hip Diagnostics":
+        st.markdown("""
+        <div style="background: linear-gradient(135deg, #1D4D3B 0%, #153829 100%);
+             padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem; border-left: 4px solid #a08e66;">
+            <h2 style="color: white; margin: 0;">Hip Diagnostics</h2>
+            <p style="color: rgba(255,255,255,0.9); margin: 0.5rem 0 0 0;">
+                Adduction &amp; Abduction (ForceFrame) | Flexion (ForceFrame) &amp; Extension (ForceDecks)
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # Prepare hip data from both devices
+        hip_data = prepare_hip_diagnostics_data(forceframe_df, forcedecks_df)
+        adab_df = hip_data['adab']
+        flex_df = hip_data['flexion']
+        ext_df = hip_data['extension']
+
+        has_ff_data = not adab_df.empty or not flex_df.empty
+        has_ext_data = not ext_df.empty
+
+        if not has_ff_data and not has_ext_data:
+            st.warning("No hip diagnostics data available. Ensure ForceFrame hip tests have been synced.")
+        else:
+            # --- Controls row ---
+            ctrl_col1, ctrl_col2 = st.columns(2)
+
+            with ctrl_col1:
+                # Position selector for AD/AB angle
+                positions_available = []
+                if not adab_df.empty and 'position' in adab_df.columns:
+                    positions_available = sorted(adab_df['position'].dropna().unique().tolist())
+                if positions_available:
+                    pos_idx = get_persisted_selectbox_index("hip_position_select", positions_available)
+                    selected_position = st.selectbox(
+                        "AD/AB Position (angle):",
+                        positions_available,
+                        index=pos_idx,
+                        key="hip_position_select"
+                    )
+                    adab_df = adab_df[adab_df['position'] == selected_position].copy()
+                elif not adab_df.empty:
+                    st.info("No position variants found - showing all Hip AD/AB data.")
+
+            with ctrl_col2:
+                unit_option = st.radio(
+                    "Display Units:",
+                    ["N/kg (body mass relative)", "Newtons (N)"],
+                    horizontal=True,
+                    key="hip_unit_toggle"
+                )
+                use_nkg = "N/kg" in unit_option
+                unit_label = 'N/kg' if use_nkg else 'N'
+
+            # --- Apply filters using combined ForceFrame hip data ---
+            # Build a combined df for filtering (sport/gender/date)
+            combined_parts = []
+            if not adab_df.empty:
+                combined_parts.append(adab_df)
+            if not flex_df.empty:
+                combined_parts.append(flex_df)
+            if combined_parts:
+                combined_ff = pd.concat(combined_parts, ignore_index=True)
+                filtered_combined, sport, gender = render_filters(combined_ff, "hip")
+
+                # Apply the same sport/gender/date filters back to individual dfs
+                filter_names = filtered_combined['Name'].unique() if 'Name' in filtered_combined.columns else []
+
+                if not adab_df.empty and 'Name' in adab_df.columns:
+                    adab_df = adab_df[adab_df['Name'].isin(filter_names)]
+                if not flex_df.empty and 'Name' in flex_df.columns:
+                    flex_df = flex_df[flex_df['Name'].isin(filter_names)]
+
+                # Also filter extension data by the same athletes
+                if has_ext_data and 'Name' in ext_df.columns:
+                    # Apply sport/gender filters to extension data too
+                    if sport != 'All' and 'athlete_sport' in ext_df.columns:
+                        ext_df = ext_df[ext_df['athlete_sport'] == sport]
+                    if gender != 'All' and 'athlete_sex' in ext_df.columns:
+                        ext_df = ext_df[ext_df['athlete_sex'] == gender]
+            else:
+                sport, gender = 'All', 'All'
+
+            # Pivot extension to L/R per athlete
+            ext_pivot = pivot_extension_lr(ext_df, use_nkg=use_nkg)
+
+            # Get suffix for column selection
+            suffix = '_nkg' if use_nkg else ''
+
+            # --- View tabs ---
+            view_tabs = st.tabs(["👥 Group View", "🏃 Individual View"])
+
+            with view_tabs[0]:
+                # ---- ROW 1: Adduction | Abduction ----
+                if not adab_df.empty:
+                    # Get latest test per athlete
+                    if 'testDateUtc' in adab_df.columns:
+                        adab_df['testDateUtc'] = pd.to_datetime(adab_df['testDateUtc'], errors='coerce')
+                        latest_adab = adab_df.sort_values('testDateUtc').groupby('Name').last().reset_index()
+                    else:
+                        latest_adab = adab_df.groupby('Name').last().reset_index()
+
+                    col1, col2 = st.columns(2)
+
+                    with col1:
+                        add_l = f'Add_Left{suffix}'
+                        add_r = f'Add_Right{suffix}'
+                        if add_l in latest_adab.columns and add_r in latest_adab.columns:
+                            fig = create_ranked_side_by_side_chart(
+                                latest_adab, add_l, add_r,
+                                'Hip Adduction', unit_label,
+                                title='Hip Adduction - Left vs Right'
+                            )
+                            if fig:
+                                st.plotly_chart(fig, use_container_width=True, key="hip_add_group")
+                            else:
+                                st.info("No Adduction data to display.")
+                        else:
+                            st.info("Adduction columns not available.")
+
+                    with col2:
+                        abd_l = f'Abd_Left{suffix}'
+                        abd_r = f'Abd_Right{suffix}'
+                        if abd_l in latest_adab.columns and abd_r in latest_adab.columns:
+                            fig = create_ranked_side_by_side_chart(
+                                latest_adab, abd_l, abd_r,
+                                'Hip Abduction', unit_label,
+                                title='Hip Abduction - Left vs Right'
+                            )
+                            if fig:
+                                st.plotly_chart(fig, use_container_width=True, key="hip_abd_group")
+                            else:
+                                st.info("No Abduction data to display.")
+                        else:
+                            st.info("Abduction columns not available.")
+                else:
+                    st.info("No Hip AD/AB data available from ForceFrame.")
+
+                st.markdown("---")
+
+                # ---- ROW 2: Flexion | Extension ----
+                col3, col4 = st.columns(2)
+
+                with col3:
+                    if not flex_df.empty:
+                        if 'testDateUtc' in flex_df.columns:
+                            flex_df['testDateUtc'] = pd.to_datetime(flex_df['testDateUtc'], errors='coerce')
+                            latest_flex = flex_df.sort_values('testDateUtc').groupby('Name').last().reset_index()
+                        else:
+                            latest_flex = flex_df.groupby('Name').last().reset_index()
+
+                        flx_l = f'Flx_Left{suffix}'
+                        flx_r = f'Flx_Right{suffix}'
+                        if flx_l in latest_flex.columns and flx_r in latest_flex.columns:
+                            fig = create_ranked_side_by_side_chart(
+                                latest_flex, flx_l, flx_r,
+                                'Hip Flexion', unit_label,
+                                title='Hip Flexion - Left vs Right'
+                            )
+                            if fig:
+                                st.plotly_chart(fig, use_container_width=True, key="hip_flx_group")
+                            else:
+                                st.info("No Flexion data to display.")
+                        else:
+                            st.info("Flexion columns not available.")
+                    else:
+                        st.info("No Hip Flexion data available from ForceFrame.")
+
+                with col4:
+                    if not ext_pivot.empty and 'Ext_Left' in ext_pivot.columns and 'Ext_Right' in ext_pivot.columns:
+                        fig = create_ranked_side_by_side_chart(
+                            ext_pivot, 'Ext_Left', 'Ext_Right',
+                            'Hip Extension', unit_label,
+                            title='Hip Extension - Left vs Right (ForceDecks SL Hip Thrust)'
+                        )
+                        if fig:
+                            st.plotly_chart(fig, use_container_width=True, key="hip_ext_group")
+                        else:
+                            st.info("Not enough Hip Extension data to chart.")
+                    else:
+                        st.info("Hip Extension: Limited data from ForceDecks SLISOT hip thrust tests.")
+
+                st.markdown("---")
+
+                # ---- ROW 3: Summary Table ----
+                st.markdown("### Comprehensive Hip Summary")
+
+                # Build summary table using latest values
+                summary_adab = latest_adab if not adab_df.empty else pd.DataFrame()
+                summary_flex = latest_flex if not flex_df.empty else pd.DataFrame()
+
+                summary = create_hip_summary_table(summary_adab, summary_flex, ext_pivot, unit=unit_label)
+
+                if not summary.empty:
+                    st.dataframe(summary, use_container_width=True, hide_index=True)
+                else:
+                    st.info("Not enough data across metrics to generate summary table.")
+
+            with view_tabs[1]:
+                # ---- Individual View ----
+                # Collect all athletes across hip metrics
+                all_athletes = set()
+                if not adab_df.empty and 'Name' in adab_df.columns:
+                    all_athletes.update(adab_df['Name'].dropna().unique())
+                if not flex_df.empty and 'Name' in flex_df.columns:
+                    all_athletes.update(flex_df['Name'].dropna().unique())
+                if not ext_df.empty and 'Name' in ext_df.columns:
+                    all_athletes.update(ext_df['Name'].dropna().unique())
+                all_athletes = sorted(all_athletes)
+
+                if not all_athletes:
+                    st.info("No athletes found in hip diagnostics data.")
+                else:
+                    default_athletes = get_persisted_athlete_selection("hip_athlete_select", all_athletes)
+                    selected_athletes = st.multiselect(
+                        "Select Athletes:",
+                        all_athletes,
+                        default=default_athletes,
+                        key="hip_athlete_select"
+                    )
+
+                    metric_options = ['Hip Adduction', 'Hip Abduction', 'Hip Flexion', 'Hip Extension']
+                    metric_idx = get_persisted_selectbox_index("hip_ind_metric", metric_options)
+                    selected_metric = st.selectbox(
+                        "Select Metric:",
+                        metric_options,
+                        index=metric_idx,
+                        key="hip_ind_metric"
+                    )
+
+                    if selected_athletes and selected_metric:
+                        # Map metric to data source and columns
+                        metric_map = {
+                            'Hip Adduction': {
+                                'df': adab_df, 'left': f'Add_Left{suffix}', 'right': f'Add_Right{suffix}',
+                                'date_col': 'testDateUtc'
+                            },
+                            'Hip Abduction': {
+                                'df': adab_df, 'left': f'Abd_Left{suffix}', 'right': f'Abd_Right{suffix}',
+                                'date_col': 'testDateUtc'
+                            },
+                            'Hip Flexion': {
+                                'df': flex_df, 'left': f'Flx_Left{suffix}', 'right': f'Flx_Right{suffix}',
+                                'date_col': 'testDateUtc'
+                            },
+                            'Hip Extension': {
+                                'df': ext_df, 'left': None, 'right': None,
+                                'date_col': 'recordedDateUtc'
+                            }
+                        }
+
+                        config = metric_map[selected_metric]
+                        source_df = config['df']
+                        date_col = config['date_col']
+
+                        if source_df is None or source_df.empty:
+                            st.info(f"No {selected_metric} data available.")
+                        elif selected_metric == 'Hip Extension':
+                            # Special handling: single-limb data plotted as separate lines
+                            val_col = 'force_value_nkg' if use_nkg and 'force_value_nkg' in source_df.columns else 'force_value'
+                            athlete_ext = source_df[source_df['Name'].isin(selected_athletes)].copy()
+                            if athlete_ext.empty:
+                                st.info("No Hip Extension data for selected athletes.")
+                            else:
+                                athlete_ext[date_col] = pd.to_datetime(athlete_ext[date_col], errors='coerce')
+                                athlete_ext = athlete_ext.sort_values(date_col)
+
+                                fig = go.Figure()
+                                for athlete in selected_athletes:
+                                    adf = athlete_ext[athlete_ext['Name'] == athlete]
+                                    for side_label, side_val, color in [('Left', 'Left', TEAL_PRIMARY), ('Right', 'Right', CORAL_ACCENT)]:
+                                        side_data = adf[adf['side'] == side_val]
+                                        if not side_data.empty:
+                                            fig.add_trace(go.Scatter(
+                                                x=side_data[date_col],
+                                                y=side_data[val_col],
+                                                mode='lines+markers',
+                                                name=f'{athlete} - {side_label}',
+                                                line=dict(color=color)
+                                            ))
+
+                                fig.update_layout(
+                                    title=f'Hip Extension Progression ({unit_label})',
+                                    xaxis_title='Date', yaxis_title=f'Net Peak Force ({unit_label})',
+                                    plot_bgcolor='white', paper_bgcolor='white',
+                                    font=dict(family='Inter, sans-serif', color='#333'),
+                                    legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1)
+                                )
+                                fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
+                                fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
+                                st.plotly_chart(fig, use_container_width=True, key="hip_ext_ind")
+                        else:
+                            # Standard ForceFrame bilateral metric
+                            left_col = config['left']
+                            right_col = config['right']
+
+                            if 'Name' not in source_df.columns or left_col not in source_df.columns:
+                                st.info(f"Required columns missing for {selected_metric}.")
+                            else:
+                                athlete_data = source_df[source_df['Name'].isin(selected_athletes)].copy()
+                                if athlete_data.empty:
+                                    st.info(f"No {selected_metric} data for selected athletes.")
+                                else:
+                                    athlete_data[date_col] = pd.to_datetime(athlete_data[date_col], errors='coerce')
+                                    athlete_data = athlete_data.sort_values(date_col)
+
+                                    fig = go.Figure()
+                                    for athlete in selected_athletes:
+                                        adf = athlete_data[athlete_data['Name'] == athlete]
+                                        if not adf.empty:
+                                            fig.add_trace(go.Scatter(
+                                                x=adf[date_col], y=adf[left_col],
+                                                mode='lines+markers',
+                                                name=f'{athlete} - Left',
+                                                line=dict(color=TEAL_PRIMARY)
+                                            ))
+                                            fig.add_trace(go.Scatter(
+                                                x=adf[date_col], y=adf[right_col],
+                                                mode='lines+markers',
+                                                name=f'{athlete} - Right',
+                                                line=dict(color=CORAL_ACCENT)
+                                            ))
+
+                                    fig.update_layout(
+                                        title=f'{selected_metric} Progression ({unit_label})',
+                                        xaxis_title='Date', yaxis_title=f'{selected_metric} ({unit_label})',
+                                        plot_bgcolor='white', paper_bgcolor='white',
+                                        font=dict(family='Inter, sans-serif', color='#333'),
+                                        legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1)
+                                    )
+                                    fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
+                                    fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
+                                    st.plotly_chart(fig, use_container_width=True, key="hip_ind_chart")
+
+                                    # Asymmetry table for latest values
+                                    if date_col in athlete_data.columns:
+                                        latest = athlete_data.sort_values(date_col).groupby('Name').last().reset_index()
+                                    else:
+                                        latest = athlete_data.groupby('Name').last().reset_index()
+
+                                    asym_table = create_asymmetry_table(latest, left_col, right_col, unit=unit_label)
+                                    if not asym_table.empty:
+                                        st.markdown(f"**{selected_metric} - Asymmetry Summary**")
+                                        st.dataframe(asym_table, use_container_width=True, hide_index=True)
 
     # =====================
     # Strength RM Tab (Manual Entry)
