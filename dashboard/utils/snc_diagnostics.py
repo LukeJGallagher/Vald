@@ -3375,24 +3375,19 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                                 athlete_data = shoulder_df[shoulder_df['Name'].isin(selected_athletes)].copy()
                                 if not athlete_data.empty and 'testDateUtc' in athlete_data.columns:
                                     athlete_data['testDateUtc'] = pd.to_datetime(athlete_data['testDateUtc'], errors='coerce')
-                                    athlete_data = athlete_data.sort_values('testDateUtc')
+                                    latest = athlete_data.sort_values('testDateUtc').groupby('Name').last().reset_index()
 
-                                    fig = go.Figure()
-                                    for athlete in selected_athletes:
-                                        adf = athlete_data[athlete_data['Name'] == athlete]
-                                        if not adf.empty:
-                                            fig.add_trace(go.Scatter(x=adf['testDateUtc'], y=adf[left_col], mode='lines+markers', name=f'{athlete} - Left', line=dict(color=TEAL_PRIMARY)))
-                                            fig.add_trace(go.Scatter(x=adf['testDateUtc'], y=adf[right_col], mode='lines+markers', name=f'{athlete} - Right', line=dict(color=TEAL_LIGHT)))
-
-                                    fig.update_layout(title=f'{selected_metric} Progression ({unit_label})', xaxis_title='Date', yaxis_title=f'{selected_metric} ({unit_label})',
-                                                      plot_bgcolor='white', paper_bgcolor='white', font=dict(family='Inter, sans-serif', color='#333'),
-                                                      legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1))
-                                    fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
-                                    fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
-                                    st.plotly_chart(fig, use_container_width=True, key="shoulder_ind_chart")
+                                    # Bar chart - consistent with Group View
+                                    if left_col in latest.columns and right_col in latest.columns:
+                                        fig = create_ranked_side_by_side_chart(
+                                            latest, left_col, right_col,
+                                            selected_metric, unit_label,
+                                            title=f'{selected_metric} - Left vs Right'
+                                        )
+                                        if fig:
+                                            st.plotly_chart(fig, use_container_width=True, key="shoulder_ind_chart")
 
                                     # Asymmetry table
-                                    latest = athlete_data.sort_values('testDateUtc').groupby('Name').last().reset_index()
                                     asym_table = create_asymmetry_table(latest, left_col, right_col, unit=unit_label)
                                     if not asym_table.empty:
                                         st.markdown(f"**{selected_metric} - Asymmetry Summary**")
