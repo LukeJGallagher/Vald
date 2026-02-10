@@ -2034,6 +2034,9 @@ def create_individual_report(df: pd.DataFrame,
             if fig:
                 st.plotly_chart(fig, use_container_width=True)
 
+    # Data directory for manual test files
+    data_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data')
+
     # DynaMo Grip trends (if data available)
     dynamo_df = _load_dynamo_df()
     if not dynamo_df.empty:
