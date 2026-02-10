@@ -761,16 +761,25 @@ TEST_CONFIG = {
 }
 
 # Metric column resolver - finds actual column from list of possible names
-def resolve_metric_column(df: pd.DataFrame, metric_spec) -> Optional[str]:
-    """Find actual column name from a metric specification (string or list of possibilities)."""
+def resolve_metric_column(df: pd.DataFrame, metric_spec, require_data: bool = True) -> Optional[str]:
+    """Find actual column name from a metric specification (string or list of possibilities).
+
+    Args:
+        df: DataFrame to search
+        metric_spec: Column name (str) or list of possible column names
+        require_data: If True, only return columns that have at least one non-null value.
+                      This prevents selecting a column that exists but has no data for the
+                      filtered subset (e.g., JUMP_HEIGHT_IMP_MOM exists in header but is
+                      NaN for ABCMJ tests).
+    """
     if metric_spec is None:
         return None
-    if isinstance(metric_spec, str):
-        return metric_spec if metric_spec in df.columns else None
-    if isinstance(metric_spec, list):
-        for col in metric_spec:
-            if col in df.columns:
-                return col
+    candidates = [metric_spec] if isinstance(metric_spec, str) else metric_spec if isinstance(metric_spec, list) else []
+    for col in candidates:
+        if col in df.columns:
+            if require_data and df[col].notna().sum() == 0:
+                continue  # Column exists but has no data - try next candidate
+            return col
     return None
 
 # Default benchmarks - These are fallbacks if benchmark database not available
@@ -2905,11 +2914,17 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                 metric_unit = 'cm'
 
                 # Check columns in order of preference
+                # Include both UPPERCASE (local_sync) and mixed-case (legacy API) formats
                 metric_options = [
                     ('PUSHUP_HEIGHT', 'Pushup Height', 'cm'),
+                    ('Pushup Height_Trial', 'Pushup Height', 'cm'),
+                    ('PUSHUP_HEIGHT_INCHES', 'Pushup Height', 'in'),
                     ('FLIGHT_TIME', 'Flight Time', 's'),
+                    ('Flight Time_Trial', 'Flight Time', 's'),
                     ('BODYMASS_RELATIVE_TAKEOFF_POWER', 'Relative Peak Power', 'W/kg'),
+                    ('Peak Power / BM_Trial', 'Relative Peak Power', 'W/kg'),
                     ('PEAK_TAKEOFF_FORCE', 'Peak Takeoff Force', 'N'),
+                    ('Peak Takeoff Force_Trial', 'Peak Takeoff Force', 'N'),
                 ]
 
                 for col, name, unit in metric_options:
@@ -2919,7 +2934,20 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                         metric_unit = unit
                         break
 
+                # Fallback: search for any column with 'PUSHUP' or 'pushup' in name
+                if metric_col is None:
+                    for col in filtered_df.columns:
+                        if 'PUSHUP' in col.upper() and filtered_df[col].notna().sum() > 0:
+                            metric_col = col
+                            metric_name = col.replace('_', ' ').title()
+                            metric_unit = ''
+                            break
+
                 if metric_col:
+                    # Convert m to cm if values look like meters
+                    if metric_unit == 'cm' and filtered_df[metric_col].median() < 1:
+                        filtered_df[metric_col] = filtered_df[metric_col] * 100
+
                     # Get latest test per athlete for group view
                     if 'recordedDateUtc' in filtered_df.columns:
                         latest_df = filtered_df.sort_values('recordedDateUtc').groupby('Name').last().reset_index()
@@ -2938,6 +2966,10 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                         st.plotly_chart(fig, use_container_width=True, key="plyo_pushup_group_bar")
                 else:
                     st.warning("Plyo Pushup metrics not found in data.")
+                    # Show available columns for debugging
+                    ppu_cols = [c for c in filtered_df.columns if any(k in c.upper() for k in ['PUSH', 'FLIGHT', 'TAKEOFF', 'POWER'])]
+                    if ppu_cols:
+                        st.info(f"Available PPU columns: {', '.join(ppu_cols[:10])}")
 
             with view_tabs[1]:
                 athletes = sorted(filtered_df['Name'].dropna().unique()) if 'Name' in filtered_df.columns else []
@@ -2994,13 +3026,13 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                     # Standardize column names for DynaMo data
                     if 'full_name' in dynamo_df.columns and 'Name' not in dynamo_df.columns:
                         dynamo_df['Name'] = dynamo_df['full_name']
-                    if 'startTimeUTC' in dynamo_df.columns:
+                    if 'startTimeUTC' in dynamo_df.columns and 'recordedDateUtc' not in dynamo_df.columns:
                         dynamo_df['recordedDateUtc'] = pd.to_datetime(dynamo_df['startTimeUTC'], errors='coerce')
-                    if 'athlete_sport' in dynamo_df.columns and 'athlete_sport' not in dynamo_df.columns:
-                        pass  # Already has it
+                    elif 'analysedDateUTC' in dynamo_df.columns and 'recordedDateUtc' not in dynamo_df.columns:
+                        dynamo_df['recordedDateUtc'] = pd.to_datetime(dynamo_df['analysedDateUTC'], errors='coerce')
                     break
                 except Exception as e:
-                    pass
+                    st.warning(f"Error loading DynaMo data: {e}")
 
         if dynamo_df.empty:
             st.warning("No DynaMo (grip strength) data available. Run local_sync.py to fetch data.")

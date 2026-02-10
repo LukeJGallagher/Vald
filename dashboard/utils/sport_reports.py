@@ -273,10 +273,10 @@ def get_dynamic_benchmarks(gender: str = "male", source: str = "VALD") -> Dict:
 # Supports both legacy API format (with _Trial suffix) and local_sync format (UPPERCASE)
 METRIC_COLUMNS = {
     'cmj_height': [
-        'JUMP_HEIGHT_IMP_MOM',  # local_sync format (meters)
-        'JUMP_HEIGHT',  # local_sync format (meters)
+        'JUMP_HEIGHT_IMP_MOM',  # local_sync format (meters) - preferred (more accurate)
         'Jump Height (Imp-Mom)_Trial',  # legacy API format
-        'Jump Height (Flight Time)_Trial',
+        # Note: JUMP_HEIGHT (flight-time method) intentionally excluded - gives different
+        # values than impulse-momentum (e.g., 78.8cm vs 48cm) and causes confusion
     ],
     'peak_power': [
         'BODYMASS_RELATIVE_TAKEOFF_POWER',  # local_sync format (W/kg)
@@ -341,10 +341,15 @@ def get_nordbord_force_columns(df: pd.DataFrame) -> Tuple[Optional[str], Optiona
 
 
 def get_metric_column(df: pd.DataFrame, metric_key: str) -> Optional[str]:
-    """Find the actual column name for a metric in the dataframe."""
+    """Find the actual column name for a metric in the dataframe.
+
+    Only returns columns that have at least one non-null value, preventing
+    selection of columns that exist in the header but have no data for the
+    filtered subset (e.g., JUMP_HEIGHT_IMP_MOM vs JUMP_HEIGHT).
+    """
     possible_cols = METRIC_COLUMNS.get(metric_key, [metric_key])
     for col in possible_cols:
-        if col in df.columns:
+        if col in df.columns and df[col].notna().sum() > 0:
             return col
     return None
 
