@@ -1120,7 +1120,7 @@ def create_ranked_side_by_side_chart(
         y=plot_df['Name'],
         x=plot_df[right_col],
         orientation='h',
-        marker_color=CORAL_ACCENT,
+        marker_color=TEAL_LIGHT,
         text=[f"{v:.0f}" for v in plot_df[right_col]],
         textposition='auto',
         name='Right'
@@ -2111,7 +2111,7 @@ def create_hip_summary_table(
     return summary[[c for c in ordered if c in summary.columns]]
 
 
-def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.DataFrame = None, forceframe_df: pd.DataFrame = None):
+def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.DataFrame = None, forceframe_df: pd.DataFrame = None, dynamo_df: pd.DataFrame = None):
     """
     Main function to render the S&C Diagnostics Canvas tab.
     """
@@ -2189,9 +2189,9 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                 benchmark = render_benchmark_input('IMTP', 'imtp')
 
             # Sub-tabs for Group vs Individual
-            view_tabs = st.tabs(["👥 Group View", "🏃 Individual View"])
+            selected_view = st.radio("View:", ["👥 Group View", "🏃 Individual View"], horizontal=True, key="imtp_view")
 
-            with view_tabs[0]:
+            if selected_view == "👥 Group View":
                 # Group ranked bar chart - use config for column resolution
                 metric_col = resolve_metric_column(filtered_df, TEST_CONFIG['IMTP']['metric1'])
 
@@ -2209,7 +2209,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                 else:
                     st.warning("Peak Force metric not found in data.")
 
-            with view_tabs[1]:
+            if selected_view == "🏃 Individual View":
                 # Individual line chart with multi-select
                 athletes = sorted(filtered_df['Name'].dropna().unique()) if 'Name' in filtered_df.columns else []
 
@@ -2261,9 +2261,9 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
             with col2:
                 benchmark = render_benchmark_input('CMJ', 'cmj')
 
-            view_tabs = st.tabs(["👥 Group View", "🏃 Individual View"])
+            selected_view = st.radio("View:", ["👥 Group View", "🏃 Individual View"], horizontal=True, key="cmj_view")
 
-            with view_tabs[0]:
+            if selected_view == "👥 Group View":
                 # Use config for column resolution
                 metric_col = resolve_metric_column(filtered_df, TEST_CONFIG['CMJ']['metric1'])
 
@@ -2301,7 +2301,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                 else:
                     st.warning("CMJ Power metric not found in data.")
 
-            with view_tabs[1]:
+            if selected_view == "🏃 Individual View":
                 athletes = sorted(filtered_df['Name'].dropna().unique()) if 'Name' in filtered_df.columns else []
 
                 if athletes:
@@ -2381,9 +2381,9 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                 test_key = selected_sl_test.replace(' ', '_')
                 benchmark = render_benchmark_input(test_key, 'sl')
 
-            view_tabs = st.tabs(["👥 Group View", "🏃 Individual View"])
+            selected_view = st.radio("View:", ["👥 Group View", "🏃 Individual View"], horizontal=True, key="sl_view")
 
-            with view_tabs[0]:
+            if selected_view == "👥 Group View":
                 # Determine left/right columns based on test type
                 if 'ISO' in selected_sl_test or 'IMTP' in selected_sl_test:
                     left_col = 'Peak Force / BM_Left'
@@ -2432,7 +2432,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                 else:
                     st.warning(f"Left/Right metrics not found for {selected_sl_test}.")
 
-            with view_tabs[1]:
+            if selected_view == "🏃 Individual View":
                 athletes = sorted(filtered_df['Name'].dropna().unique()) if 'Name' in filtered_df.columns else []
 
                 if athletes:
@@ -2481,9 +2481,9 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
             with col2:
                 benchmark = render_benchmark_input('NordBord', 'nordbord')
 
-            view_tabs = st.tabs(["👥 Group View", "🏃 Individual View"])
+            selected_view = st.radio("View:", ["👥 Group View", "🏃 Individual View"], horizontal=True, key="nordbord_view")
 
-            with view_tabs[0]:
+            if selected_view == "👥 Group View":
                 left_col = 'leftMaxForce'
                 right_col = 'rightMaxForce'
 
@@ -2521,7 +2521,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                 else:
                     st.warning("NordBord force columns not found.")
 
-            with view_tabs[1]:
+            if selected_view == "🏃 Individual View":
                 athletes = sorted(filtered_df['Name'].dropna().unique()) if 'Name' in filtered_df.columns else []
 
                 if athletes:
@@ -2567,9 +2567,9 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
             with col2:
                 benchmark = render_benchmark_input('10_5_Hop', 'hop')
 
-            view_tabs = st.tabs(["👥 Group View", "🏃 Individual View"])
+            selected_view = st.radio("View:", ["👥 Group View", "🏃 Individual View"], horizontal=True, key="hop_view")
 
-            with view_tabs[0]:
+            if selected_view == "👥 Group View":
                 metric_col = None
                 needs_conversion = False
 
@@ -2611,7 +2611,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                 else:
                     st.warning("RSI metric not found in data.")
 
-            with view_tabs[1]:
+            if selected_view == "🏃 Individual View":
                 athletes = sorted(filtered_df['Name'].dropna().unique()) if 'Name' in filtered_df.columns else []
 
                 if athletes:
@@ -2686,9 +2686,9 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                     if not available_cols:
                         st.info("No force metrics found in data.")
                     else:
-                        view_tabs = st.tabs(["👥 Group View", "🏃 Individual View"])
+                        selected_view = st.radio("View:", ["👥 Group View", "🏃 Individual View"], horizontal=True, key="quadrant_view")
 
-                        with view_tabs[0]:
+                        if selected_view == "👥 Group View":
                             st.markdown(f"**{selected_test_type}** - Latest values per athlete")
 
                             # Get latest test for each athlete
@@ -2755,7 +2755,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                             else:
                                 st.info("No athlete data available for display.")
 
-                        with view_tabs[1]:
+                        if selected_view == "🏃 Individual View":
                             athletes = sorted(filtered_df['Name'].dropna().unique()) if 'Name' in filtered_df.columns else []
 
                             if athletes:
@@ -2901,10 +2901,10 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
             # Get suffix for column selection
             suffix = '_nkg' if use_nkg else ''
 
-            # --- View tabs ---
-            view_tabs = st.tabs(["👥 Group View", "🏃 Individual View"])
+            # --- View toggle ---
+            selected_view = st.radio("View:", ["👥 Group View", "🏃 Individual View"], horizontal=True, key="hip_view")
 
-            with view_tabs[0]:
+            if selected_view == "👥 Group View":
                 # ---- ROW 1: Adduction | Abduction ----
                 if not adab_df.empty:
                     # Get latest test per athlete
@@ -3010,7 +3010,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                 else:
                     st.info("Not enough data across metrics to generate summary table.")
 
-            with view_tabs[1]:
+            if selected_view == "🏃 Individual View":
                 # ---- Individual View ----
                 # Collect all athletes across hip metrics
                 all_athletes = set()
@@ -3082,7 +3082,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                                 fig = go.Figure()
                                 for athlete in selected_athletes:
                                     adf = athlete_ext[athlete_ext['Name'] == athlete]
-                                    for side_label, side_val, color in [('Left', 'Left', TEAL_PRIMARY), ('Right', 'Right', CORAL_ACCENT)]:
+                                    for side_label, side_val, color in [('Left', 'Left', TEAL_PRIMARY), ('Right', 'Right', TEAL_LIGHT)]:
                                         side_data = adf[adf['side'] == side_val]
                                         if not side_data.empty:
                                             fig.add_trace(go.Scatter(
@@ -3132,7 +3132,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                                                 x=adf[date_col], y=adf[right_col],
                                                 mode='lines+markers',
                                                 name=f'{athlete} - Right',
-                                                line=dict(color=CORAL_ACCENT)
+                                                line=dict(color=TEAL_LIGHT)
                                             ))
 
                                     fig.update_layout(
@@ -3254,9 +3254,9 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                     group_fig_rm = None
                     individual_fig_rm = None
 
-                    view_tabs_rm = st.tabs(["👥 Group View", "🏃 Individual Progression", "📥 Export"])
+                    selected_view_rm = st.radio("View:", ["👥 Group View", "🏃 Individual Progression", "📥 Export"], horizontal=True, key="strength_view")
 
-                    with view_tabs_rm[0]:
+                    if selected_view_rm == "👥 Group View":
                         # Get latest 1RM for each athlete
                         if 'estimated_1rm' in exercise_df.columns:
                             latest_df = exercise_df.sort_values('date').groupby('Name').last().reset_index()
@@ -3275,7 +3275,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                         else:
                             st.info("No estimated 1RM data available.")
 
-                    with view_tabs_rm[1]:
+                    if selected_view_rm == "🏃 Individual Progression":
                         if athletes_rm:
                             selected_athletes_rm = st.multiselect(
                                 "Select Athletes:",
@@ -3299,7 +3299,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                                 if individual_fig_rm:
                                     st.plotly_chart(individual_fig_rm, use_container_width=True, key="strength_ind_line")
 
-                    with view_tabs_rm[2]:
+                    if selected_view_rm == "📥 Export":
                         # Export tab
                         st.markdown(f"#### Export {selected_exercise} Data")
                         st.markdown("Download group summary or individual athlete data as Excel or PDF with charts.")
@@ -3379,9 +3379,9 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                     with col2:
                         benchmark = render_benchmark_input('Broad_Jump', 'broad_jump')
 
-                    view_tabs = st.tabs(["👥 Group View", "🏃 Individual View"])
+                    selected_view = st.radio("View:", ["👥 Group View", "🏃 Individual View"], horizontal=True, key="broadjump_view")
 
-                    with view_tabs[0]:
+                    if selected_view == "👥 Group View":
                         metric_col = 'distance_m' if 'distance_m' in filtered_df.columns else 'distance'
                         if metric_col in filtered_df.columns:
                             fig = create_ranked_bar_chart(
@@ -3395,7 +3395,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                             if fig:
                                 st.plotly_chart(fig, use_container_width=True, key="broad_jump_group_bar")
 
-                    with view_tabs[1]:
+                    if selected_view == "🏃 Individual View":
                         athletes = sorted(filtered_df['Name'].dropna().unique()) if 'Name' in filtered_df.columns else []
                         if athletes:
                             selected_athletes = st.multiselect(
@@ -3465,9 +3465,9 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                         with col2:
                             benchmark = render_benchmark_input(selected_fitness_test.replace(' ', '_'), 'fitness')
 
-                        view_tabs = st.tabs(["👥 Group View", "🏃 Individual View"])
+                        selected_view = st.radio("View:", ["👥 Group View", "🏃 Individual View"], horizontal=True, key="fitness_view")
 
-                        with view_tabs[0]:
+                        if selected_view == "👥 Group View":
                             # Common fitness metrics
                             metric_cols = ['distance', 'vo2_max', 'result', 'score']
                             metric_col = None
@@ -3489,7 +3489,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                                 if fig:
                                     st.plotly_chart(fig, use_container_width=True, key="fitness_group_bar")
 
-                        with view_tabs[1]:
+                        if selected_view == "🏃 Individual View":
                             athletes = sorted(filtered_df['Name'].dropna().unique()) if 'Name' in filtered_df.columns else []
                             if athletes:
                                 selected_athletes = st.multiselect(
@@ -3562,9 +3562,9 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
             with col2:
                 benchmark = render_benchmark_input('Plyo_Pushup', 'plyo_pushup')
 
-            view_tabs = st.tabs(["👥 Group View", "🏃 Individual View"])
+            selected_view = st.radio("View:", ["👥 Group View", "🏃 Individual View"], horizontal=True, key="ppu_view")
 
-            with view_tabs[0]:
+            if selected_view == "👥 Group View":
                 # Look for pushup metrics - PUSHUP_HEIGHT is the primary metric
                 metric_col = None
                 metric_name = 'Pushup Height'
@@ -3628,7 +3628,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                     if ppu_cols:
                         st.info(f"Available PPU columns: {', '.join(ppu_cols[:10])}")
 
-            with view_tabs[1]:
+            if selected_view == "🏃 Individual View":
                 athletes = sorted(filtered_df['Name'].dropna().unique()) if 'Name' in filtered_df.columns else []
 
                 if athletes:
@@ -3667,29 +3667,24 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
     elif selected_test_tab == "✊ DynaMo":
         st.markdown("### DynaMo (Grip Strength)")
 
-        # Load DynaMo data
-        dynamo_df = pd.DataFrame()
+        # Use passed dynamo_df if available, otherwise load from file
+        if dynamo_df is None or dynamo_df.empty:
+            try:
+                from .data_loader import load_vald_data
+                dynamo_df = load_vald_data('dynamo')
+            except Exception:
+                dynamo_df = pd.DataFrame()
 
-        # Try to load from various sources
-        dynamo_paths = [
-            os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'dynamo_allsports_with_athletes.csv'),
-            os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'vald-data', 'data', 'dynamo_allsports_with_athletes.csv'),
-        ]
-
-        for path in dynamo_paths:
-            if os.path.exists(path):
-                try:
-                    dynamo_df = pd.read_csv(path)
-                    # Standardize column names for DynaMo data
-                    if 'full_name' in dynamo_df.columns and 'Name' not in dynamo_df.columns:
-                        dynamo_df['Name'] = dynamo_df['full_name']
-                    if 'startTimeUTC' in dynamo_df.columns and 'recordedDateUtc' not in dynamo_df.columns:
-                        dynamo_df['recordedDateUtc'] = pd.to_datetime(dynamo_df['startTimeUTC'], errors='coerce')
-                    elif 'analysedDateUTC' in dynamo_df.columns and 'recordedDateUtc' not in dynamo_df.columns:
-                        dynamo_df['recordedDateUtc'] = pd.to_datetime(dynamo_df['analysedDateUTC'], errors='coerce')
-                    break
-                except Exception as e:
-                    st.warning(f"Error loading DynaMo data: {e}")
+        # Standardize column names
+        if dynamo_df is not None and not dynamo_df.empty:
+            if 'full_name' in dynamo_df.columns and 'Name' not in dynamo_df.columns:
+                dynamo_df['Name'] = dynamo_df['full_name']
+            if 'startTimeUTC' in dynamo_df.columns and 'recordedDateUtc' not in dynamo_df.columns:
+                dynamo_df['recordedDateUtc'] = pd.to_datetime(dynamo_df['startTimeUTC'], errors='coerce')
+            elif 'analysedDateUTC' in dynamo_df.columns and 'recordedDateUtc' not in dynamo_df.columns:
+                dynamo_df['recordedDateUtc'] = pd.to_datetime(dynamo_df['analysedDateUTC'], errors='coerce')
+        else:
+            dynamo_df = pd.DataFrame()
 
         if dynamo_df.empty:
             st.warning("No DynaMo (grip strength) data available. Run local_sync.py to fetch data.")
@@ -3733,9 +3728,9 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                     metric_col = 'maxForceNewtons' if 'maxForceNewtons' in filtered_df.columns else None
 
                     if metric_col:
-                        view_tabs = st.tabs(["👥 Group View", "🏃 Individual View"])
+                        selected_view = st.radio("View:", ["👥 Group View", "🏃 Individual View"], horizontal=True, key="dynamo_view")
 
-                        with view_tabs[0]:
+                        if selected_view == "👥 Group View":
                             # Get latest test per athlete for group view
                             if 'recordedDateUtc' in filtered_df.columns:
                                 latest_df = filtered_df.sort_values('recordedDateUtc').groupby('Name').last().reset_index()
@@ -3753,7 +3748,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                             if fig:
                                 st.plotly_chart(fig, use_container_width=True, key="dynamo_group_bar")
 
-                        with view_tabs[1]:
+                        if selected_view == "🏃 Individual View":
                             athletes = sorted(filtered_df['Name'].dropna().unique()) if 'Name' in filtered_df.columns else []
                             if athletes:
                                 selected_athletes = st.multiselect(
@@ -3843,9 +3838,9 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                 if metric_col in display_df.columns and conversion != 1:
                     display_df[metric_col] = display_df[metric_col] * conversion
 
-                view_tabs = st.tabs(["👥 Group View", "🏃 Individual View"])
+                selected_view = st.radio("View:", ["👥 Group View", "🏃 Individual View"], horizontal=True, key="balance_view")
 
-                with view_tabs[0]:
+                if selected_view == "👥 Group View":
                     if metric_col in display_df.columns:
                         # For balance, we want to rank by lowest (best)
                         fig = create_ranked_bar_chart(
@@ -3861,7 +3856,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                     else:
                         st.warning(f"Metric {metric_col} not found in data.")
 
-                with view_tabs[1]:
+                if selected_view == "🏃 Individual View":
                     athletes = sorted(display_df['Name'].dropna().unique()) if 'Name' in display_df.columns else []
 
                     if athletes:
