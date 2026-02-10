@@ -7804,4 +7804,5 @@ if os.path.exists(footer_banner_path):
         <img src="data:image/jpeg;base64,{footer_b64}" style="width: 100%; height: auto; display: block; max-height: 100px; object-fit: cover; object-position: center;">
     </div>
     <p style="text-align: center; font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem;">© 2025 Saudi Olympic & Paralympic Committee</p>
+    <p style="text-align: center; font-size: 0.7rem; color: #6c757d; margin-top: 0.1rem;">App created by Luke Gallagher</p>
     """, unsafe_allow_html=True)

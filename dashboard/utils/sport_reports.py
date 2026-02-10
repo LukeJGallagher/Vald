@@ -62,6 +62,31 @@ TEAL_LIGHT = '#2E6040'        # Light green
 GRAY_BLUE = '#78909C'         # Neutral gray
 INFO_BLUE = '#0077B6'         # Info/testing blue
 
+def _load_dynamo_df() -> pd.DataFrame:
+    """Load DynaMo data from local files, GitHub repo, or VALD API."""
+    dynamo_paths = [
+        os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'dynamo_allsports_with_athletes.csv'),
+        os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'vald-data', 'data', 'dynamo_allsports_with_athletes.csv'),
+    ]
+    for path in dynamo_paths:
+        if os.path.exists(path):
+            try:
+                return pd.read_csv(path)
+            except Exception:
+                pass
+    # Fallback: use data_loader (supports GitHub repo + VALD API)
+    try:
+        from .data_loader import load_vald_data
+        return load_vald_data('dynamo')
+    except Exception:
+        pass
+    try:
+        from utils.data_loader import load_vald_data
+        return load_vald_data('dynamo')
+    except Exception:
+        pass
+    return pd.DataFrame()
+
 # Benchmark zone colors (with transparency) - Team Saudi teal palette
 ZONE_COLORS = {
     'excellent': 'rgba(37, 80, 53, 0.20)',        # Saudi Green (excellent)
@@ -1278,18 +1303,7 @@ def create_group_report(df: pd.DataFrame,
     col1, col2 = st.columns(2)
 
     # Load DynaMo data
-    dynamo_df = pd.DataFrame()
-    dynamo_paths = [
-        os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'dynamo_allsports_with_athletes.csv'),
-        os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'vald-data', 'data', 'dynamo_allsports_with_athletes.csv'),
-    ]
-    for path in dynamo_paths:
-        if os.path.exists(path):
-            try:
-                dynamo_df = pd.read_csv(path)
-                break
-            except Exception:
-                pass
+    dynamo_df = _load_dynamo_df()
 
     # Filter DynaMo for grip tests and sport
     if not dynamo_df.empty:
@@ -2021,56 +2035,42 @@ def create_individual_report(df: pd.DataFrame,
                 st.plotly_chart(fig, use_container_width=True)
 
     # DynaMo Grip trends (if data available)
-    data_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data')
-    dynamo_paths = [
-        os.path.join(data_dir, 'dynamo_allsports_with_athletes.csv'),
-        os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'vald-data', 'data', 'dynamo_allsports_with_athletes.csv'),
-    ]
-    for path in dynamo_paths:
-        if os.path.exists(path):
-            try:
-                dynamo_df = pd.read_csv(path)
-                # Filter for GripSqueeze and this athlete
-                if 'movement' in dynamo_df.columns:
-                    dynamo_df = dynamo_df[dynamo_df['movement'] == 'GripSqueeze']
-                name_col = 'full_name' if 'full_name' in dynamo_df.columns else 'Name'
-                athlete_grip = dynamo_df[dynamo_df[name_col] == athlete_name].copy() if name_col in dynamo_df.columns else pd.DataFrame()
+    dynamo_df = _load_dynamo_df()
+    if not dynamo_df.empty:
+        if 'movement' in dynamo_df.columns:
+            dynamo_df = dynamo_df[dynamo_df['movement'] == 'GripSqueeze']
+        name_col = 'full_name' if 'full_name' in dynamo_df.columns else 'Name'
+        athlete_grip = dynamo_df[dynamo_df[name_col] == athlete_name].copy() if name_col in dynamo_df.columns else pd.DataFrame()
 
-                if not athlete_grip.empty and 'maxForceNewtons' in athlete_grip.columns and 'laterality' in athlete_grip.columns:
-                    st.markdown("### DynaMo Grip Strength")
-                    # Parse date
-                    grip_date_col = None
-                    for col in ['testDateUtc', 'recordedDateUtc', 'modifiedDateUtc']:
-                        if col in athlete_grip.columns:
-                            grip_date_col = col
-                            athlete_grip[col] = pd.to_datetime(athlete_grip[col], errors='coerce')
-                            break
+        if not athlete_grip.empty and 'maxForceNewtons' in athlete_grip.columns and 'laterality' in athlete_grip.columns:
+            st.markdown("### DynaMo Grip Strength")
+            grip_date_col = None
+            for col in ['startTimeUTC', 'analysedDateUTC', 'testDateUtc', 'recordedDateUtc']:
+                if col in athlete_grip.columns:
+                    grip_date_col = col
+                    athlete_grip[col] = pd.to_datetime(athlete_grip[col], errors='coerce')
+                    break
 
-                    if grip_date_col:
-                        col1, col2 = st.columns(2)
-                        with col1:
-                            # Match 'LEFT', 'LeftSide', 'LeftThenRight', etc.
-                            left_grip = athlete_grip[athlete_grip['laterality'].str.contains('Left', case=False, na=False)].sort_values(grip_date_col)
-                            if not left_grip.empty:
-                                fig = go.Figure()
-                                fig.add_trace(go.Scatter(x=left_grip[grip_date_col], y=left_grip['maxForceNewtons'],
-                                                        mode='lines+markers', name='Left Grip', line=dict(color=TEAL_PRIMARY)))
-                                fig.update_layout(title='Left Grip Strength', xaxis_title='Date', yaxis_title='Force (N)',
-                                                 plot_bgcolor='white', paper_bgcolor='white')
-                                st.plotly_chart(fig, use_container_width=True)
-                        with col2:
-                            # Match 'RIGHT', 'RightSide', 'RightThenLeft', etc.
-                            right_grip = athlete_grip[athlete_grip['laterality'].str.contains('Right', case=False, na=False)].sort_values(grip_date_col)
-                            if not right_grip.empty:
-                                fig = go.Figure()
-                                fig.add_trace(go.Scatter(x=right_grip[grip_date_col], y=right_grip['maxForceNewtons'],
-                                                        mode='lines+markers', name='Right Grip', line=dict(color=GOLD_ACCENT)))
-                                fig.update_layout(title='Right Grip Strength', xaxis_title='Date', yaxis_title='Force (N)',
-                                                 plot_bgcolor='white', paper_bgcolor='white')
-                                st.plotly_chart(fig, use_container_width=True)
-                break
-            except Exception:
-                pass
+            if grip_date_col:
+                col1, col2 = st.columns(2)
+                with col1:
+                    left_grip = athlete_grip[athlete_grip['laterality'].str.contains('Left', case=False, na=False)].sort_values(grip_date_col)
+                    if not left_grip.empty:
+                        fig = go.Figure()
+                        fig.add_trace(go.Scatter(x=left_grip[grip_date_col], y=left_grip['maxForceNewtons'],
+                                                mode='lines+markers', name='Left Grip', line=dict(color=TEAL_PRIMARY)))
+                        fig.update_layout(title='Left Grip Strength', xaxis_title='Date', yaxis_title='Force (N)',
+                                         plot_bgcolor='white', paper_bgcolor='white')
+                        st.plotly_chart(fig, use_container_width=True)
+                with col2:
+                    right_grip = athlete_grip[athlete_grip['laterality'].str.contains('Right', case=False, na=False)].sort_values(grip_date_col)
+                    if not right_grip.empty:
+                        fig = go.Figure()
+                        fig.add_trace(go.Scatter(x=right_grip[grip_date_col], y=right_grip['maxForceNewtons'],
+                                                mode='lines+markers', name='Right Grip', line=dict(color=GOLD_ACCENT)))
+                        fig.update_layout(title='Right Grip Strength', xaxis_title='Date', yaxis_title='Force (N)',
+                                         plot_bgcolor='white', paper_bgcolor='white')
+                        st.plotly_chart(fig, use_container_width=True)
 
     # Strength RM trends (Manual Entry)
     lower_body_path = os.path.join(data_dir, 'sc_lower_body.csv')
@@ -2629,18 +2629,7 @@ def create_group_report_v2(df: pd.DataFrame,
     # =========================================================================
     st.markdown("### DynaMo Grip Strength")
 
-    dynamo_df = pd.DataFrame()
-    dynamo_paths = [
-        os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'dynamo_allsports_with_athletes.csv'),
-        os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'vald-data', 'data', 'dynamo_allsports_with_athletes.csv'),
-    ]
-    for path in dynamo_paths:
-        if os.path.exists(path):
-            try:
-                dynamo_df = pd.read_csv(path)
-                break
-            except Exception:
-                pass
+    dynamo_df = _load_dynamo_df()
 
     grip_data = []
     if not dynamo_df.empty and 'maxForceNewtons' in dynamo_df.columns:
