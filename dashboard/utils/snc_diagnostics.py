@@ -2136,6 +2136,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
         "🏃 10:5 Hop",       # Ranked Bar
         "🔄 Quadrant Tests", # Stacked Multi-Variable
         "🦴 Hip Diagnostics", # ForceFrame + ForceDecks hip assessment
+        "💪 Shoulder Health", # ForceFrame Shoulder IR/ER assessment
         "🏋️ Strength RM",    # Ranked Bar (Manual Entry)
         "🦘 Broad Jump",     # Ranked Bar (Manual Entry)
         "🏃 Fitness Tests",  # Ranked Bar (6 Min Aerobic, etc.)
@@ -2952,6 +2953,44 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
 
                 st.markdown("---")
 
+                # ---- ROW 1.5: Adduction/Abduction Ratio Chart ----
+                if not adab_df.empty:
+                    add_l_col = f'Add_Left{suffix}'
+                    add_r_col = f'Add_Right{suffix}'
+                    abd_l_col = f'Abd_Left{suffix}'
+                    abd_r_col = f'Abd_Right{suffix}'
+
+                    if all(c in latest_adab.columns for c in [add_l_col, add_r_col, abd_l_col, abd_r_col]):
+                        ratio_df = latest_adab[['Name']].copy()
+                        ratio_df['Add/Abd Left'] = np.where(
+                            latest_adab[abd_l_col] > 0,
+                            latest_adab[add_l_col] / latest_adab[abd_l_col],
+                            np.nan
+                        )
+                        ratio_df['Add/Abd Right'] = np.where(
+                            latest_adab[abd_r_col] > 0,
+                            latest_adab[add_r_col] / latest_adab[abd_r_col],
+                            np.nan
+                        )
+                        ratio_df = ratio_df.dropna(subset=['Add/Abd Left', 'Add/Abd Right'])
+
+                        if not ratio_df.empty:
+                            fig = create_ranked_side_by_side_chart(
+                                ratio_df, 'Add/Abd Left', 'Add/Abd Right',
+                                'Add/Abd Ratio', 'ratio',
+                                title='Hip Adduction/Abduction Ratio - Left vs Right'
+                            )
+                            if fig:
+                                # Format text as 2 decimal places for ratios
+                                fig.for_each_trace(lambda t: t.update(
+                                    text=[f"{v:.2f}" for v in t.x]
+                                ))
+                                st.plotly_chart(fig, use_container_width=True, key="hip_addabd_ratio_chart")
+                        else:
+                            st.info("Insufficient data for Add/Abd ratio calculation.")
+
+                st.markdown("---")
+
                 # ---- ROW 2: Flexion | Extension ----
                 col3, col4 = st.columns(2)
 
@@ -3156,6 +3195,212 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                                     if not asym_table.empty:
                                         st.markdown(f"**{selected_metric} - Asymmetry Summary**")
                                         st.dataframe(asym_table, use_container_width=True, hide_index=True)
+
+    # =====================
+    # Shoulder Health Tab (ForceFrame IR/ER)
+    # =====================
+    elif selected_test_tab == "💪 Shoulder Health":
+        st.markdown("""
+        <div style="background: linear-gradient(135deg, #1D4D3B 0%, #153829 100%);
+             padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem; border-left: 4px solid #a08e66;">
+            <h2 style="color: white; margin: 0;">Shoulder Health</h2>
+            <p style="color: rgba(255,255,255,0.9); margin: 0.5rem 0 0 0;">
+                Internal Rotation &amp; External Rotation (ForceFrame)
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        if forceframe_df is not None and not forceframe_df.empty and 'testTypeName' in forceframe_df.columns:
+            # Standardize columns
+            sh_ff = forceframe_df.copy()
+            if 'Name' not in sh_ff.columns and 'full_name' in sh_ff.columns:
+                sh_ff['Name'] = sh_ff['full_name']
+            if 'recordedDateUtc' not in sh_ff.columns and 'testDateUtc' in sh_ff.columns:
+                sh_ff['recordedDateUtc'] = sh_ff['testDateUtc']
+
+            # Filter for Shoulder IR/ER tests
+            shoulder_mask = sh_ff['testTypeName'].str.contains('Shoulder IR/ER', case=False, na=False)
+            shoulder_df = sh_ff[shoulder_mask].copy()
+
+            if shoulder_df.empty:
+                st.warning("No Shoulder IR/ER data available from ForceFrame.")
+            else:
+                # Map inner->IR, outer->ER
+                shoulder_df['IR_Left'] = pd.to_numeric(shoulder_df.get('innerLeftMaxForce'), errors='coerce')
+                shoulder_df['IR_Right'] = pd.to_numeric(shoulder_df.get('innerRightMaxForce'), errors='coerce')
+                shoulder_df['ER_Left'] = pd.to_numeric(shoulder_df.get('outerLeftMaxForce'), errors='coerce')
+                shoulder_df['ER_Right'] = pd.to_numeric(shoulder_df.get('outerRightMaxForce'), errors='coerce')
+
+                # Body mass normalization from ForceDecks
+                bm_map = {}
+                if forcedecks_df is not None and not forcedecks_df.empty and 'weight' in forcedecks_df.columns:
+                    fd = forcedecks_df.copy()
+                    if 'Name' not in fd.columns and 'full_name' in fd.columns:
+                        fd['Name'] = fd['full_name']
+                    fd_valid = fd[fd['weight'] > 0].copy()
+                    if not fd_valid.empty and 'recordedDateUtc' in fd_valid.columns:
+                        fd_valid['recordedDateUtc'] = pd.to_datetime(fd_valid['recordedDateUtc'], errors='coerce')
+                        bm_map = fd_valid.sort_values('recordedDateUtc').groupby('Name')['weight'].last().to_dict()
+
+                shoulder_df['body_mass'] = shoulder_df['Name'].map(bm_map)
+                for col in ['IR_Left', 'IR_Right', 'ER_Left', 'ER_Right']:
+                    shoulder_df[f'{col}_nkg'] = np.where(shoulder_df['body_mass'] > 0, shoulder_df[col] / shoulder_df['body_mass'], np.nan)
+
+                # Controls
+                unit_option = st.radio("Display Units:", ["N/kg (body mass relative)", "Newtons (N)"], horizontal=True, key="shoulder_unit_toggle")
+                use_nkg = "N/kg" in unit_option
+                unit_label = 'N/kg' if use_nkg else 'N'
+                suffix = '_nkg' if use_nkg else ''
+
+                # Filters
+                filtered_shoulder, sport, gender = render_filters(shoulder_df, "shoulder")
+
+                if filtered_shoulder.empty:
+                    st.warning("No Shoulder IR/ER data for selected filters.")
+                else:
+                    # View toggle
+                    selected_view = st.radio("View:", ["👥 Group View", "🏃 Individual View"], horizontal=True, key="shoulder_view")
+
+                    if selected_view == "👥 Group View":
+                        # Get latest test per athlete
+                        if 'testDateUtc' in filtered_shoulder.columns:
+                            filtered_shoulder['testDateUtc'] = pd.to_datetime(filtered_shoulder['testDateUtc'], errors='coerce')
+                            latest_sh = filtered_shoulder.sort_values('testDateUtc').groupby('Name').last().reset_index()
+                        else:
+                            latest_sh = filtered_shoulder.groupby('Name').last().reset_index()
+
+                        # ---- ROW 1: IR | ER side by side ----
+                        col1, col2 = st.columns(2)
+
+                        with col1:
+                            ir_l, ir_r = f'IR_Left{suffix}', f'IR_Right{suffix}'
+                            if ir_l in latest_sh.columns and ir_r in latest_sh.columns:
+                                fig = create_ranked_side_by_side_chart(latest_sh, ir_l, ir_r, 'Internal Rotation', unit_label, title='Shoulder IR - Left vs Right')
+                                if fig:
+                                    st.plotly_chart(fig, use_container_width=True, key="shoulder_ir_group")
+                                else:
+                                    st.info("No IR data to display.")
+
+                        with col2:
+                            er_l, er_r = f'ER_Left{suffix}', f'ER_Right{suffix}'
+                            if er_l in latest_sh.columns and er_r in latest_sh.columns:
+                                fig = create_ranked_side_by_side_chart(latest_sh, er_l, er_r, 'External Rotation', unit_label, title='Shoulder ER - Left vs Right')
+                                if fig:
+                                    st.plotly_chart(fig, use_container_width=True, key="shoulder_er_group")
+                                else:
+                                    st.info("No ER data to display.")
+
+                        st.markdown("---")
+
+                        # ---- ROW 2: IR/ER Ratio chart ----
+                        ir_l_col, ir_r_col = f'IR_Left{suffix}', f'IR_Right{suffix}'
+                        er_l_col, er_r_col = f'ER_Left{suffix}', f'ER_Right{suffix}'
+
+                        if all(c in latest_sh.columns for c in [ir_l_col, ir_r_col, er_l_col, er_r_col]):
+                            ratio_df = latest_sh[['Name']].copy()
+                            ratio_df['IR/ER Left'] = np.where(latest_sh[er_l_col] > 0, latest_sh[ir_l_col] / latest_sh[er_l_col], np.nan)
+                            ratio_df['IR/ER Right'] = np.where(latest_sh[er_r_col] > 0, latest_sh[ir_r_col] / latest_sh[er_r_col], np.nan)
+                            ratio_df = ratio_df.dropna(subset=['IR/ER Left', 'IR/ER Right'])
+
+                            if not ratio_df.empty:
+                                fig = create_ranked_side_by_side_chart(ratio_df, 'IR/ER Left', 'IR/ER Right', 'IR/ER Ratio', 'ratio', title='Shoulder IR/ER Ratio - Left vs Right')
+                                if fig:
+                                    st.plotly_chart(fig, use_container_width=True, key="shoulder_ratio_chart")
+
+                        st.markdown("---")
+
+                        # ---- ROW 3: Summary Table ----
+                        st.markdown("### Shoulder Summary")
+                        summary_cols = ['Name']
+                        for c in [ir_l_col, ir_r_col, er_l_col, er_r_col]:
+                            if c in latest_sh.columns:
+                                summary_cols.append(c)
+                        summary_sh = latest_sh[summary_cols].copy()
+
+                        # Calculate asymmetry
+                        if ir_l_col in summary_sh.columns and ir_r_col in summary_sh.columns:
+                            avg_ir = (summary_sh[ir_l_col] + summary_sh[ir_r_col]) / 2
+                            summary_sh['IR Asym%'] = np.where(avg_ir > 0, abs(summary_sh[ir_l_col] - summary_sh[ir_r_col]) / avg_ir * 100, np.nan)
+                        if er_l_col in summary_sh.columns and er_r_col in summary_sh.columns:
+                            avg_er = (summary_sh[er_l_col] + summary_sh[er_r_col]) / 2
+                            summary_sh['ER Asym%'] = np.where(avg_er > 0, abs(summary_sh[er_l_col] - summary_sh[er_r_col]) / avg_er * 100, np.nan)
+
+                        # IR/ER ratios
+                        if ir_l_col in summary_sh.columns and er_l_col in summary_sh.columns:
+                            summary_sh['IR/ER L'] = np.where(summary_sh[er_l_col] > 0, summary_sh[ir_l_col] / summary_sh[er_l_col], np.nan)
+                        if ir_r_col in summary_sh.columns and er_r_col in summary_sh.columns:
+                            summary_sh['IR/ER R'] = np.where(summary_sh[er_r_col] > 0, summary_sh[ir_r_col] / summary_sh[er_r_col], np.nan)
+
+                        # Status flags
+                        def _asym_flag(val):
+                            if pd.isna(val): return ''
+                            if val <= 5: return '🟢'
+                            if val <= 10: return '🟡'
+                            return '🔴'
+
+                        for col in ['IR Asym%', 'ER Asym%']:
+                            if col in summary_sh.columns:
+                                summary_sh[col.replace('%', ' Flag')] = summary_sh[col].apply(_asym_flag)
+                                summary_sh[col] = summary_sh[col].apply(lambda x: f"{x:.1f}%" if pd.notna(x) else '--')
+
+                        # Rename metric columns for display
+                        rename = {ir_l_col: f'IR L ({unit_label})', ir_r_col: f'IR R ({unit_label})',
+                                  er_l_col: f'ER L ({unit_label})', er_r_col: f'ER R ({unit_label})'}
+                        summary_sh = summary_sh.rename(columns=rename)
+
+                        # Round floats
+                        for col in summary_sh.columns:
+                            if summary_sh[col].dtype in ['float64', 'float32']:
+                                summary_sh[col] = summary_sh[col].round(2)
+
+                        st.dataframe(summary_sh, use_container_width=True, hide_index=True)
+
+                    if selected_view == "🏃 Individual View":
+                        athletes = sorted(filtered_shoulder['Name'].dropna().unique())
+                        if not athletes:
+                            st.info("No athletes found.")
+                        else:
+                            default_athletes = get_persisted_athlete_selection("shoulder_athlete_select", athletes)
+                            selected_athletes = st.multiselect("Select Athletes:", athletes, default=default_athletes, key="shoulder_athlete_select")
+
+                            metric_options = ['Internal Rotation', 'External Rotation']
+                            metric_idx = get_persisted_selectbox_index("shoulder_ind_metric", metric_options)
+                            selected_metric = st.selectbox("Select Metric:", metric_options, index=metric_idx, key="shoulder_ind_metric")
+
+                            if selected_athletes and selected_metric:
+                                col_map = {'Internal Rotation': (f'IR_Left{suffix}', f'IR_Right{suffix}'),
+                                           'External Rotation': (f'ER_Left{suffix}', f'ER_Right{suffix}')}
+                                left_col, right_col = col_map[selected_metric]
+
+                                athlete_data = shoulder_df[shoulder_df['Name'].isin(selected_athletes)].copy()
+                                if not athlete_data.empty and 'testDateUtc' in athlete_data.columns:
+                                    athlete_data['testDateUtc'] = pd.to_datetime(athlete_data['testDateUtc'], errors='coerce')
+                                    athlete_data = athlete_data.sort_values('testDateUtc')
+
+                                    fig = go.Figure()
+                                    for athlete in selected_athletes:
+                                        adf = athlete_data[athlete_data['Name'] == athlete]
+                                        if not adf.empty:
+                                            fig.add_trace(go.Scatter(x=adf['testDateUtc'], y=adf[left_col], mode='lines+markers', name=f'{athlete} - Left', line=dict(color=TEAL_PRIMARY)))
+                                            fig.add_trace(go.Scatter(x=adf['testDateUtc'], y=adf[right_col], mode='lines+markers', name=f'{athlete} - Right', line=dict(color=TEAL_LIGHT)))
+
+                                    fig.update_layout(title=f'{selected_metric} Progression ({unit_label})', xaxis_title='Date', yaxis_title=f'{selected_metric} ({unit_label})',
+                                                      plot_bgcolor='white', paper_bgcolor='white', font=dict(family='Inter, sans-serif', color='#333'),
+                                                      legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1))
+                                    fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
+                                    fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
+                                    st.plotly_chart(fig, use_container_width=True, key="shoulder_ind_chart")
+
+                                    # Asymmetry table
+                                    latest = athlete_data.sort_values('testDateUtc').groupby('Name').last().reset_index()
+                                    asym_table = create_asymmetry_table(latest, left_col, right_col, unit=unit_label)
+                                    if not asym_table.empty:
+                                        st.markdown(f"**{selected_metric} - Asymmetry Summary**")
+                                        st.dataframe(asym_table, use_container_width=True, hide_index=True)
+                                else:
+                                    st.info(f"No {selected_metric} data for selected athletes.")
+        else:
+            st.warning("No ForceFrame data available for shoulder diagnostics.")
 
     # =====================
     # Strength RM Tab (Manual Entry)
