@@ -1214,6 +1214,8 @@ QUADRANT_COLORS = {
     'ER': '#FF9800',          # External Rotation
     'Adduction': '#0077B6',
     'Abduction': '#a08e66',
+    'ADD': '#0077B6',             # Shorthand for Adduction (Blue)
+    'ABD': '#a08e66',             # Shorthand for Abduction (Gold)
 }
 
 

@@ -49,10 +49,23 @@ try:
     )
     SNC_CHARTS_AVAILABLE = True
 except ImportError:
-    SNC_CHARTS_AVAILABLE = False
-    TEST_CONFIG = {}
-    QUADRANT_COLORS = {}
-    render_snc_diagnostics_tab = None
+    try:
+        from utils.snc_diagnostics import (
+            create_ranked_bar_chart,
+            create_ranked_side_by_side_chart,
+            create_individual_line_chart,
+            create_stacked_quadrant_chart,
+            create_multi_line_strength_chart,
+            render_snc_diagnostics_tab,
+            TEST_CONFIG,
+            QUADRANT_COLORS
+        )
+        SNC_CHARTS_AVAILABLE = True
+    except ImportError:
+        SNC_CHARTS_AVAILABLE = False
+        TEST_CONFIG = {}
+        QUADRANT_COLORS = {}
+        render_snc_diagnostics_tab = None
 
 # Team Saudi colors (from THEME_GUIDE.md)
 TEAL_PRIMARY = '#255035'      # Saudi Green
@@ -1031,14 +1044,24 @@ def create_group_report(df: pd.DataFrame,
                 elif 'Right' in col and ('Force' in col or 'Peak' in col):
                     right_col = col
 
-            if left_col and right_col and 'Name' in sliso_df.columns and SNC_CHARTS_AVAILABLE:
+            if left_col and right_col and 'Name' in sliso_df.columns:
                 latest_sliso = sliso_df.groupby('Name').agg({left_col: 'last', right_col: 'last'}).reset_index()
-                fig = create_ranked_side_by_side_chart(
-                    latest_sliso, left_col, right_col,
-                    "Relative Peak Force", "N/kg",
-                    title="SL ISO Squat - L/R"
-                )
-                if fig:
+                if SNC_CHARTS_AVAILABLE:
+                    fig = create_ranked_side_by_side_chart(
+                        latest_sliso, left_col, right_col,
+                        "Relative Peak Force", "N/kg",
+                        title="SL ISO Squat - L/R"
+                    )
+                    if fig:
+                        st.plotly_chart(fig, use_container_width=True)
+                else:
+                    # Inline fallback chart
+                    plot_df = latest_sliso.sort_values(left_col, ascending=True)
+                    fig = go.Figure()
+                    fig.add_trace(go.Bar(y=plot_df['Name'], x=plot_df[left_col], orientation='h', marker_color=TEAL_PRIMARY, name='Left'))
+                    fig.add_trace(go.Bar(y=plot_df['Name'], x=plot_df[right_col], orientation='h', marker_color=GOLD_ACCENT, name='Right'))
+                    fig.update_layout(title="SL ISO Squat - L/R", barmode='group', plot_bgcolor='white', paper_bgcolor='white',
+                                      height=max(250, len(plot_df) * 40), margin=dict(l=10, r=10, t=40, b=10))
                     st.plotly_chart(fig, use_container_width=True)
             else:
                 st.info("SL ISO Squat data not available")
@@ -1060,14 +1083,23 @@ def create_group_report(df: pd.DataFrame,
                 elif 'Right' in col and ('Force' in col or 'Peak' in col):
                     right_col = col
 
-            if left_col and right_col and 'Name' in slimtp_df.columns and SNC_CHARTS_AVAILABLE:
+            if left_col and right_col and 'Name' in slimtp_df.columns:
                 latest_slimtp = slimtp_df.groupby('Name').agg({left_col: 'last', right_col: 'last'}).reset_index()
-                fig = create_ranked_side_by_side_chart(
-                    latest_slimtp, left_col, right_col,
-                    "Relative Peak Force", "N/kg",
-                    title="SL IMTP - L/R"
-                )
-                if fig:
+                if SNC_CHARTS_AVAILABLE:
+                    fig = create_ranked_side_by_side_chart(
+                        latest_slimtp, left_col, right_col,
+                        "Relative Peak Force", "N/kg",
+                        title="SL IMTP - L/R"
+                    )
+                    if fig:
+                        st.plotly_chart(fig, use_container_width=True)
+                else:
+                    plot_df = latest_slimtp.sort_values(left_col, ascending=True)
+                    fig = go.Figure()
+                    fig.add_trace(go.Bar(y=plot_df['Name'], x=plot_df[left_col], orientation='h', marker_color=TEAL_PRIMARY, name='Left'))
+                    fig.add_trace(go.Bar(y=plot_df['Name'], x=plot_df[right_col], orientation='h', marker_color=GOLD_ACCENT, name='Right'))
+                    fig.update_layout(title="SL IMTP - L/R", barmode='group', plot_bgcolor='white', paper_bgcolor='white',
+                                      height=max(250, len(plot_df) * 40), margin=dict(l=10, r=10, t=40, b=10))
                     st.plotly_chart(fig, use_container_width=True)
             else:
                 st.info("SL IMTP data not available")
@@ -1087,14 +1119,23 @@ def create_group_report(df: pd.DataFrame,
                 elif 'Right' in col and ('Power' in col or 'Peak' in col):
                     right_col = col
 
-            if left_col and right_col and 'Name' in slcmj_df.columns and SNC_CHARTS_AVAILABLE:
+            if left_col and right_col and 'Name' in slcmj_df.columns:
                 latest_slcmj = slcmj_df.groupby('Name').agg({left_col: 'last', right_col: 'last'}).reset_index()
-                fig = create_ranked_side_by_side_chart(
-                    latest_slcmj, left_col, right_col,
-                    "Relative Peak Power", "W/kg",
-                    title="SL CMJ - L/R Peak Power"
-                )
-                if fig:
+                if SNC_CHARTS_AVAILABLE:
+                    fig = create_ranked_side_by_side_chart(
+                        latest_slcmj, left_col, right_col,
+                        "Relative Peak Power", "W/kg",
+                        title="SL CMJ - L/R Peak Power"
+                    )
+                    if fig:
+                        st.plotly_chart(fig, use_container_width=True)
+                else:
+                    plot_df = latest_slcmj.sort_values(left_col, ascending=True)
+                    fig = go.Figure()
+                    fig.add_trace(go.Bar(y=plot_df['Name'], x=plot_df[left_col], orientation='h', marker_color=TEAL_PRIMARY, name='Left'))
+                    fig.add_trace(go.Bar(y=plot_df['Name'], x=plot_df[right_col], orientation='h', marker_color=GOLD_ACCENT, name='Right'))
+                    fig.update_layout(title="SL CMJ - L/R Peak Power", barmode='group', plot_bgcolor='white', paper_bgcolor='white',
+                                      height=max(250, len(plot_df) * 40), margin=dict(l=10, r=10, t=40, b=10))
                     st.plotly_chart(fig, use_container_width=True)
             else:
                 st.info("SL CMJ data not available")
@@ -1404,48 +1445,78 @@ def create_group_report(df: pd.DataFrame,
                 forceframe_df['testTypeName'].str.contains('Shoulder IR/ER', case=False, na=False)
             ] if 'testTypeName' in forceframe_df.columns else pd.DataFrame()
 
-            if not shoulder_irer_df.empty and 'Name' in shoulder_irer_df.columns and SNC_CHARTS_AVAILABLE:
-                # ForceFrame uses inner/outer columns for IR/ER
-                # Inner = Internal Rotation, Outer = External Rotation (typically)
+            if not shoulder_irer_df.empty and 'Name' in shoulder_irer_df.columns:
                 inner_col = 'innerLeftMaxForce' if 'innerLeftMaxForce' in shoulder_irer_df.columns else None
                 outer_col = 'outerLeftMaxForce' if 'outerLeftMaxForce' in shoulder_irer_df.columns else None
 
                 if inner_col and outer_col:
-                    # Get latest per athlete, averaging left and right
                     shoulder_irer_df['IR_avg'] = (shoulder_irer_df['innerLeftMaxForce'].fillna(0) + shoulder_irer_df.get('innerRightMaxForce', shoulder_irer_df['innerLeftMaxForce']).fillna(0)) / 2
                     shoulder_irer_df['ER_avg'] = (shoulder_irer_df['outerLeftMaxForce'].fillna(0) + shoulder_irer_df.get('outerRightMaxForce', shoulder_irer_df['outerLeftMaxForce']).fillna(0)) / 2
 
                     latest_shoulder = shoulder_irer_df.groupby('Name').agg({'IR_avg': 'last', 'ER_avg': 'last'}).reset_index()
-                    metric_cols = {'IR': 'IR_avg', 'ER': 'ER_avg'}
-                    fig = create_stacked_quadrant_chart(
-                        latest_shoulder, metric_cols,
-                        "Shoulder Rotation", "N",
-                        title="Shoulder IR/ER Profile",
-                        vertical=True
-                    )
-                    if fig:
+                    if SNC_CHARTS_AVAILABLE:
+                        metric_cols = {'IR': 'IR_avg', 'ER': 'ER_avg'}
+                        fig = create_stacked_quadrant_chart(
+                            latest_shoulder, metric_cols,
+                            "Shoulder Rotation", "N",
+                            title="Shoulder IR/ER Profile",
+                            vertical=True
+                        )
+                        if fig:
+                            st.plotly_chart(fig, use_container_width=True)
+                    else:
+                        # Inline fallback
+                        plot_df = latest_shoulder.sort_values('IR_avg', ascending=True)
+                        fig = go.Figure()
+                        fig.add_trace(go.Bar(y=plot_df['Name'], x=plot_df['IR_avg'], orientation='h', marker_color=TEAL_PRIMARY, name='IR'))
+                        fig.add_trace(go.Bar(y=plot_df['Name'], x=plot_df['ER_avg'], orientation='h', marker_color='#FF9800', name='ER'))
+                        fig.update_layout(title="Shoulder IR/ER Profile", barmode='group', plot_bgcolor='white', paper_bgcolor='white',
+                                          height=max(250, len(plot_df) * 40), margin=dict(l=10, r=10, t=40, b=10))
                         st.plotly_chart(fig, use_container_width=True)
                 else:
                     st.info("Shoulder IR/ER force columns not found")
-            elif not shoulder_irer_df.empty:
-                st.info("Shoulder IR/ER data available - enable S&C charts for visualization")
             else:
                 st.info("No Shoulder IR/ER tests found in ForceFrame data")
         else:
             st.info("ForceFrame data not available")
 
     with col2:
+        # Shoulder IR/ER Ratio chart (replaces old ASH stub)
         if forceframe_df is not None and not forceframe_df.empty:
-            # Look for ASH test or abduction/adduction
-            ash_df = forceframe_df[
-                forceframe_df['testTypeName'].str.contains('ASH|Abduct', case=False, na=False, regex=True)
+            shoulder_irer_df2 = forceframe_df[
+                forceframe_df['testTypeName'].str.contains('Shoulder IR/ER', case=False, na=False)
             ] if 'testTypeName' in forceframe_df.columns else pd.DataFrame()
 
-            if not ash_df.empty and 'Name' in ash_df.columns:
-                st.markdown("**Shoulder ASH**")
-                st.info("ForceFrame shoulder ASH data - visualization pending")
+            if not shoulder_irer_df2.empty and 'Name' in shoulder_irer_df2.columns:
+                shoulder_irer_df2['IR_avg'] = (pd.to_numeric(shoulder_irer_df2.get('innerLeftMaxForce'), errors='coerce').fillna(0) +
+                                                pd.to_numeric(shoulder_irer_df2.get('innerRightMaxForce'), errors='coerce').fillna(0)) / 2
+                shoulder_irer_df2['ER_avg'] = (pd.to_numeric(shoulder_irer_df2.get('outerLeftMaxForce'), errors='coerce').fillna(0) +
+                                                pd.to_numeric(shoulder_irer_df2.get('outerRightMaxForce'), errors='coerce').fillna(0)) / 2
+                latest_sh2 = shoulder_irer_df2.groupby('Name').agg({'IR_avg': 'last', 'ER_avg': 'last'}).reset_index()
+                latest_sh2['IR/ER Ratio'] = np.where(latest_sh2['ER_avg'] > 0, latest_sh2['IR_avg'] / latest_sh2['ER_avg'], np.nan)
+                latest_sh2 = latest_sh2.dropna(subset=['IR/ER Ratio'])
+
+                if not latest_sh2.empty:
+                    plot_df = latest_sh2.sort_values('IR/ER Ratio', ascending=True)
+                    fig = go.Figure()
+                    fig.add_trace(go.Bar(
+                        y=plot_df['Name'], x=plot_df['IR/ER Ratio'], orientation='h',
+                        marker_color=TEAL_PRIMARY,
+                        text=[f"{v:.2f}" for v in plot_df['IR/ER Ratio']],
+                        textposition='outside'
+                    ))
+                    fig.update_layout(
+                        title="Shoulder IR/ER Ratio",
+                        xaxis_title="IR/ER Ratio",
+                        plot_bgcolor='white', paper_bgcolor='white',
+                        height=max(250, len(plot_df) * 40),
+                        margin=dict(l=10, r=10, t=40, b=10)
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+                else:
+                    st.info("Insufficient data for Shoulder IR/ER ratio")
             else:
-                st.info("Shoulder ASH data not available")
+                st.info("No Shoulder IR/ER data available")
         else:
             st.info("ForceFrame data not available")
 
@@ -1465,7 +1536,7 @@ def create_group_report(df: pd.DataFrame,
                 forceframe_df['testTypeName'].str.contains('Hip AD/AB', case=False, na=False)
             ] if 'testTypeName' in forceframe_df.columns else pd.DataFrame()
 
-            if not hip_adab_df.empty and 'Name' in hip_adab_df.columns and SNC_CHARTS_AVAILABLE:
+            if not hip_adab_df.empty and 'Name' in hip_adab_df.columns:
                 # ForceFrame uses inner/outer columns
                 # Inner = Adduction, Outer = Abduction (typically)
                 inner_col = 'innerLeftMaxForce' if 'innerLeftMaxForce' in hip_adab_df.columns else None
@@ -1477,19 +1548,27 @@ def create_group_report(df: pd.DataFrame,
                     hip_adab_df['ABD_avg'] = (hip_adab_df['outerLeftMaxForce'].fillna(0) + hip_adab_df.get('outerRightMaxForce', hip_adab_df['outerLeftMaxForce']).fillna(0)) / 2
 
                     latest_hip = hip_adab_df.groupby('Name').agg({'ADD_avg': 'last', 'ABD_avg': 'last'}).reset_index()
-                    metric_cols = {'ADD': 'ADD_avg', 'ABD': 'ABD_avg'}
-                    fig = create_stacked_quadrant_chart(
-                        latest_hip, metric_cols,
-                        "Hip Strength", "N",
-                        title="Hip ADD/ABD Profile",
-                        vertical=True
-                    )
-                    if fig:
+                    if SNC_CHARTS_AVAILABLE:
+                        metric_cols = {'ADD': 'ADD_avg', 'ABD': 'ABD_avg'}
+                        fig = create_stacked_quadrant_chart(
+                            latest_hip, metric_cols,
+                            "Hip Strength", "N",
+                            title="Hip ADD/ABD Profile",
+                            vertical=True
+                        )
+                        if fig:
+                            st.plotly_chart(fig, use_container_width=True)
+                    else:
+                        # Inline fallback
+                        plot_df = latest_hip.sort_values('ADD_avg', ascending=True)
+                        fig = go.Figure()
+                        fig.add_trace(go.Bar(y=plot_df['Name'], x=plot_df['ADD_avg'], orientation='h', marker_color='#0077B6', name='ADD'))
+                        fig.add_trace(go.Bar(y=plot_df['Name'], x=plot_df['ABD_avg'], orientation='h', marker_color='#a08e66', name='ABD'))
+                        fig.update_layout(title="Hip ADD/ABD Profile", barmode='group', plot_bgcolor='white', paper_bgcolor='white',
+                                          height=max(250, len(plot_df) * 40), margin=dict(l=10, r=10, t=40, b=10))
                         st.plotly_chart(fig, use_container_width=True)
                 else:
                     st.info("Hip AD/AB force columns not found")
-            elif not hip_adab_df.empty:
-                st.info("Hip AD/AB data available - enable S&C charts for visualization")
             else:
                 st.info("No Hip AD/AB tests found in ForceFrame data")
         else:
@@ -1502,7 +1581,7 @@ def create_group_report(df: pd.DataFrame,
                 forceframe_df['testTypeName'].str.contains('Hip IR/ER', case=False, na=False)
             ] if 'testTypeName' in forceframe_df.columns else pd.DataFrame()
 
-            if not hip_irer_df.empty and 'Name' in hip_irer_df.columns and SNC_CHARTS_AVAILABLE:
+            if not hip_irer_df.empty and 'Name' in hip_irer_df.columns:
                 # Use inner/outer for IR/ER
                 inner_col = 'innerLeftMaxForce' if 'innerLeftMaxForce' in hip_irer_df.columns else None
                 outer_col = 'outerLeftMaxForce' if 'outerLeftMaxForce' in hip_irer_df.columns else None
@@ -1512,19 +1591,27 @@ def create_group_report(df: pd.DataFrame,
                     hip_irer_df['ER_avg'] = (hip_irer_df['outerLeftMaxForce'].fillna(0) + hip_irer_df.get('outerRightMaxForce', hip_irer_df['outerLeftMaxForce']).fillna(0)) / 2
 
                     latest_hip_irer = hip_irer_df.groupby('Name').agg({'IR_avg': 'last', 'ER_avg': 'last'}).reset_index()
-                    metric_cols = {'IR': 'IR_avg', 'ER': 'ER_avg'}
-                    fig = create_stacked_quadrant_chart(
-                        latest_hip_irer, metric_cols,
-                        "Hip Rotation", "N",
-                        title="Hip IR/ER Profile",
-                        vertical=True
-                    )
-                    if fig:
+                    if SNC_CHARTS_AVAILABLE:
+                        metric_cols = {'IR': 'IR_avg', 'ER': 'ER_avg'}
+                        fig = create_stacked_quadrant_chart(
+                            latest_hip_irer, metric_cols,
+                            "Hip Rotation", "N",
+                            title="Hip IR/ER Profile",
+                            vertical=True
+                        )
+                        if fig:
+                            st.plotly_chart(fig, use_container_width=True)
+                    else:
+                        # Inline fallback
+                        plot_df = latest_hip_irer.sort_values('IR_avg', ascending=True)
+                        fig = go.Figure()
+                        fig.add_trace(go.Bar(y=plot_df['Name'], x=plot_df['IR_avg'], orientation='h', marker_color='#1D4D3B', name='IR'))
+                        fig.add_trace(go.Bar(y=plot_df['Name'], x=plot_df['ER_avg'], orientation='h', marker_color='#FF9800', name='ER'))
+                        fig.update_layout(title="Hip IR/ER Profile", barmode='group', plot_bgcolor='white', paper_bgcolor='white',
+                                          height=max(250, len(plot_df) * 40), margin=dict(l=10, r=10, t=40, b=10))
                         st.plotly_chart(fig, use_container_width=True)
                 else:
                     st.info("Hip IR/ER force columns not found")
-            elif not hip_irer_df.empty:
-                st.info("Hip IR/ER data available - enable S&C charts")
             else:
                 st.info("No Hip IR/ER tests found in ForceFrame data")
         else:
