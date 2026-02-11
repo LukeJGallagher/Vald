@@ -1841,12 +1841,14 @@ class WeightliftingDiagnosticsModule:
         """Column 3: Athlete Summary Card with auto-generated observations."""
         st.markdown("#### Athlete Summary")
 
-        # Get body mass
+        # Get body mass (VALD uses 'weight', 'BODY_MASS', or 'bodyMassKg')
         body_mass = None
-        if not forcedecks_df.empty and 'bodyMassKg' in forcedecks_df.columns:
-            bm = forcedecks_df['bodyMassKg'].dropna()
-            if not bm.empty:
-                body_mass = bm.iloc[0]
+        for bm_col in ['weight', 'BODY_MASS', 'bodyMassKg']:
+            if not forcedecks_df.empty and bm_col in forcedecks_df.columns:
+                bm = pd.to_numeric(forcedecks_df[bm_col], errors='coerce').dropna()
+                if not bm.empty:
+                    body_mass = bm.iloc[0]
+                    break
 
         # Build card HTML
         bm_text = f"{body_mass:.1f} kg" if body_mass else "N/A"
