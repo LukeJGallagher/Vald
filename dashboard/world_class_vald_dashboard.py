@@ -134,6 +134,7 @@ try:
         IsometricSingleLegModule,
         IsometricDoubleLegModule,
         ThrowsTrainingModule,
+        WeightliftingDiagnosticsModule,
         display_test_type_module
     )
     TEST_TYPE_MODULES_AVAILABLE = True
@@ -5940,7 +5941,7 @@ with tabs[1]:  # Reports
             # Report type tabs - Strength Diagnostics (with Canvas/Classic/Group V2/Individual), Shooting, Throws, and Benchmark Settings
             # Note: Group v2 and Individual moved inside Strength Diagnostics tab, Group v3 hidden
             # Use selectbox + session state for persistence (st.tabs resets on filter changes)
-            report_tabs = st.tabs(["💪 Strength Diagnostics", "🎯 Shooting Balance", "🥏 Throws", "⚙️ Benchmark Settings"])
+            report_tabs = st.tabs(["💪 Strength Diagnostics", "🎯 Shooting Balance", "🥏 Throws", "🏋️ Weightlifting", "⚙️ Benchmark Settings"])
 
             # Render benchmark legend
             render_benchmark_legend()
@@ -6407,7 +6408,79 @@ with tabs[1]:  # Reports
                 else:
                     st.info("No throws athletes found. Looking for Athletics athletes or those with 'Throw', 'Shot', 'Discus', 'Javelin', or 'Hammer' in their sport.")
 
-            with report_tabs[3]:  # Benchmark Settings
+            with report_tabs[3]:  # Weightlifting
+                st.markdown("### 🏋️ Weightlifting Diagnostics")
+                st.caption("Physical diagnostics summary for Weightlifting athletes")
+
+                # Filter for Weightlifting athletes (use original df so they always appear)
+                wl_mask = df['athlete_sport'].str.contains(
+                    'Weightlifting', case=False, na=False
+                ) if 'athlete_sport' in df.columns else pd.Series([False] * len(df))
+                wl_df = df[wl_mask].copy()
+
+                # Ensure Name column exists
+                if not wl_df.empty:
+                    if 'Name' not in wl_df.columns or wl_df['Name'].isna().all():
+                        if 'full_name' in wl_df.columns:
+                            wl_df['Name'] = wl_df['full_name']
+
+                if not wl_df.empty:
+                    wl_athletes = sorted(wl_df['Name'].dropna().unique()) if 'Name' in wl_df.columns else []
+
+                    if wl_athletes:
+                        selected_wl_athlete = st.selectbox(
+                            "Select Weightlifting Athlete:",
+                            options=wl_athletes,
+                            key="wl_athlete_selector"
+                        )
+
+                        if TEST_TYPE_MODULES_AVAILABLE:
+                            # Get this athlete's ForceDecks data
+                            athlete_fd = wl_df[wl_df['Name'] == selected_wl_athlete].copy()
+
+                            # Get ForceFrame data for this athlete
+                            athlete_ff = pd.DataFrame()
+                            if not df_forceframe.empty and 'Name' in df_forceframe.columns:
+                                athlete_ff = df_forceframe[df_forceframe['Name'] == selected_wl_athlete].copy()
+                            elif not df_forceframe.empty and 'full_name' in df_forceframe.columns:
+                                athlete_ff = df_forceframe[df_forceframe['full_name'] == selected_wl_athlete].copy()
+
+                            # Get DynaMo data for this athlete
+                            athlete_dyn = pd.DataFrame()
+                            if not df_dynamo.empty and 'Name' in df_dynamo.columns:
+                                athlete_dyn = df_dynamo[df_dynamo['Name'] == selected_wl_athlete].copy()
+                            elif not df_dynamo.empty and 'full_name' in df_dynamo.columns:
+                                athlete_dyn = df_dynamo[df_dynamo['full_name'] == selected_wl_athlete].copy()
+
+                            WeightliftingDiagnosticsModule.display_dashboard(
+                                forcedecks_df=athlete_fd,
+                                athlete_name=selected_wl_athlete,
+                                forceframe_df=athlete_ff if not athlete_ff.empty else None,
+                                dynamo_df=athlete_dyn if not athlete_dyn.empty else None
+                            )
+                        else:
+                            # Fallback basic display
+                            athlete_wl = wl_df[wl_df['Name'] == selected_wl_athlete]
+                            if not athlete_wl.empty:
+                                st.markdown(f"#### {selected_wl_athlete}")
+                                col1, col2, col3 = st.columns(3)
+                                with col1:
+                                    st.metric("Total Tests", len(athlete_wl))
+                                with col2:
+                                    if 'testType' in athlete_wl.columns:
+                                        st.metric("Test Types", ', '.join(athlete_wl['testType'].unique()))
+                                with col3:
+                                    if 'bodyMassKg' in athlete_wl.columns:
+                                        bm = athlete_wl['bodyMassKg'].dropna()
+                                        if not bm.empty:
+                                            st.metric("Body Mass", f"{bm.iloc[0]:.1f} kg")
+                                st.dataframe(athlete_wl, use_container_width=True, hide_index=True)
+                    else:
+                        st.info("No Weightlifting athletes found in the data")
+                else:
+                    st.info("No Weightlifting athletes found. Looking for athletes with 'Weightlifting' in their sport.")
+
+            with report_tabs[4]:  # Benchmark Settings
                 # Benchmark Settings - S&C staff can edit VALD norms
                 try:
                     from dashboard.utils.benchmark_database import render_benchmark_editor

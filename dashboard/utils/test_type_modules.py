@@ -1548,6 +1548,492 @@ class ThrowsTrainingModule:
 # MODULE ROUTER
 # ============================================================================
 
+# ============================================================================
+# WEIGHTLIFTING PHYSICAL DIAGNOSTICS MODULE
+# ============================================================================
+
+class WeightliftingDiagnosticsModule:
+    """
+    Weightlifting Physical Diagnostics Summary.
+
+    3-column layout:
+    - Column 1: Performance Asymmetry (L/R bars for IMTP, CMJ impulse, CMJ peak force)
+    - Column 2: Hip Profile (ForceFrame) + Upper Limb Profile
+    - Column 3: Athlete Summary Card with auto-generated observations
+    + Trunk Profile section below (DynaMo data)
+    """
+
+    # Team Saudi brand colors
+    TEAL_PRIMARY = '#007167'
+    TEAL_LIGHT = '#009688'
+    TEAL_DARK = '#005a51'
+    GOLD_ACCENT = '#a08e66'
+    BLUE = '#0077B6'
+    RED_FLAG = '#dc3545'
+
+    @staticmethod
+    def display_dashboard(forcedecks_df: pd.DataFrame, athlete_name: str,
+                          forceframe_df: pd.DataFrame = None,
+                          dynamo_df: pd.DataFrame = None):
+        """Display the Weightlifting Physical Diagnostics Summary."""
+
+        st.markdown(f"""
+        <div style="background: linear-gradient(135deg, #007167 0%, #005a51 100%);
+             padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem; border-left: 4px solid #a08e66;">
+            <h2 style="color: white; margin: 0;">Physical Diagnostics Summary</h2>
+            <p style="color: rgba(255,255,255,0.9); margin: 0.5rem 0 0 0;">{athlete_name} - Weightlifting</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # Get latest test data per type for this athlete
+        date_col = get_date_column(forcedecks_df)
+        if date_col:
+            forcedecks_df[date_col] = pd.to_datetime(forcedecks_df[date_col], errors='coerce')
+            forcedecks_df = forcedecks_df.sort_values(date_col, ascending=False)
+
+        imtp_df = forcedecks_df[forcedecks_df['testType'] == 'IMTP'] if 'testType' in forcedecks_df.columns else pd.DataFrame()
+        cmj_df = forcedecks_df[forcedecks_df['testType'].isin(['CMJ', 'ABCMJ'])] if 'testType' in forcedecks_df.columns else pd.DataFrame()
+        isot_df = forcedecks_df[forcedecks_df['testType'] == 'ISOT'] if 'testType' in forcedecks_df.columns else pd.DataFrame()
+        ppu_df = forcedecks_df[forcedecks_df['testType'] == 'PPU'] if 'testType' in forcedecks_df.columns else pd.DataFrame()
+
+        # 3-column layout
+        col1, col2, col3 = st.columns([1.2, 1.2, 1])
+
+        with col1:
+            WeightliftingDiagnosticsModule._display_asymmetry_profile(imtp_df, cmj_df, isot_df)
+
+        with col2:
+            WeightliftingDiagnosticsModule._display_body_profile(forceframe_df, ppu_df, cmj_df)
+
+        with col3:
+            WeightliftingDiagnosticsModule._display_athlete_card(
+                athlete_name, forcedecks_df, imtp_df, cmj_df, forceframe_df
+            )
+
+        # Trunk Profile (DynaMo) below the 3-column layout
+        if dynamo_df is not None and not dynamo_df.empty:
+            st.markdown("---")
+            WeightliftingDiagnosticsModule._display_trunk_profile(dynamo_df)
+
+    @staticmethod
+    def _get_latest_row(df: pd.DataFrame) -> pd.Series:
+        """Get the most recent test row."""
+        if df.empty:
+            return pd.Series(dtype='float64')
+        return df.iloc[0]  # Already sorted desc by date
+
+    @staticmethod
+    def _calc_asymmetry(left, right):
+        """Calculate asymmetry percentage. Positive = right dominant."""
+        if pd.isna(left) or pd.isna(right) or (left + right) == 0:
+            return np.nan
+        avg = (left + right) / 2
+        return ((right - left) / avg) * 100
+
+    @staticmethod
+    def _display_asymmetry_profile(imtp_df, cmj_df, isot_df):
+        """Column 1: Performance Asymmetry L/R bars."""
+        st.markdown("#### Performance Asymmetry")
+
+        metrics = []
+
+        # IMTP Peak Force L/R
+        if not imtp_df.empty:
+            latest = WeightliftingDiagnosticsModule._get_latest_row(imtp_df)
+            l_val = latest.get('PEAK_VERTICAL_FORCE_Left', np.nan)
+            r_val = latest.get('PEAK_VERTICAL_FORCE_Right', np.nan)
+            if pd.notna(l_val) and pd.notna(r_val):
+                asym = WeightliftingDiagnosticsModule._calc_asymmetry(l_val, r_val)
+                metrics.append({'name': 'IMTP Peak Force', 'left': l_val, 'right': r_val, 'asym': asym, 'unit': 'N'})
+
+        # ISOT (Start Position) L/R
+        if not isot_df.empty:
+            latest = WeightliftingDiagnosticsModule._get_latest_row(isot_df)
+            l_val = latest.get('PEAK_VERTICAL_FORCE_Left', np.nan)
+            r_val = latest.get('PEAK_VERTICAL_FORCE_Right', np.nan)
+            if pd.notna(l_val) and pd.notna(r_val):
+                asym = WeightliftingDiagnosticsModule._calc_asymmetry(l_val, r_val)
+                metrics.append({'name': 'ISO Start Position', 'left': l_val, 'right': r_val, 'asym': asym, 'unit': 'N'})
+
+        # CMJ Concentric Impulse L/R
+        if not cmj_df.empty:
+            latest = WeightliftingDiagnosticsModule._get_latest_row(cmj_df)
+            l_val = latest.get('CONCENTRIC_IMPULSE_Left', np.nan)
+            r_val = latest.get('CONCENTRIC_IMPULSE_Right', np.nan)
+            if pd.notna(l_val) and pd.notna(r_val):
+                asym = WeightliftingDiagnosticsModule._calc_asymmetry(l_val, r_val)
+                metrics.append({'name': 'CMJ Impulse', 'left': l_val, 'right': r_val, 'asym': asym, 'unit': 'Ns'})
+
+            # CMJ Peak Concentric Force L/R
+            l_val = latest.get('PEAK_CONCENTRIC_FORCE_Left', np.nan)
+            r_val = latest.get('PEAK_CONCENTRIC_FORCE_Right', np.nan)
+            if pd.notna(l_val) and pd.notna(r_val):
+                asym = WeightliftingDiagnosticsModule._calc_asymmetry(l_val, r_val)
+                metrics.append({'name': 'CMJ Peak Force', 'left': l_val, 'right': r_val, 'asym': asym, 'unit': 'N'})
+
+        if not metrics:
+            st.info("No asymmetry data available")
+            return
+
+        # Build diverging bar chart
+        names = [m['name'] for m in metrics]
+        left_vals = [-m['left'] for m in metrics]  # Negative for left side
+        right_vals = [m['right'] for m in metrics]
+        asym_vals = [m['asym'] for m in metrics]
+
+        fig = go.Figure()
+
+        # Left bars (negative direction)
+        left_colors = []
+        for m in metrics:
+            a = abs(m['asym'])
+            if a > 10:
+                left_colors.append(WeightliftingDiagnosticsModule.RED_FLAG)
+            elif a > 5:
+                left_colors.append(WeightliftingDiagnosticsModule.GOLD_ACCENT)
+            else:
+                left_colors.append(WeightliftingDiagnosticsModule.TEAL_PRIMARY)
+
+        right_colors = left_colors.copy()
+
+        fig.add_trace(go.Bar(
+            y=names, x=left_vals, orientation='h',
+            marker_color=left_colors, name='Left',
+            text=[f"{abs(v):.0f}" for v in left_vals],
+            textposition='inside', textfont=dict(color='white')
+        ))
+
+        fig.add_trace(go.Bar(
+            y=names, x=right_vals, orientation='h',
+            marker_color=right_colors, name='Right',
+            text=[f"{v:.0f}" for v in right_vals],
+            textposition='inside', textfont=dict(color='white'),
+            opacity=0.75
+        ))
+
+        # Add asymmetry annotations
+        for i, m in enumerate(metrics):
+            a = m['asym']
+            color = WeightliftingDiagnosticsModule.RED_FLAG if abs(a) > 10 else '#333'
+            fig.add_annotation(
+                x=max(right_vals) * 1.1, y=names[i],
+                text=f"<b>{abs(a):.1f}%</b>",
+                font=dict(color=color, size=11),
+                showarrow=False, xanchor='left'
+            )
+
+        fig.update_layout(
+            barmode='overlay',
+            plot_bgcolor='white', paper_bgcolor='white',
+            font=dict(family='Inter, sans-serif', color='#333'),
+            height=max(200, len(metrics) * 70),
+            margin=dict(l=10, r=60, t=10, b=10),
+            showlegend=True,
+            legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='center', x=0.5),
+            xaxis=dict(showgrid=True, gridcolor='lightgray', zeroline=True, zerolinecolor='#333', zerolinewidth=2),
+            yaxis=dict(showgrid=False)
+        )
+
+        st.plotly_chart(fig, use_container_width=True, key="wl_asymmetry_chart")
+
+        # Asymmetry legend
+        st.caption("Color: Green (<5%) | Gold (5-10%) | Red (>10% - flag)")
+
+    @staticmethod
+    def _display_body_profile(forceframe_df, ppu_df, cmj_df):
+        """Column 2: Hip Profile + Upper Limb Profile."""
+        st.markdown("#### Hip Profile")
+
+        hip_metrics = []
+
+        if forceframe_df is not None and not forceframe_df.empty:
+            # Hip Flexion from ForceFrame
+            hip_flex = forceframe_df[forceframe_df['testTypeName'].str.contains('Flex', case=False, na=False)] if 'testTypeName' in forceframe_df.columns else pd.DataFrame()
+            if not hip_flex.empty:
+                row = hip_flex.iloc[0]
+                l_val = row.get('outerLeftMaxForce', np.nan)
+                r_val = row.get('outerRightMaxForce', np.nan)
+                if pd.notna(l_val) and pd.notna(r_val):
+                    hip_metrics.append({'name': 'Hip Flexion', 'left': l_val, 'right': r_val})
+
+            # Hip Adduction/Abduction if available
+            hip_adab = forceframe_df[forceframe_df['testTypeName'].str.contains('Adduct|Abduct', case=False, na=False)] if 'testTypeName' in forceframe_df.columns else pd.DataFrame()
+            if not hip_adab.empty:
+                row = hip_adab.iloc[0]
+                add_l = row.get('innerLeftMaxForce', np.nan)
+                add_r = row.get('innerRightMaxForce', np.nan)
+                abd_l = row.get('outerLeftMaxForce', np.nan)
+                abd_r = row.get('outerRightMaxForce', np.nan)
+                if pd.notna(add_l) and pd.notna(add_r):
+                    hip_metrics.append({'name': 'Adduction', 'left': add_l, 'right': add_r})
+                if pd.notna(abd_l) and pd.notna(abd_r):
+                    hip_metrics.append({'name': 'Abduction', 'left': abd_l, 'right': abd_r})
+
+        if hip_metrics:
+            fig = go.Figure()
+            names = [m['name'] for m in hip_metrics]
+            for m in hip_metrics:
+                fig.add_trace(go.Bar(
+                    y=[m['name']], x=[m['left']], orientation='h',
+                    marker_color=WeightliftingDiagnosticsModule.TEAL_PRIMARY,
+                    text=[f"L: {m['left']:.0f}N"], textposition='outside',
+                    showlegend=(m == hip_metrics[0]), name='Left',
+                    legendgroup='left'
+                ))
+                fig.add_trace(go.Bar(
+                    y=[m['name']], x=[m['right']], orientation='h',
+                    marker_color=WeightliftingDiagnosticsModule.TEAL_LIGHT,
+                    text=[f"R: {m['right']:.0f}N"], textposition='outside',
+                    showlegend=(m == hip_metrics[0]), name='Right',
+                    legendgroup='right'
+                ))
+
+            fig.update_layout(
+                barmode='group',
+                plot_bgcolor='white', paper_bgcolor='white',
+                font=dict(family='Inter, sans-serif', color='#333'),
+                height=max(150, len(hip_metrics) * 60),
+                margin=dict(l=10, r=80, t=10, b=10),
+                showlegend=True,
+                legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='center', x=0.5),
+                xaxis=dict(showgrid=True, gridcolor='lightgray', title='Force (N)'),
+                yaxis=dict(showgrid=False)
+            )
+            st.plotly_chart(fig, use_container_width=True, key="wl_hip_profile")
+        else:
+            st.info("No ForceFrame hip data available")
+
+        # Upper Limb Profile
+        st.markdown("#### Upper Limb Profile")
+        upper_metrics = []
+
+        # Plyo Pushup height
+        if not ppu_df.empty:
+            latest = WeightliftingDiagnosticsModule._get_latest_row(ppu_df)
+            ppu_height = latest.get('PUSHUP_HEIGHT', np.nan)
+            if pd.notna(ppu_height):
+                upper_metrics.append(('Plyo Pushup Height', f"{ppu_height:.1f} cm"))
+            ppu_power = latest.get('BODYMASS_RELATIVE_TAKEOFF_POWER', np.nan)
+            if pd.notna(ppu_power):
+                upper_metrics.append(('PPU Rel. Power', f"{ppu_power:.2f} W/kg"))
+
+        # CMJ concentric RFD
+        if not cmj_df.empty:
+            latest = WeightliftingDiagnosticsModule._get_latest_row(cmj_df)
+            rfd = latest.get('CONCENTRIC_RFD', np.nan)
+            if pd.notna(rfd):
+                upper_metrics.append(('CMJ Concentric RFD', f"{rfd:.0f} N/s"))
+
+        if upper_metrics:
+            for label, value in upper_metrics:
+                st.markdown(f"""
+                <div style="background: #f8f9fa; padding: 0.5rem 1rem; border-radius: 6px;
+                     margin-bottom: 0.5rem; border-left: 3px solid #007167;">
+                    <span style="color: #666; font-size: 0.85rem;">{label}</span><br>
+                    <span style="color: #333; font-size: 1.1rem; font-weight: bold;">{value}</span>
+                </div>
+                """, unsafe_allow_html=True)
+        else:
+            st.info("No upper limb data available")
+
+    @staticmethod
+    def _display_athlete_card(athlete_name, forcedecks_df, imtp_df, cmj_df, forceframe_df):
+        """Column 3: Athlete Summary Card with auto-generated observations."""
+        st.markdown("#### Athlete Summary")
+
+        # Get body mass
+        body_mass = None
+        if not forcedecks_df.empty and 'bodyMassKg' in forcedecks_df.columns:
+            bm = forcedecks_df['bodyMassKg'].dropna()
+            if not bm.empty:
+                body_mass = bm.iloc[0]
+
+        # Build card HTML
+        bm_text = f"{body_mass:.1f} kg" if body_mass else "N/A"
+        test_count = len(forcedecks_df)
+        date_col = get_date_column(forcedecks_df)
+        latest_date = "N/A"
+        if date_col and not forcedecks_df.empty:
+            dates = pd.to_datetime(forcedecks_df[date_col], errors='coerce').dropna()
+            if not dates.empty:
+                latest_date = dates.max().strftime('%d %b %Y')
+
+        st.markdown(f"""
+        <div style="background: linear-gradient(135deg, #007167 0%, #005a51 100%);
+             padding: 1.2rem; border-radius: 10px; color: white;">
+            <h3 style="margin: 0; color: white;">{athlete_name}</h3>
+            <p style="color: #a08e66; margin: 0.3rem 0;">Weightlifting</p>
+            <hr style="border-color: rgba(255,255,255,0.2); margin: 0.8rem 0;">
+            <p style="margin: 0.3rem 0; font-size: 0.9rem;">Body Mass: <b>{bm_text}</b></p>
+            <p style="margin: 0.3rem 0; font-size: 0.9rem;">Total Tests: <b>{test_count}</b></p>
+            <p style="margin: 0.3rem 0; font-size: 0.9rem;">Latest Test: <b>{latest_date}</b></p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # Key metrics
+        st.markdown("##### Key Metrics")
+        if not imtp_df.empty:
+            latest = WeightliftingDiagnosticsModule._get_latest_row(imtp_df)
+            npf = latest.get('NET_PEAK_VERTICAL_FORCE', np.nan)
+            rel = latest.get('ISO_BM_REL_FORCE_PEAK', np.nan)
+            if pd.notna(npf):
+                st.metric("IMTP Net Peak Force", f"{npf:.0f} N")
+            if pd.notna(rel):
+                st.metric("IMTP Relative Force", f"{rel:.2f} N/kg")
+
+        if not cmj_df.empty:
+            latest = WeightliftingDiagnosticsModule._get_latest_row(cmj_df)
+            jh = latest.get('JUMP_HEIGHT', np.nan)
+            rp = latest.get('BODYMASS_RELATIVE_TAKEOFF_POWER', np.nan)
+            if pd.notna(jh):
+                # VALD stores jump height in cm (typically 20-60cm range)
+                st.metric("CMJ Height", f"{jh:.1f} cm")
+            if pd.notna(rp):
+                st.metric("CMJ Rel. Power", f"{rp:.2f} W/kg")
+
+        # Auto-generated observations
+        st.markdown("##### Observations")
+        observations = WeightliftingDiagnosticsModule._generate_observations(imtp_df, cmj_df, forceframe_df)
+        if observations:
+            for obs in observations:
+                st.markdown(f"- {obs}")
+        else:
+            st.caption("Insufficient data for automated observations")
+
+    @staticmethod
+    def _generate_observations(imtp_df, cmj_df, forceframe_df):
+        """Auto-generate observations based on asymmetry and trends."""
+        observations = []
+
+        # Check IMTP asymmetry
+        if not imtp_df.empty:
+            latest = imtp_df.iloc[0]
+            l = latest.get('PEAK_VERTICAL_FORCE_Left', np.nan)
+            r = latest.get('PEAK_VERTICAL_FORCE_Right', np.nan)
+            if pd.notna(l) and pd.notna(r) and (l + r) > 0:
+                asym = abs(r - l) / ((l + r) / 2) * 100
+                if asym > 10:
+                    dom = "Right" if r > l else "Left"
+                    observations.append(f"IMTP asymmetry {asym:.1f}% ({dom} dominant) - monitor")
+                elif asym < 5:
+                    observations.append(f"IMTP symmetry good ({asym:.1f}%)")
+
+        # Check CMJ impulse asymmetry
+        if not cmj_df.empty:
+            latest = cmj_df.iloc[0]
+            l = latest.get('CONCENTRIC_IMPULSE_Left', np.nan)
+            r = latest.get('CONCENTRIC_IMPULSE_Right', np.nan)
+            if pd.notna(l) and pd.notna(r) and (l + r) > 0:
+                asym = abs(r - l) / ((l + r) / 2) * 100
+                if asym > 10:
+                    dom = "Right" if r > l else "Left"
+                    observations.append(f"CMJ impulse asymmetry {asym:.1f}% ({dom} dominant)")
+
+        # Check hip flexion asymmetry
+        if forceframe_df is not None and not forceframe_df.empty:
+            hip_flex = forceframe_df[forceframe_df['testTypeName'].str.contains('Flex', case=False, na=False)] if 'testTypeName' in forceframe_df.columns else pd.DataFrame()
+            if not hip_flex.empty:
+                row = hip_flex.iloc[0]
+                l = row.get('outerLeftMaxForce', np.nan)
+                r = row.get('outerRightMaxForce', np.nan)
+                if pd.notna(l) and pd.notna(r) and (l + r) > 0:
+                    asym = abs(r - l) / ((l + r) / 2) * 100
+                    if asym > 10:
+                        dom = "Right" if r > l else "Left"
+                        observations.append(f"Hip flexion asymmetry {asym:.1f}% ({dom} dominant)")
+
+        # Check IMTP trend (if 3+ tests)
+        if len(imtp_df) >= 3:
+            forces = imtp_df['NET_PEAK_VERTICAL_FORCE'].dropna() if 'NET_PEAK_VERTICAL_FORCE' in imtp_df.columns else pd.Series(dtype='float64')
+            if len(forces) >= 3:
+                recent = forces.iloc[0]
+                oldest = forces.iloc[-1]
+                change_pct = ((recent - oldest) / oldest) * 100 if oldest > 0 else 0
+                if change_pct > 5:
+                    observations.append(f"IMTP trending up (+{change_pct:.0f}% over {len(forces)} tests)")
+                elif change_pct < -5:
+                    observations.append(f"IMTP trending down ({change_pct:.0f}% over {len(forces)} tests)")
+
+        return observations
+
+    @staticmethod
+    def _display_trunk_profile(dynamo_df):
+        """Trunk Profile section from DynaMo data."""
+        st.markdown("#### Trunk Strength Profile (DynaMo)")
+
+        if dynamo_df.empty or 'movement' not in dynamo_df.columns:
+            st.info("No DynaMo trunk data available")
+            return
+
+        # Get latest test per movement (DynaMo uses camelCase: 'Flexion', 'Extension', 'LateralFlexionLeft', etc.)
+        movements = {}
+        movement_patterns = {
+            'Flexion': r'^Flexion$',
+            'Extension': r'^Extension$',
+            'Lateral Flexion Left': r'LateralFlexionLeft|Lateral.*Flexion.*Left',
+            'Lateral Flexion Right': r'LateralFlexionRight|Lateral.*Flexion.*Right',
+        }
+        for label, pattern in movement_patterns.items():
+            m_df = dynamo_df[dynamo_df['movement'].str.contains(pattern, case=False, na=False, regex=True)]
+            if not m_df.empty and 'maxForceNewtons' in m_df.columns:
+                movements[label] = m_df['maxForceNewtons'].iloc[0]
+
+        if not movements:
+            st.info("No trunk strength data found")
+            return
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+            # Flexion vs Extension
+            flex = movements.get('Flexion', 0)
+            ext = movements.get('Extension', 0)
+            if flex > 0 or ext > 0:
+                fig = go.Figure()
+                fig.add_trace(go.Bar(
+                    x=['Flexion', 'Extension'], y=[flex, ext],
+                    marker_color=[WeightliftingDiagnosticsModule.TEAL_PRIMARY,
+                                  WeightliftingDiagnosticsModule.TEAL_LIGHT],
+                    text=[f"{flex:.0f}N", f"{ext:.0f}N"],
+                    textposition='outside'
+                ))
+                ratio = flex / ext if ext > 0 else 0
+                fig.update_layout(
+                    title=f"Trunk Flex/Ext (Ratio: {ratio:.2f})",
+                    plot_bgcolor='white', paper_bgcolor='white',
+                    font=dict(family='Inter, sans-serif', color='#333'),
+                    height=250, margin=dict(l=10, r=10, t=40, b=10),
+                    yaxis=dict(title='Force (N)', showgrid=True, gridcolor='lightgray'),
+                    xaxis=dict(showgrid=False)
+                )
+                st.plotly_chart(fig, use_container_width=True, key="wl_trunk_flex_ext")
+
+        with col2:
+            # Lateral Flexion L vs R
+            lat_l = movements.get('Lateral Flexion Left', 0)
+            lat_r = movements.get('Lateral Flexion Right', 0)
+            if lat_l > 0 or lat_r > 0:
+                asym = abs(lat_r - lat_l) / ((lat_l + lat_r) / 2) * 100 if (lat_l + lat_r) > 0 else 0
+                asym_color = WeightliftingDiagnosticsModule.RED_FLAG if asym > 10 else '#333'
+                fig = go.Figure()
+                fig.add_trace(go.Bar(
+                    x=['Left', 'Right'], y=[lat_l, lat_r],
+                    marker_color=[WeightliftingDiagnosticsModule.TEAL_PRIMARY,
+                                  WeightliftingDiagnosticsModule.TEAL_LIGHT],
+                    text=[f"{lat_l:.0f}N", f"{lat_r:.0f}N"],
+                    textposition='outside'
+                ))
+                fig.update_layout(
+                    title=f"Lateral Flexion (Asym: {asym:.1f}%)",
+                    plot_bgcolor='white', paper_bgcolor='white',
+                    font=dict(family='Inter, sans-serif', color='#333'),
+                    height=250, margin=dict(l=10, r=10, t=40, b=10),
+                    yaxis=dict(title='Force (N)', showgrid=True, gridcolor='lightgray'),
+                    xaxis=dict(showgrid=False)
+                )
+                st.plotly_chart(fig, use_container_width=True, key="wl_trunk_lateral")
+
+
 def display_test_type_module(test_type: str, athlete_df: pd.DataFrame, athlete_name: str, sport: str = None):
     """
     Route to appropriate test-type specific module.
@@ -1574,6 +2060,9 @@ def display_test_type_module(test_type: str, athlete_df: pd.DataFrame, athlete_n
             ThrowsTrainingModule.display_throws_dashboard(athlete_df, athlete_name, sport)
         else:
             st.warning("Sport information required for Throws dashboard")
+
+    elif test_type == 'WEIGHTLIFTING':
+        WeightliftingDiagnosticsModule.display_dashboard(athlete_df, athlete_name)
 
     else:
         st.error(f"Unknown test type module: {test_type}")

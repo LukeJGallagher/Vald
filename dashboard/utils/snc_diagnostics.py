@@ -1104,13 +1104,16 @@ def create_ranked_side_by_side_chart(
     # Create figure
     fig = go.Figure()
 
+    # Use appropriate text format: ratios need decimals, force/power use integers
+    text_fmt = '.2f' if unit == 'ratio' else '.0f'
+
     # Add left bars
     fig.add_trace(go.Bar(
         y=plot_df['Name'],
         x=plot_df[left_col],
         orientation='h',
         marker_color=TEAL_PRIMARY,
-        text=[f"{v:.0f}" for v in plot_df[left_col]],
+        text=[f"{v:{text_fmt}}" for v in plot_df[left_col]],
         textposition='auto',
         name='Left'
     ))
@@ -1121,7 +1124,7 @@ def create_ranked_side_by_side_chart(
         x=plot_df[right_col],
         orientation='h',
         marker_color=TEAL_LIGHT,
-        text=[f"{v:.0f}" for v in plot_df[right_col]],
+        text=[f"{v:{text_fmt}}" for v in plot_df[right_col]],
         textposition='auto',
         name='Right'
     ))
@@ -1133,7 +1136,7 @@ def create_ranked_side_by_side_chart(
             line_dash="dash",
             line_color=BENCHMARK_COLOR,
             line_width=2,
-            annotation_text=f"{benchmark:.0f} {unit}",
+            annotation_text=f"{benchmark:{text_fmt}} {unit}",
             annotation_position="top"
         )
 
