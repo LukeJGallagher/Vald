@@ -6428,9 +6428,15 @@ with tabs[1]:  # Reports
                     wl_athletes = sorted(wl_df['Name'].dropna().unique()) if 'Name' in wl_df.columns else []
 
                     if wl_athletes:
+                        # Persist selection across reruns
+                        wl_idx = 0
+                        prev_wl = st.session_state.get("wl_athlete_selector")
+                        if prev_wl and prev_wl in wl_athletes:
+                            wl_idx = wl_athletes.index(prev_wl)
                         selected_wl_athlete = st.selectbox(
                             "Select Weightlifting Athlete:",
                             options=wl_athletes,
+                            index=wl_idx,
                             key="wl_athlete_selector"
                         )
 
