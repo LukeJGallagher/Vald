@@ -92,9 +92,7 @@ try:
         push_to_github_repo,
         refresh_and_save_data
     )
-    GITHUB_SYNC_AVAILABLE = True
 except ImportError:
-    GITHUB_SYNC_AVAILABLE = False
     st.warning("⚠️ Data loader utilities not found. Using basic loading...")
 
 # Import advanced visualization modules
@@ -1225,444 +1223,11 @@ def fetch_athlete_profiles(token, region, tenant_id):
     return {}
 
 
-@st.cache_data(ttl=300, show_spinner="Fetching data from VALD API...")
-def fetch_live_data_from_api(device='forcedecks'):
-    """Fetch fresh data from VALD API using Streamlit secrets or .env credentials. Cached for 5 min."""
-    import requests
-    from datetime import datetime, timedelta, timezone
-
-    # Try to get credentials from Streamlit secrets first
-    try:
-        if hasattr(st, 'secrets') and 'vald' in st.secrets:
-            client_id = st.secrets['vald'].get('CLIENT_ID', '')
-            client_secret = st.secrets['vald'].get('CLIENT_SECRET', '')
-            tenant_id = st.secrets['vald'].get('TENANT_ID', '')
-            region = st.secrets['vald'].get('VALD_REGION', 'euw')
-        else:
-            # Fall back to environment variables
-            credentials, found = load_env_credentials()
-            if not found:
-                return None, "No API credentials found. Configure in Streamlit secrets or .env file."
-            client_id = credentials.get('client_id', '')
-            client_secret = credentials.get('client_secret', '')
-            tenant_id = credentials['tenant_id']
-            region = credentials['region']
-    except Exception as e:
-        return None, f"Error loading credentials: {str(e)}"
-
-    if not client_id or not client_secret or not tenant_id:
-        return None, "Missing API credentials (CLIENT_ID, CLIENT_SECRET, or TENANT_ID)"
-
-    # Get OAuth token - use VALD security endpoint (no scope required)
-    token_url = "https://security.valdperformance.com/connect/token"
-    token_data = {
-        'grant_type': 'client_credentials',
-        'client_id': client_id,
-        'client_secret': client_secret,
-    }
-
-    try:
-        token_response = requests.post(token_url, data=token_data, timeout=30)
-        if token_response.status_code != 200:
-            return None, f"Failed to get OAuth token: {token_response.status_code}"
-        token = token_response.json().get('access_token')
-    except Exception as e:
-        return None, f"Token request failed: {str(e)}"
-
-    headers = {
-        'Authorization': f'Bearer {token}',
-        'Accept': 'application/json'
-    }
-
-    # Set date range (last 35 days - API limit)
-    now = datetime.now(timezone.utc)
-    start_date = (now - timedelta(days=34)).strftime('%Y-%m-%dT%H:%M:%SZ')
-    end_date = now.strftime('%Y-%m-%dT%H:%M:%SZ')
-
-    # API endpoints
-    endpoints = {
-        'forcedecks': f'https://prd-{region}-api-extforcedecks.valdperformance.com/tests',
-        'forceframe': f'https://prd-{region}-api-externalforceframe.valdperformance.com/tests',
-        'nordbord': f'https://prd-{region}-api-externalnordbord.valdperformance.com/tests',
-    }
-
-    if device not in endpoints:
-        return None, f"Unknown device: {device}"
-
-    url = endpoints[device]
-    params = {
-        'TenantId': tenant_id,
-        'TestFromUtc': start_date,
-        'TestToUtc': end_date,
-        'ModifiedFromUtc': start_date,
-    }
-
-    try:
-        response = requests.get(url, headers=headers, params=params, timeout=60)
-        if response.status_code == 200:
-            data = response.json()
-            # Handle dict with 'tests' key or list
-            if isinstance(data, dict) and 'tests' in data:
-                tests = data['tests']
-            elif isinstance(data, list):
-                tests = data
-            else:
-                tests = []
-
-            if tests:
-                df = pd.DataFrame(tests)
-
-                # Fetch athlete profiles to get names
-                if 'profileId' in df.columns:
-                    profile_names = fetch_athlete_profiles(token, region, tenant_id)
-                    if profile_names:
-                        df['full_name'] = df['profileId'].map(profile_names)
-
-                return df, None
-            else:
-                return pd.DataFrame(), "No data found in the specified date range"
-        else:
-            return None, f"API Error {response.status_code}: {response.text[:200]}"
-    except Exception as e:
-        return None, f"API request failed: {str(e)}"
-
-
-@st.cache_data(ttl=600, show_spinner="Fetching historical data...")
-def fetch_historical_data_from_api(device='forcedecks', progress_callback=None):
-    """
-    Fetch ALL historical data from VALD API using the valdR pattern. Cached for 10 min.
-    1. Get OAuth token
-    2. Get all athletes
-    3. For each athlete, get all tests (no date limit!)
-
-    This bypasses the 35-day API limit by fetching per-athlete.
-    Based on the official valdR package approach.
-    """
-    import requests
-    import time
-
-    # Try to get credentials from Streamlit secrets first
-    try:
-        if hasattr(st, 'secrets') and 'vald' in st.secrets:
-            client_id = st.secrets['vald'].get('CLIENT_ID', '')
-            client_secret = st.secrets['vald'].get('CLIENT_SECRET', '')
-            region = st.secrets['vald'].get('VALD_REGION', 'euw')
-        else:
-            credentials, found = load_env_credentials()
-            if not found:
-                return None, "No API credentials found. Configure in Streamlit secrets or .env file."
-            client_id = credentials.get('client_id', '')
-            client_secret = credentials.get('client_secret', '')
-            region = credentials['region']
-    except Exception as e:
-        return None, f"Error loading credentials: {str(e)}"
-
-    if not client_id or not client_secret:
-        return None, "Missing API credentials (CLIENT_ID, CLIENT_SECRET)"
-
-    # Get OAuth token - use VALD security endpoint (no scope required)
-    token_url = "https://security.valdperformance.com/connect/token"
-    token_data = {
-        'grant_type': 'client_credentials',
-        'client_id': client_id,
-        'client_secret': client_secret,
-    }
-
-    try:
-        token_response = requests.post(token_url, data=token_data, timeout=30)
-        if token_response.status_code != 200:
-            return None, f"Token error {token_response.status_code}: {token_response.text[:200]}"
-        token = token_response.json().get('access_token')
-    except Exception as e:
-        return None, f"Token request failed: {str(e)}"
-
-    headers = {'Authorization': f'Bearer {token}'}
-
-    # API base URLs per device (valdR pattern)
-    api_bases = {
-        'forcedecks': f'https://prd-{region}-api-extforcedecks.valdperformance.com/api',
-        'forceframe': f'https://prd-{region}-api-externalforceframe.valdperformance.com/api',
-        'nordbord': f'https://prd-{region}-api-externalnordbord.valdperformance.com/api'
-    }
-
-    if device not in api_bases:
-        return None, f"Unknown device: {device}"
-
-    api_base = api_bases[device]
-
-    # Step 1: Get all athletes
-    if progress_callback:
-        progress_callback("Fetching athlete list...")
-
-    try:
-        athletes_url = f"{api_base}/athletes"
-        athletes_response = requests.get(athletes_url, headers=headers, timeout=60)
-        if athletes_response.status_code != 200:
-            return None, f"Failed to get athletes: {athletes_response.status_code}"
-        athletes = athletes_response.json()
-    except Exception as e:
-        return None, f"Failed to fetch athletes: {str(e)}"
-
-    if not athletes:
-        return None, "No athletes found"
-
-    # Step 2: Get all tests for each athlete
-    all_tests = []
-    total_athletes = len(athletes)
-
-    for i, athlete in enumerate(athletes):
-        athlete_id = athlete.get('id')
-        athlete_name = f"{athlete.get('firstName', '')} {athlete.get('lastName', '')}".strip()
-
-        if progress_callback:
-            progress_callback(f"Fetching tests for athlete {i+1}/{total_athletes}: {athlete_name}")
-
-        try:
-            tests_url = f"{api_base}/athletes/{athlete_id}/tests"
-            tests_response = requests.get(tests_url, headers=headers, timeout=30)
-
-            if tests_response.status_code == 200:
-                tests = tests_response.json()
-                for test in tests:
-                    test['athlete_name'] = athlete_name
-                    test['athlete_id'] = athlete_id
-                    test['full_name'] = athlete_name
-                all_tests.extend(tests)
-            elif tests_response.status_code == 404:
-                continue  # No tests for this athlete
-        except Exception:
-            continue  # Skip failed athletes
-
-        # Polite delay to avoid rate limiting (like valdR)
-        time.sleep(0.3)
-
-    if not all_tests:
-        return pd.DataFrame(), "No tests found for any athletes"
-
-    df = pd.DataFrame(all_tests)
-    return df, None
-
-
 # ============================================================================
-# DATA LOADING WITH UPLOAD & REFRESH SUPPORT
+# DATA LOADING (automated sync via GitHub Actions)
 # ============================================================================
-
-# Initialize session state for uploaded data
-if 'uploaded_data' not in st.session_state:
-    st.session_state.uploaded_data = None
-if 'data_source' not in st.session_state:
-    st.session_state.data_source = 'local'
-
-# Data management section in sidebar (before filters)
-with st.sidebar.expander("📁 Data Management", expanded=False):
-    # File uploader for Streamlit Cloud
-    uploaded_file = st.file_uploader(
-        "Upload CSV Data",
-        type=['csv'],
-        help="Upload your VALD ForceDecks CSV export",
-        key="data_uploader"
-    )
-
-    if uploaded_file is not None:
-        try:
-            st.session_state.uploaded_data = pd.read_csv(uploaded_file)
-            if 'recordedDateUtc' in st.session_state.uploaded_data.columns:
-                st.session_state.uploaded_data['recordedDateUtc'] = pd.to_datetime(
-                    st.session_state.uploaded_data['recordedDateUtc']
-                )
-            st.session_state.data_source = 'uploaded'
-            st.success(f"✅ Loaded {len(st.session_state.uploaded_data)} records")
-        except Exception as e:
-            st.error(f"Error loading file: {str(e)}")
-
-    # Refresh button to clear cache
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("🔄 Refresh", help="Clear cache and reload data", use_container_width=True):
-            st.cache_data.clear()
-            st.session_state.uploaded_data = None
-            st.session_state.data_source = 'local'
-            st.rerun()
-
-    with col2:
-        if st.button("🗑️ Clear", help="Clear uploaded data", use_container_width=True):
-            st.session_state.uploaded_data = None
-            st.session_state.data_source = 'local'
-            st.rerun()
-
-    # Show current data source
-    if st.session_state.data_source == 'uploaded':
-        st.info("📤 Using uploaded data")
-    elif st.session_state.data_source == 'api':
-        st.info("🌐 Using live API data")
-    else:
-        st.info("💾 Using local data")
-
-    # Live API Refresh section
-    st.markdown("---")
-    st.markdown("**🌐 Live API Refresh**")
-
-    api_device = st.selectbox(
-        "Device:",
-        ["ForceDecks", "ForceFrame", "NordBord"],
-        key="api_device_select"
-    )
-
-    if st.button("🔄 Fetch from API", help="Pull fresh data from VALD API and merge with historical data", use_container_width=True):
-        device_map = {"ForceDecks": "forcedecks", "ForceFrame": "forceframe", "NordBord": "nordbord"}
-        device_key = device_map[api_device]
-
-        with st.spinner(f"Fetching {api_device} data from API..."):
-            df_api, error = fetch_live_data_from_api(device_key)
-
-            if error:
-                st.error(f"API Error: {error}")
-            elif df_api is not None and not df_api.empty:
-                # Load existing historical data (use relative paths for cloud compatibility)
-                script_dir = os.path.dirname(os.path.abspath(__file__))
-                csv_path = os.path.join(script_dir, 'data', f'{device_key}_allsports_with_athletes.csv')
-
-                existing_df = None
-                if os.path.exists(csv_path):
-                    existing_df = pd.read_csv(csv_path, low_memory=False)
-
-                new_count = len(df_api)
-
-                if existing_df is not None and not existing_df.empty:
-                    # Merge: keep all existing, add new records (avoid duplicates by testId)
-                    if 'testId' in df_api.columns and 'testId' in existing_df.columns:
-                        existing_ids = set(existing_df['testId'].astype(str))
-                        new_records = df_api[~df_api['testId'].astype(str).isin(existing_ids)]
-                        new_count = len(new_records)
-
-                        if not new_records.empty:
-                            # Add athlete_sport column to new records if not present
-                            if 'athlete_sport' not in new_records.columns and 'athlete_sport' in existing_df.columns:
-                                # Try to get athlete_sport from existing data based on profileId
-                                if 'profileId' in new_records.columns:
-                                    sport_map = existing_df.groupby('profileId')['athlete_sport'].first().to_dict()
-                                    new_records['athlete_sport'] = new_records['profileId'].map(sport_map).fillna('Unknown')
-
-                            merged_df = pd.concat([existing_df, new_records], ignore_index=True)
-                        else:
-                            merged_df = existing_df
-                    else:
-                        merged_df = pd.concat([existing_df, df_api], ignore_index=True)
-                else:
-                    merged_df = df_api
-
-                # Save merged data to CSV (note: on Streamlit Cloud, this is ephemeral storage)
-                try:
-                    merged_df.to_csv(csv_path, index=False)
-                    st.success(f"✅ Added {new_count} new records! Total: {len(merged_df)} records saved.")
-                except Exception as e:
-                    st.warning(f"Data loaded but save failed: {e}")
-
-                # Store in session state based on device
-                if device_key == 'forcedecks':
-                    st.session_state.uploaded_data = merged_df
-                    st.session_state.data_source = 'api'
-                st.cache_data.clear()
-                st.rerun()
-            else:
-                st.warning("No data returned from API")
-
-    # Sync to Private GitHub Repo
-    st.markdown("---")
-    st.markdown("**☁️ Sync to GitHub**")
-    st.caption("Save data to private repo for persistence")
-
-    if GITHUB_SYNC_AVAILABLE:
-        sync_device = st.selectbox(
-            "Device to sync:",
-            ["ForceDecks", "ForceFrame", "NordBord"],
-            key="sync_device_select"
-        )
-
-        if st.button("☁️ Refresh & Save to GitHub", help="Fetch from API and save to private GitHub repo", use_container_width=True):
-            device_map = {"ForceDecks": "forcedecks", "ForceFrame": "forceframe", "NordBord": "nordbord"}
-            device_key = device_map[sync_device]
-
-            with st.spinner(f"Fetching {sync_device} data and syncing to GitHub..."):
-                df_synced, success = refresh_and_save_data(device_key)
-
-                if success and not df_synced.empty:
-                    st.success(f"✅ Synced {len(df_synced)} records to GitHub!")
-                    st.cache_data.clear()
-                    st.rerun()
-                elif not df_synced.empty:
-                    st.warning("Data fetched but GitHub sync failed. Check secrets.")
-                else:
-                    st.error("Failed to fetch data from API. Check VALD credentials.")
-    else:
-        st.info("GitHub sync requires data_loader with push_to_github_repo function")
-
-    # Historical Refresh section - fetches ALL data (no date limit)
-    st.markdown("---")
-    st.markdown("**📜 Full Historical Refresh**")
-    st.caption("Fetches ALL test data per athlete (bypasses 35-day limit)")
-
-    hist_device = st.selectbox(
-        "Device:",
-        ["ForceDecks", "ForceFrame", "NordBord"],
-        key="hist_device_select"
-    )
-
-    if st.button("📜 Full Historical Refresh", help="Pull ALL historical data from VALD API (takes longer)", use_container_width=True):
-        device_map = {"ForceDecks": "forcedecks", "ForceFrame": "forceframe", "NordBord": "nordbord"}
-        device_key = device_map[hist_device]
-
-        progress_placeholder = st.empty()
-        status_placeholder = st.empty()
-
-        def update_progress(message):
-            status_placeholder.text(message)
-
-        with st.spinner(f"Fetching ALL {hist_device} historical data..."):
-            update_progress("Starting historical data fetch...")
-            df_hist, error = fetch_historical_data_from_api(device_key, progress_callback=update_progress)
-
-            if error:
-                st.error(f"Historical Fetch Error: {error}")
-            elif df_hist is not None and not df_hist.empty:
-                # Save to CSV (replaces existing data with fresh download)
-                script_dir = os.path.dirname(os.path.abspath(__file__))
-                csv_path = os.path.join(script_dir, 'data', f'{device_key}_allsports_with_athletes.csv')
-
-                try:
-                    df_hist.to_csv(csv_path, index=False)
-                    st.success(f"✅ Historical refresh complete! {len(df_hist)} total records saved.")
-
-                    # Get date range if available
-                    date_col = 'recordedDateUtc' if 'recordedDateUtc' in df_hist.columns else 'testDateUtc' if 'testDateUtc' in df_hist.columns else None
-                    if date_col:
-                        df_hist[date_col] = pd.to_datetime(df_hist[date_col])
-                        min_date = df_hist[date_col].min()
-                        max_date = df_hist[date_col].max()
-                        st.info(f"📅 Date range: {min_date.strftime('%Y-%m-%d')} to {max_date.strftime('%Y-%m-%d')}")
-
-                    # Update session state
-                    if device_key == 'forcedecks':
-                        st.session_state.uploaded_data = df_hist
-                        st.session_state.data_source = 'api'
-                    st.cache_data.clear()
-                    st.rerun()
-                except Exception as e:
-                    st.warning(f"Data fetched but save failed: {e}")
-                    st.session_state.uploaded_data = df_hist
-                    st.session_state.data_source = 'api'
-            else:
-                st.warning("No historical data returned")
-
-        progress_placeholder.empty()
-        status_placeholder.empty()
-
-# Load data based on source
 with st.spinner("Loading performance data..."):
-    if st.session_state.uploaded_data is not None:
-        df = st.session_state.uploaded_data
-    else:
-        df = load_vald_data('forcedecks')
+    df = load_vald_data('forcedecks')
 
 # Load ForceFrame and NordBord data (uses data_loader with API fallback)
 @st.cache_data(ttl=3600)
@@ -5938,10 +5503,15 @@ with tabs[1]:  # Reports
 
         if available_sports or selected_report_sport:
 
-            # Report type tabs - Strength Diagnostics (with Canvas/Classic/Group V2/Individual), Shooting, Throws, and Benchmark Settings
-            # Note: Group v2 and Individual moved inside Strength Diagnostics tab, Group v3 hidden
-            # Use selectbox + session state for persistence (st.tabs resets on filter changes)
-            report_tabs = st.tabs(["💪 Strength Diagnostics", "🎯 Shooting Balance", "🥏 Throws", "🏋️ Weightlifting", "⚙️ Benchmark Settings"])
+            # Report section selector - segmented_control persists via key (st.tabs resets on widget interaction)
+            report_tab_options = ["💪 Strength", "🎯 Shooting", "🥏 Throws", "🏋️ Weightlifting", "⚙️ Settings"]
+            selected_report_tab = st.segmented_control(
+                "Report Section",
+                options=report_tab_options,
+                default=report_tab_options[0],
+                key="report_tab_selector",
+                label_visibility="collapsed"
+            )
 
             # Render benchmark legend
             render_benchmark_legend()
@@ -6036,7 +5606,7 @@ with tabs[1]:  # Reports
                     if 'athlete_sport' not in sport_dynamo.columns:
                         sport_dynamo['athlete_sport'] = sport_dynamo['Name'].map(athlete_sport_map)
 
-            with report_tabs[0]:  # Strength Diagnostics
+            if selected_report_tab == "💪 Strength":
                 # View toggle - Canvas vs Classic vs Group V2 vs Individual layout
                 view_tabs = st.tabs(["📊 S&C Canvas (12 Tests)", "📋 Classic Layout", "👥 Group V2 (Summary)", "🏃 Individual"])
 
@@ -6276,7 +5846,7 @@ with tabs[1]:  # Reports
                     else:
                         st.info("No athletes found for the selected sport")
 
-            with report_tabs[1]:  # Shooting Balance
+            elif selected_report_tab == "🎯 Shooting":
                 # Shooting Balance Report - 10m Pistol
                 # Note: Uses original df, not filtered_df, so shooting athletes show regardless of sport filter
                 st.markdown("### 🎯 10m Pistol - Balance Analysis")
@@ -6344,7 +5914,7 @@ with tabs[1]:  # Reports
                                 if len(available_sports) > 20:
                                     st.write(f"... and {len(available_sports) - 20} more")
 
-            with report_tabs[2]:  # Throws
+            elif selected_report_tab == "🥏 Throws":
                 # Throws Report - Athletics throws analysis using ThrowsTrainingModule
                 st.markdown("### 🥏 Throws Analysis")
                 st.caption("Shot Put, Discus, Javelin, and Hammer performance tracking")
@@ -6408,7 +5978,7 @@ with tabs[1]:  # Reports
                 else:
                     st.info("No throws athletes found. Looking for Athletics athletes or those with 'Throw', 'Shot', 'Discus', 'Javelin', or 'Hammer' in their sport.")
 
-            with report_tabs[3]:  # Weightlifting
+            elif selected_report_tab == "🏋️ Weightlifting":
                 st.markdown("### 🏋️ Weightlifting Diagnostics")
                 st.caption("Physical diagnostics summary for Weightlifting athletes")
 
@@ -6486,7 +6056,7 @@ with tabs[1]:  # Reports
                 else:
                     st.info("No Weightlifting athletes found. Looking for athletes with 'Weightlifting' in their sport.")
 
-            with report_tabs[4]:  # Benchmark Settings
+            elif selected_report_tab == "⚙️ Settings":
                 # Benchmark Settings - S&C staff can edit VALD norms
                 try:
                     from dashboard.utils.benchmark_database import render_benchmark_editor

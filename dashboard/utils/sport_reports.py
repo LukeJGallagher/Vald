@@ -967,7 +967,7 @@ def create_group_report(df: pd.DataFrame,
         metric_col = get_metric_column(sport_df, 'rsi')
         if metric_col:
             # RSHIP = 10:5 Repeat Single Hop In Place
-            hop_df = sport_df[sport_df['testType'].str.contains('RSHIP|DJ|SLDJ|Hop|Drop', case=False, na=False)]
+            hop_df = sport_df[sport_df['testType'].isin(['HJ', 'SLHJ', 'RSHIP', 'RSKIP', 'RSAIP'])]
             # Apply RSI unit conversion if needed
             hop_df = apply_metric_conversion(hop_df, 'rsi', metric_col)
             if not hop_df.empty and SNC_CHARTS_AVAILABLE:
@@ -1877,7 +1877,7 @@ def create_group_report(df: pd.DataFrame,
                 # 10:5 Hop RSI Trend
                 metric_col = get_metric_column(sport_df, 'rsi')
                 if metric_col:
-                    hop_df = sport_df[sport_df['testType'].str.contains('RSHIP|DJ|SLDJ|Hop|Drop', case=False, na=False)]
+                    hop_df = sport_df[sport_df['testType'].isin(['HJ', 'SLHJ', 'RSHIP', 'RSKIP', 'RSAIP'])]
                     # Apply RSI unit conversion if needed
                     hop_df = apply_metric_conversion(hop_df, 'rsi', metric_col)
                     if not hop_df.empty:
@@ -2037,7 +2037,7 @@ def create_individual_report(df: pd.DataFrame,
     with col1:
         metric_col = get_metric_column(athlete_df, 'rsi')
         if metric_col:
-            hop_df = athlete_df[athlete_df['testType'].str.contains('Hop|DJ|Drop|CMJ', case=False, na=False)]
+            hop_df = athlete_df[athlete_df['testType'].isin(['HJ', 'SLHJ', 'RSHIP', 'RSKIP', 'RSAIP'])]
             # Apply RSI unit conversion if needed
             hop_df = apply_metric_conversion(hop_df, 'rsi', metric_col)
             if not hop_df.empty:
@@ -2483,7 +2483,7 @@ def create_group_report_v2(df: pd.DataFrame,
         # 10:5 Hop - RSI
         rsi_col = get_metric_column(athlete_data, 'rsi')
         if rsi_col:
-            hop_df = athlete_data[athlete_data['testType'].str.contains('RSHIP|DJ|SLDJ|Hop|Drop', case=False, na=False)]
+            hop_df = athlete_data[athlete_data['testType'].isin(['HJ', 'SLHJ', 'RSHIP', 'RSKIP', 'RSAIP'])]
             if not hop_df.empty:
                 val = hop_df[rsi_col].dropna().iloc[-1] if not hop_df[rsi_col].dropna().empty else None
                 if val is not None:
@@ -3424,7 +3424,7 @@ def create_group_report_v3(df: pd.DataFrame,
             # RSI
             rsi_col = get_metric_column(athlete_data, 'rsi')
             if rsi_col:
-                hop_df = athlete_data[athlete_data['testType'].str.contains('Hop|DJ|Drop|CMJ', case=False, na=False)]
+                hop_df = athlete_data[athlete_data['testType'].isin(['HJ', 'SLHJ', 'RSHIP', 'RSKIP', 'RSAIP'])]
                 if not hop_df.empty and not hop_df[rsi_col].dropna().empty:
                     rsi_val = hop_df[rsi_col].dropna().iloc[-1]
                     # Apply RSI conversion if value is too high (likely *100)
@@ -3516,7 +3516,7 @@ def create_group_report_v3(df: pd.DataFrame,
         rsi_col = get_metric_column(sport_df, 'rsi')
         if rsi_col:
             # RSHIP = Repeat Single Hop In Place (10-5), DJ = Drop Jump
-            hop_df = sport_df[sport_df['testType'].str.contains('RSHIP|DJ|SLDJ|Hop|Drop', case=False, na=False)]
+            hop_df = sport_df[sport_df['testType'].isin(['HJ', 'SLHJ', 'RSHIP', 'RSKIP', 'RSAIP'])]
             # Apply RSI unit conversion if needed
             hop_df = apply_metric_conversion(hop_df, 'rsi', rsi_col)
             if not hop_df.empty:

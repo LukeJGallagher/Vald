@@ -2236,6 +2236,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                         if gender != 'All' and 'athlete_sex' in all_imtp.columns:
                             all_imtp = all_imtp[all_imtp['athlete_sex'] == gender]
 
+                        metric_col = resolve_metric_column(all_imtp, TEST_CONFIG['IMTP']['metric1'])
                         fig = create_individual_line_chart(
                             all_imtp,
                             selected_athletes,
@@ -2326,6 +2327,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                         if gender != 'All' and 'athlete_sex' in all_cmj.columns:
                             all_cmj = all_cmj[all_cmj['athlete_sex'] == gender]
 
+                        metric_col = resolve_metric_column(all_cmj, TEST_CONFIG['CMJ']['metric1'])
                         fig = create_individual_line_chart(
                             all_cmj,
                             selected_athletes,
