@@ -37,19 +37,27 @@ OUTPUT_DIR = Path(r"c:\Users\l.gallagher\OneDrive - Team Saudi\Documents\Perform
 # Group to sport mapping - Maps VALD group names to sport categories
 # IMPORTANT: Include exact VALD group names (check API for current groups)
 GROUP_TO_CATEGORY = {
-    # Fencing (all 3 weapons)
-    'Fencing - Epee ': 'Fencing', 'Fencing - Foil': 'Fencing', 'Fencing - Sabre': 'Fencing',
-    'Epee': 'Fencing', 'Epee ': 'Fencing', 'Foil': 'Fencing', 'Sabre': 'Fencing',
-    # Athletics (all disciplines)
-    'Athletics - Horizontal Jumps': 'Athletics', 'Athletics - Middle distance': 'Athletics',
-    'Athletics - Multi events': 'Athletics', 'Athletics - Short Sprints': 'Athletics',
-    'Athletics - Throwers': 'Athletics', 'Athletics - TBC': 'Athletics',
-    'Short Sprints': 'Athletics', 'Throwers': 'Athletics', 'Decathlon': 'Athletics',
-    # Wrestling (all styles)
-    'Freestyle': 'Wrestling', 'Greco Roman': 'Wrestling', 'GS': 'Wrestling', 'RUS': 'Wrestling',
-    # Taekwondo (all categories + TBC)
-    'TKD Junior Female': 'Taekwondo', 'TKD Junior Male': 'Taekwondo',
-    'TKD Senior Female': 'Taekwondo', 'TKD Senior Male': 'Taekwondo', 'TKD TBC': 'Taekwondo',
+    # Fencing (split by weapon)
+    'Fencing - Epee ': 'Fencing - Epee', 'Epee': 'Fencing - Epee', 'Epee ': 'Fencing - Epee',
+    'Fencing - Epee - Mens - 2025': 'Fencing - Epee', 'Fencing - Epee - Womens - 2025': 'Fencing - Epee',
+    'Fencing - Foil': 'Fencing - Foil', 'Foil': 'Fencing - Foil',
+    'Fencing - Foil - Mens - 2025': 'Fencing - Foil', 'Fencing - Foil - Womens - 2025': 'Fencing - Foil',
+    'Fencing - Sabre': 'Fencing - Sabre', 'Sabre': 'Fencing - Sabre',
+    'Fencing - Sabre - Mens - 2025': 'Fencing - Sabre', 'Fencing - Sabre - Womens - 2025': 'Fencing - Sabre',
+    'Fencing - SOTC - 2026': 'Fencing - SOTC',
+    # Athletics (split by discipline)
+    'Athletics - Horizontal Jumps': 'Athletics - Jumps', 'Athletics - Middle distance': 'Athletics - Middle Distance',
+    'Athletics - Multi events': 'Athletics - Multi Events', 'Athletics - Short Sprints': 'Athletics - Sprints',
+    'Athletics - Throwers': 'Athletics - Throws', 'Athletics - TBC': 'Athletics',
+    'Short Sprints': 'Athletics - Sprints', 'Throwers': 'Athletics - Throws', 'Decathlon': 'Athletics - Multi Events',
+    # Wrestling (split by style)
+    'Freestyle': 'Wrestling - Freestyle', 'GS': 'Wrestling - Freestyle', 'RUS': 'Wrestling - Freestyle',
+    'Greco Roman': 'Wrestling - Greco Roman',
+    'Wrestling - Freestyle': 'Wrestling - Freestyle', 'Wrestling - Greco Roman': 'Wrestling - Greco Roman',
+    # Taekwondo (split by level)
+    'TKD Junior Female': 'Taekwondo - Junior', 'TKD Junior Male': 'Taekwondo - Junior',
+    'TKD Senior Female': 'Taekwondo - Senior', 'TKD Senior Male': 'Taekwondo - Senior',
+    'TKD TBC': 'Taekwondo',
     # Swimming
     'SOTC Swimming': 'Swimming', 'Swimming TBC': 'Swimming',
     # Para sports
@@ -61,7 +69,9 @@ GROUP_TO_CATEGORY = {
     'Jiu-Jitsu': 'Jiu-Jitsu', 'Jiu Jitsu TBC': 'Jiu-Jitsu',
     # Other sports
     'Weightlifting': 'Weightlifting', 'Weightlifting TBC': 'Weightlifting',
-    'Rowing - Classic': 'Rowing', 'Rowing - Coastal': 'Rowing', 'Coastal': 'Rowing',
+    'Weightlifting 2026': 'Weightlifting',
+    # Rowing (split by type)
+    'Rowing - Classic': 'Rowing - Classic', 'Rowing - Coastal': 'Rowing - Coastal', 'Coastal': 'Rowing - Coastal',
     'Pistol 10m': 'Shooting', 'Shooting TBC': 'Shooting',
     'Equestrian TBC': 'Equestrian', 'Snow Sports': 'Snow Sports',
     # Skip groups (return None - these become "Unknown")
@@ -702,9 +712,15 @@ def main():
             for sport, count in test_sports.head(15).items():
                 print(f"      {sport}: {count}")
 
+    # --- ForceFrame, NordBord, DynaMo: wrap each in try/except so one failure doesn't block others ---
+
+    forceframe_tests = []
     print(f"\n[6] Fetching ForceFrame data...")
-    forceframe_tests = fetch_forceframe(token, region, tenant_id, from_date=from_date)
-    print(f"    Total ForceFrame tests: {len(forceframe_tests)}")
+    try:
+        forceframe_tests = fetch_forceframe(token, region, tenant_id, from_date=from_date)
+        print(f"    Total ForceFrame tests: {len(forceframe_tests)}")
+    except Exception as e:
+        print(f"    ForceFrame fetch FAILED (continuing): {e}")
 
     if forceframe_tests:
         df = pd.DataFrame(forceframe_tests)
@@ -721,9 +737,13 @@ def main():
         df.to_csv(output_file, index=False)
         print(f"    Saved: {output_file}")
 
+    nordbord_tests = []
     print(f"\n[7] Fetching NordBord data...")
-    nordbord_tests = fetch_nordbord(token, region, tenant_id, from_date=from_date)
-    print(f"    Total NordBord tests: {len(nordbord_tests)}")
+    try:
+        nordbord_tests = fetch_nordbord(token, region, tenant_id, from_date=from_date)
+        print(f"    Total NordBord tests: {len(nordbord_tests)}")
+    except Exception as e:
+        print(f"    NordBord fetch FAILED (continuing): {e}")
 
     if nordbord_tests:
         df = pd.DataFrame(nordbord_tests)
@@ -740,9 +760,13 @@ def main():
         df.to_csv(output_file, index=False)
         print(f"    Saved: {output_file}")
 
+    dynamo_tests = []
     print(f"\n[8] Fetching DynaMo data...")
-    dynamo_tests = fetch_dynamo(token, region, tenant_id, from_date=from_date)
-    print(f"    Total DynaMo tests: {len(dynamo_tests)}")
+    try:
+        dynamo_tests = fetch_dynamo(token, region, tenant_id, from_date=from_date)
+        print(f"    Total DynaMo tests: {len(dynamo_tests)}")
+    except Exception as e:
+        print(f"    DynaMo fetch FAILED (continuing): {e}")
 
     if dynamo_tests:
         df = pd.DataFrame(dynamo_tests)

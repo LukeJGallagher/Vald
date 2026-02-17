@@ -17,42 +17,44 @@ import time
 # ============================================================================
 
 GROUP_TO_CATEGORY = {
-    # Fencing (3 groups)
-    'Epee': 'Fencing', 'Epee ': 'Fencing', 'Foil': 'Fencing', 'Sabre': 'Fencing',
-    # Athletics (5 groups)
-    'Athletics - Horizontal Jumps': 'Athletics', 'Athletics - Middle distance': 'Athletics',
-    'Short Sprints': 'Athletics', 'Throwers': 'Athletics', 'Decathlon': 'Athletics',
-    # Wrestling (4 groups)
-    'Freestyle': 'Wrestling', 'Greco Roman': 'Wrestling', 'GS': 'Wrestling', 'RUS': 'Wrestling',
-    # Taekwondo (4 groups)
-    'TKD Junior Female': 'Taekwondo', 'TKD Junior Male': 'Taekwondo',
-    'TKD Senior Female': 'Taekwondo', 'TKD Senior Male': 'Taekwondo',
+    # Fencing (split by weapon)
+    'Fencing - Epee ': 'Fencing - Epee', 'Epee': 'Fencing - Epee', 'Epee ': 'Fencing - Epee',
+    'Fencing - Epee - Mens - 2025': 'Fencing - Epee', 'Fencing - Epee - Womens - 2025': 'Fencing - Epee',
+    'Fencing - Foil': 'Fencing - Foil', 'Foil': 'Fencing - Foil',
+    'Fencing - Foil - Mens - 2025': 'Fencing - Foil', 'Fencing - Foil - Womens - 2025': 'Fencing - Foil',
+    'Fencing - Sabre': 'Fencing - Sabre', 'Sabre': 'Fencing - Sabre',
+    'Fencing - Sabre - Mens - 2025': 'Fencing - Sabre', 'Fencing - Sabre - Womens - 2025': 'Fencing - Sabre',
+    'Fencing - SOTC - 2026': 'Fencing - SOTC',
+    # Athletics (split by discipline)
+    'Athletics - Horizontal Jumps': 'Athletics - Jumps', 'Athletics - Middle distance': 'Athletics - Middle Distance',
+    'Athletics - Multi events': 'Athletics - Multi Events', 'Athletics - Short Sprints': 'Athletics - Sprints',
+    'Athletics - Throwers': 'Athletics - Throws', 'Athletics - TBC': 'Athletics',
+    'Short Sprints': 'Athletics - Sprints', 'Throwers': 'Athletics - Throws', 'Decathlon': 'Athletics - Multi Events',
+    # Wrestling (split by style)
+    'Freestyle': 'Wrestling - Freestyle', 'GS': 'Wrestling - Freestyle', 'RUS': 'Wrestling - Freestyle',
+    'Greco Roman': 'Wrestling - Greco Roman',
+    'Wrestling - Freestyle': 'Wrestling - Freestyle', 'Wrestling - Greco Roman': 'Wrestling - Greco Roman',
+    # Taekwondo (split by level)
+    'TKD Junior Female': 'Taekwondo - Junior', 'TKD Junior Male': 'Taekwondo - Junior',
+    'TKD Senior Female': 'Taekwondo - Senior', 'TKD Senior Male': 'Taekwondo - Senior',
+    'TKD TBC': 'Taekwondo',
     # Swimming
-    'SOTC Swimming': 'Swimming',
+    'SOTC Swimming': 'Swimming', 'Swimming TBC': 'Swimming',
     # Para Sports
-    'Para Swimming': 'Para Swimming', 'Para Sprints': 'Para Athletics',
+    'Para Swimming': 'Para Swimming', 'Para Sprints': 'Para Athletics', 'Para TBC': 'Para Athletics',
     'Para TKD': 'Para Taekwondo', 'Para Cycling': 'Para Cycling', 'Wheel Chair': 'Wheelchair Sports',
-    # Individual Sports (group = category)
-    'Karate': 'Karate', 'Karate TBC': 'Karate', 'Coastal': 'Rowing', 'Pistol 10m': 'Shooting',
-    'Snow Sports': 'Snow Sports', 'Equestrian': 'Equestrian', 'Equestrian TBC': 'Equestrian',
+    # Combat sports
+    'Karate': 'Karate', 'Karate TBC': 'Karate',
     'Judo': 'Judo', 'Judo TBC': 'Judo',
     'Jiu-Jitsu': 'Jiu-Jitsu', 'Jiu Jitsu TBC': 'Jiu-Jitsu',
+    # Other sports
     'Weightlifting': 'Weightlifting', 'Weightlifting TBC': 'Weightlifting',
-    # Rowing sub-groups
-    'Rowing - Classic': 'Rowing', 'Rowing - Coastal': 'Rowing',
-    # Athletics sub-groups with TBC
-    'Athletics - Multi events': 'Athletics', 'Athletics - Short Sprints': 'Athletics',
-    'Athletics - Throwers': 'Athletics', 'Athletics - TBC': 'Athletics',
-    # Fencing with full names
-    'Fencing - Epee ': 'Fencing', 'Fencing - Foil': 'Fencing', 'Fencing - Sabre': 'Fencing',
-    # TKD TBC
-    'TKD TBC': 'Taekwondo',
-    # Para TBC
-    'Para TBC': 'Para Athletics',
-    # Shooting TBC
-    'Shooting TBC': 'Shooting',
-    # Swimming TBC
-    'Swimming TBC': 'Swimming',
+    'Weightlifting 2026': 'Weightlifting',
+    # Rowing (split by type)
+    'Rowing - Classic': 'Rowing - Classic', 'Rowing - Coastal': 'Rowing - Coastal', 'Coastal': 'Rowing - Coastal',
+    'Pistol 10m': 'Shooting', 'Shooting TBC': 'Shooting',
+    'Equestrian': 'Equestrian', 'Equestrian TBC': 'Equestrian',
+    'Snow Sports': 'Snow Sports',
     # Excluded groups
     'ARCHIVED': None, 'Staff': None, 'TBC': None, 'All Athletes': None,
 }
