@@ -2249,6 +2249,12 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
     # Update session state
     st.session_state.active_snc_tab = selected_test_tab
 
+    # Data summary bar
+    fd_count = len(forcedecks_df) if forcedecks_df is not None else 0
+    test_types = forcedecks_df['testType'].unique().tolist() if fd_count > 0 and 'testType' in forcedecks_df.columns else []
+    cols_count = len(forcedecks_df.columns) if fd_count > 0 else 0
+    st.caption(f"Data: {fd_count} tests | {cols_count} columns | {len(test_types)} test types")
+
     st.markdown("---")
 
     # =====================
@@ -2261,10 +2267,13 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
         imtp_df = forcedecks_df[forcedecks_df['testType'].str.contains('IMTP|ISOT|Isometric', case=False, na=False)].copy() if 'testType' in forcedecks_df.columns else pd.DataFrame()
 
         if imtp_df.empty:
-            st.warning("No IMTP test data available.")
+            st.warning(f"No IMTP test data available. Input data: {len(forcedecks_df)} rows, testType column: {'testType' in forcedecks_df.columns}")
         else:
             # Filters
             filtered_df, sport, gender = render_filters(imtp_df, "imtp")
+
+            if filtered_df.empty:
+                st.warning(f"No IMTP data after filtering (Sport: {sport}, Gender: {gender}). IMTP rows before filter: {len(imtp_df)}")
 
             # Resolve metric column first (needed for benchmark lookup)
             metric_col = resolve_metric_column(filtered_df, TEST_CONFIG['IMTP']['metric1'])
@@ -2338,9 +2347,12 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
         cmj_df = forcedecks_df[forcedecks_df['testType'].str.contains('CMJ|Counter', case=False, na=False)].copy() if 'testType' in forcedecks_df.columns else pd.DataFrame()
 
         if cmj_df.empty:
-            st.warning("No CMJ test data available.")
+            st.warning(f"No CMJ test data available. Input data: {len(forcedecks_df)} rows, testType column: {'testType' in forcedecks_df.columns}")
         else:
             filtered_df, sport, gender = render_filters(cmj_df, "cmj")
+
+            if filtered_df.empty:
+                st.warning(f"No CMJ data after filtering (Sport: {sport}, Gender: {gender}). CMJ rows before filter: {len(cmj_df)}")
 
             # Resolve metric column first (needed for benchmark lookup)
             metric_col = resolve_metric_column(filtered_df, TEST_CONFIG['CMJ']['metric1'])

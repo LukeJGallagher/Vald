@@ -5626,6 +5626,10 @@ with tabs[1]:  # Reports
                 label_visibility="collapsed"
             )
 
+            # Guard against None return from segmented_control (can happen with stale session state)
+            if selected_report_tab is None:
+                selected_report_tab = report_tab_options[0]
+
             # Render benchmark legend
             render_benchmark_legend()
 
