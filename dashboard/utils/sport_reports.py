@@ -4258,7 +4258,7 @@ def create_shooting_group_report(df: pd.DataFrame, sport: str = "Shooting"):
     if 'recordedDateUtc' in qsb_df.columns:
         qsb_df['recordedDateUtc'] = pd.to_datetime(qsb_df['recordedDateUtc'], errors='coerce')
         # Filter out NaN dates before groupby
-        valid_dates = qsb_df[qsb_df['recordedDateUtc'].notna()]
+        valid_dates = qsb_df[qsb_df['recordedDateUtc'].notna() & qsb_df['Name'].notna()]
         if not valid_dates.empty:
             latest_idx = valid_dates.groupby('Name')['recordedDateUtc'].idxmax()
             latest_df = qsb_df.loc[latest_idx].copy()

@@ -905,10 +905,12 @@ def render_filters(df: pd.DataFrame, key_prefix: str = "snc") -> Tuple[pd.DataFr
             filtered_df['recordedDateUtc'] = filtered_df['recordedDateUtc'].dt.tz_localize(None)
 
         if selected_date == 'Most Recent':
-            # Get most recent test per athlete
+            # Get most recent test per athlete (drop NaN names/dates to avoid KeyError)
             if 'Name' in filtered_df.columns:
-                idx = filtered_df.groupby('Name')['recordedDateUtc'].idxmax()
-                filtered_df = filtered_df.loc[idx]
+                valid = filtered_df.dropna(subset=['Name', 'recordedDateUtc'])
+                if not valid.empty:
+                    idx = valid.groupby('Name')['recordedDateUtc'].idxmax()
+                    filtered_df = filtered_df.loc[idx]
         elif selected_date == 'Last 7 Days':
             cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=7)
             filtered_df = filtered_df[filtered_df['recordedDateUtc'] >= cutoff]
