@@ -271,7 +271,7 @@ def render_sport_icon_grid(available_sports: list, selected_sport: str = None, k
     if st.button(
         "🏅 All Sports" if all_selected else "📋 All Sports",
         key=f"{key_prefix}_all",
-        use_container_width=True,
+        width='stretch',
         type="primary" if all_selected else "secondary"
     ):
         st.session_state.selected_sport_icon = None
@@ -323,7 +323,7 @@ def render_sport_icon_grid(available_sports: list, selected_sport: str = None, k
                     f"{icon}\n{short_label}",
                     key=f"{key_prefix}_{category}",
                     type=btn_type,
-                    use_container_width=True
+                    width='stretch'
                 ):
                     st.session_state.selected_sport_icon = category
                     st.rerun()

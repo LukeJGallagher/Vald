@@ -2297,7 +2297,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                         'IMTP - Relative Peak Force'
                     )
                     if fig:
-                        st.plotly_chart(fig, use_container_width=True, key="imtp_group_bar")
+                        st.plotly_chart(fig, width='stretch', key="imtp_group_bar")
                 else:
                     st.warning(f"Peak Force metric not found in data. Available columns: {len(filtered_df.columns)}, rows: {len(filtered_df)}. Looking for: {TEST_CONFIG['IMTP']['metric1']}")
 
@@ -2333,7 +2333,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                             'IMTP - Individual Trends'
                         )
                         if fig:
-                            st.plotly_chart(fig, use_container_width=True, key="imtp_ind_line")
+                            st.plotly_chart(fig, width='stretch', key="imtp_ind_line")
                 else:
                     st.info("No athletes found in filtered data.")
 
@@ -2374,7 +2374,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                         'CMJ - Relative Peak Power'
                     )
                     if fig:
-                        st.plotly_chart(fig, use_container_width=True, key="cmj_group_bar")
+                        st.plotly_chart(fig, width='stretch', key="cmj_group_bar")
 
                     # Also show jump height if available
                     height_col = resolve_metric_column(filtered_df, TEST_CONFIG['CMJ']['metric2'])
@@ -2394,7 +2394,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                             'CMJ - Jump Height'
                         )
                         if fig2:
-                            st.plotly_chart(fig2, use_container_width=True, key="cmj_height_bar")
+                            st.plotly_chart(fig2, width='stretch', key="cmj_height_bar")
                 else:
                     st.warning(f"CMJ Power metric not found in data. Available columns: {len(filtered_df.columns)}, rows: {len(filtered_df)}. Looking for: {TEST_CONFIG['CMJ']['metric1']}")
 
@@ -2428,7 +2428,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                             'CMJ - Individual Trends'
                         )
                         if fig:
-                            st.plotly_chart(fig, use_container_width=True, key="cmj_ind_line")
+                            st.plotly_chart(fig, width='stretch', key="cmj_ind_line")
 
     # =====================
     # SL Tests Tab
@@ -2520,7 +2520,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                         f'{selected_sl_test} - {metric_name} (Left & Right)'
                     )
                     if fig:
-                        st.plotly_chart(fig, use_container_width=True, key="sl_group_bar")
+                        st.plotly_chart(fig, width='stretch', key="sl_group_bar")
 
                     # Asymmetry table
                     st.markdown("### Asymmetry Status")
@@ -2562,7 +2562,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                             f'{selected_sl_test} - Left vs Right Trends'
                         )
                         if fig:
-                            st.plotly_chart(fig, use_container_width=True, key="sl_ind_line")
+                            st.plotly_chart(fig, width='stretch', key="sl_ind_line")
 
     # =====================
     # NordBord Tab
@@ -2609,7 +2609,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                         'NordBord - Left vs Right Hamstring Force'
                     )
                     if fig:
-                        st.plotly_chart(fig, use_container_width=True, key="nordbord_group_bar")
+                        st.plotly_chart(fig, width='stretch', key="nordbord_group_bar")
 
                     # Asymmetry table
                     st.markdown("### Asymmetry Status")
@@ -2644,7 +2644,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                             'NordBord - Left vs Right Trends'
                         )
                         if fig:
-                            st.plotly_chart(fig, use_container_width=True, key="nordbord_ind_line")
+                            st.plotly_chart(fig, width='stretch', key="nordbord_ind_line")
 
     # =====================
     # 10:5 Hop Test Tab
@@ -2705,7 +2705,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                         '10:5 Hop Test - Reactive Strength Index'
                     )
                     if fig:
-                        st.plotly_chart(fig, use_container_width=True, key="hop_group_bar")
+                        st.plotly_chart(fig, width='stretch', key="hop_group_bar")
                 else:
                     st.warning("RSI metric not found in data.")
 
@@ -2736,7 +2736,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                             '10:5 Hop Test - Individual Trends'
                         )
                         if fig:
-                            st.plotly_chart(fig, use_container_width=True, key="hop_ind_line")
+                            st.plotly_chart(fig, width='stretch', key="hop_ind_line")
 
     # =====================
     # Quadrant Tests Tab (ForceFrame)
@@ -2829,7 +2829,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                                 fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor='lightgray', tickangle=45)
                                 fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
 
-                                st.plotly_chart(fig, use_container_width=True, key="quadrant_group_chart")
+                                st.plotly_chart(fig, width='stretch', key="quadrant_group_chart")
 
                                 # Summary table
                                 st.markdown("### Summary Table")
@@ -2898,7 +2898,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                                         fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
                                         fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
 
-                                        st.plotly_chart(fig, use_container_width=True, key="quadrant_ind_chart")
+                                        st.plotly_chart(fig, width='stretch', key="quadrant_ind_chart")
                                     else:
                                         st.info("Not enough data points to show progression.")
                             else:
@@ -3024,7 +3024,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                                 title='Hip Adduction - Left vs Right'
                             )
                             if fig:
-                                st.plotly_chart(fig, use_container_width=True, key="hip_add_group")
+                                st.plotly_chart(fig, width='stretch', key="hip_add_group")
                             else:
                                 st.info("No Adduction data to display.")
                         else:
@@ -3040,7 +3040,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                                 title='Hip Abduction - Left vs Right'
                             )
                             if fig:
-                                st.plotly_chart(fig, use_container_width=True, key="hip_abd_group")
+                                st.plotly_chart(fig, width='stretch', key="hip_abd_group")
                             else:
                                 st.info("No Abduction data to display.")
                         else:
@@ -3082,7 +3082,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                                 fig.for_each_trace(lambda t: t.update(
                                     text=[f"{v:.2f}" for v in t.x]
                                 ))
-                                st.plotly_chart(fig, use_container_width=True, key="hip_addabd_ratio_chart")
+                                st.plotly_chart(fig, width='stretch', key="hip_addabd_ratio_chart")
                         else:
                             st.info("Insufficient data for Add/Abd ratio calculation.")
 
@@ -3108,7 +3108,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                                 title='Hip Flexion - Left vs Right'
                             )
                             if fig:
-                                st.plotly_chart(fig, use_container_width=True, key="hip_flx_group")
+                                st.plotly_chart(fig, width='stretch', key="hip_flx_group")
                             else:
                                 st.info("No Flexion data to display.")
                         else:
@@ -3124,7 +3124,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                             title='Hip Extension - Left vs Right (ForceDecks SL Hip Thrust)'
                         )
                         if fig:
-                            st.plotly_chart(fig, use_container_width=True, key="hip_ext_group")
+                            st.plotly_chart(fig, width='stretch', key="hip_ext_group")
                         else:
                             st.info("Not enough Hip Extension data to chart.")
                     else:
@@ -3238,7 +3238,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                                 )
                                 fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
                                 fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
-                                st.plotly_chart(fig, use_container_width=True, key="hip_ext_ind")
+                                st.plotly_chart(fig, width='stretch', key="hip_ext_ind")
                         else:
                             # Standard ForceFrame bilateral metric
                             left_col = config['left']
@@ -3280,7 +3280,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                                     )
                                     fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
                                     fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
-                                    st.plotly_chart(fig, use_container_width=True, key="hip_ind_chart")
+                                    st.plotly_chart(fig, width='stretch', key="hip_ind_chart")
 
                                     # Asymmetry table for latest values
                                     if date_col in athlete_data.columns:
@@ -3374,7 +3374,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                             if ir_l in latest_sh.columns and ir_r in latest_sh.columns:
                                 fig = create_ranked_side_by_side_chart(latest_sh, ir_l, ir_r, 'Internal Rotation', unit_label, title='Shoulder IR - Left vs Right')
                                 if fig:
-                                    st.plotly_chart(fig, use_container_width=True, key="shoulder_ir_group")
+                                    st.plotly_chart(fig, width='stretch', key="shoulder_ir_group")
                                 else:
                                     st.info("No IR data to display.")
 
@@ -3383,7 +3383,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                             if er_l in latest_sh.columns and er_r in latest_sh.columns:
                                 fig = create_ranked_side_by_side_chart(latest_sh, er_l, er_r, 'External Rotation', unit_label, title='Shoulder ER - Left vs Right')
                                 if fig:
-                                    st.plotly_chart(fig, use_container_width=True, key="shoulder_er_group")
+                                    st.plotly_chart(fig, width='stretch', key="shoulder_er_group")
                                 else:
                                     st.info("No ER data to display.")
 
@@ -3402,7 +3402,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                             if not ratio_df.empty:
                                 fig = create_ranked_side_by_side_chart(ratio_df, 'IR/ER Left', 'IR/ER Right', 'IR/ER Ratio', 'ratio', title='Shoulder IR/ER Ratio - Left vs Right')
                                 if fig:
-                                    st.plotly_chart(fig, use_container_width=True, key="shoulder_ratio_chart")
+                                    st.plotly_chart(fig, width='stretch', key="shoulder_ratio_chart")
 
                         st.markdown("---")
 
@@ -3482,7 +3482,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                                             title=f'{selected_metric} - Left vs Right'
                                         )
                                         if fig:
-                                            st.plotly_chart(fig, use_container_width=True, key="shoulder_ind_chart")
+                                            st.plotly_chart(fig, width='stretch', key="shoulder_ind_chart")
 
                                     # Asymmetry table
                                     asym_table = create_asymmetry_table(latest, left_col, right_col, unit=unit_label)
@@ -3608,7 +3608,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                                 f'{selected_exercise} - Estimated 1RM Comparison'
                             )
                             if group_fig_rm:
-                                st.plotly_chart(group_fig_rm, use_container_width=True, key="strength_group_bar")
+                                st.plotly_chart(group_fig_rm, width='stretch', key="strength_group_bar")
                         else:
                             st.info("No estimated 1RM data available.")
 
@@ -3634,7 +3634,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                                     f'{selected_exercise} - 1RM Progression'
                                 )
                                 if individual_fig_rm:
-                                    st.plotly_chart(individual_fig_rm, use_container_width=True, key="strength_ind_line")
+                                    st.plotly_chart(individual_fig_rm, width='stretch', key="strength_ind_line")
 
                     if selected_view_rm == "📥 Export":
                         # Export tab
@@ -3730,7 +3730,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                                 'Broad Jump - Distance'
                             )
                             if fig:
-                                st.plotly_chart(fig, use_container_width=True, key="broad_jump_group_bar")
+                                st.plotly_chart(fig, width='stretch', key="broad_jump_group_bar")
 
                     if selected_view == "🏃 Individual View":
                         athletes = sorted(filtered_df['Name'].dropna().unique()) if 'Name' in filtered_df.columns else []
@@ -3755,7 +3755,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                                     'Broad Jump - Individual Trends'
                                 )
                                 if fig:
-                                    st.plotly_chart(fig, use_container_width=True, key="broad_jump_ind_line")
+                                    st.plotly_chart(fig, width='stretch', key="broad_jump_ind_line")
             except Exception as e:
                 st.warning(f"Could not load Broad Jump data: {e}")
         else:
@@ -3824,7 +3824,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                                     f'{selected_fitness_test} Results'
                                 )
                                 if fig:
-                                    st.plotly_chart(fig, use_container_width=True, key="fitness_group_bar")
+                                    st.plotly_chart(fig, width='stretch', key="fitness_group_bar")
 
                         if selected_view == "🏃 Individual View":
                             athletes = sorted(filtered_df['Name'].dropna().unique()) if 'Name' in filtered_df.columns else []
@@ -3849,7 +3849,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                                         f'{selected_fitness_test} - Individual Trends'
                                     )
                                     if fig:
-                                        st.plotly_chart(fig, use_container_width=True, key="fitness_ind_line")
+                                        st.plotly_chart(fig, width='stretch', key="fitness_ind_line")
                     else:
                         st.info(f"No {selected_fitness_test} data available.")
             except Exception as e:
@@ -3957,7 +3957,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                         f'Plyo Pushup - {metric_name}'
                     )
                     if fig:
-                        st.plotly_chart(fig, use_container_width=True, key="plyo_pushup_group_bar")
+                        st.plotly_chart(fig, width='stretch', key="plyo_pushup_group_bar")
                 else:
                     st.warning("Plyo Pushup metrics not found in data.")
                     # Show available columns for debugging
@@ -3994,7 +3994,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                             'Plyo Pushup - Individual Trends'
                         )
                         if fig:
-                            st.plotly_chart(fig, use_container_width=True, key="plyo_pushup_ind_line")
+                            st.plotly_chart(fig, width='stretch', key="plyo_pushup_ind_line")
                 else:
                     st.info("No athletes found in filtered data.")
 
@@ -4083,7 +4083,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                                 'DynaMo - Grip Strength'
                             )
                             if fig:
-                                st.plotly_chart(fig, use_container_width=True, key="dynamo_group_bar")
+                                st.plotly_chart(fig, width='stretch', key="dynamo_group_bar")
 
                         if selected_view == "🏃 Individual View":
                             athletes = sorted(filtered_df['Name'].dropna().unique()) if 'Name' in filtered_df.columns else []
@@ -4113,7 +4113,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                                         'DynaMo - Individual Trends'
                                     )
                                     if fig:
-                                        st.plotly_chart(fig, use_container_width=True, key="dynamo_ind_line")
+                                        st.plotly_chart(fig, width='stretch', key="dynamo_ind_line")
                             else:
                                 st.info("No athletes found in filtered data.")
                     else:
@@ -4189,7 +4189,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                             f'Balance Test - {metric_name}'
                         )
                         if fig:
-                            st.plotly_chart(fig, use_container_width=True, key="balance_group_bar")
+                            st.plotly_chart(fig, width='stretch', key="balance_group_bar")
                     else:
                         st.warning(f"Metric {metric_col} not found in data.")
 
@@ -4218,6 +4218,6 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                                 f'Balance Test - {metric_name} Trends'
                             )
                             if fig:
-                                st.plotly_chart(fig, use_container_width=True, key="balance_ind_line")
+                                st.plotly_chart(fig, width='stretch', key="balance_ind_line")
                     else:
                         st.warning("No athletes found in filtered data.")

@@ -934,7 +934,7 @@ def create_group_report(df: pd.DataFrame,
                     title="IMTP - Relative Peak Force"
                 )
                 if fig:
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, width='stretch')
             elif not imtp_df.empty:
                 # Fallback to old style
                 fig = create_benchmark_bar_chart(
@@ -942,7 +942,7 @@ def create_group_report(df: pd.DataFrame,
                     "IMTP - Relative Peak Force", 'peak_force', 'N/kg'
                 )
                 if fig:
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, width='stretch')
             else:
                 st.info("No IMTP data available")
         else:
@@ -962,14 +962,14 @@ def create_group_report(df: pd.DataFrame,
                     title="CMJ - Relative Peak Power"
                 )
                 if fig:
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, width='stretch')
             elif not cmj_df.empty:
                 fig = create_benchmark_bar_chart(
                     cmj_df, metric_col, 'Name', benchmarks,
                     "CMJ - Relative Peak Power", 'peak_power', 'W/kg'
                 )
                 if fig:
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, width='stretch')
             else:
                 st.info("No CMJ power data available")
         else:
@@ -995,14 +995,14 @@ def create_group_report(df: pd.DataFrame,
                     title="CMJ - Jump Height (Impulse-Mom)"
                 )
                 if fig:
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, width='stretch')
             elif not cmj_df.empty:
                 fig = create_benchmark_bar_chart(
                     cmj_df, metric_col, 'Name', benchmarks,
                     "CMJ - Jump Height", 'cmj_height', 'cm'
                 )
                 if fig:
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, width='stretch')
             else:
                 st.info("No CMJ height data available")
         else:
@@ -1025,14 +1025,14 @@ def create_group_report(df: pd.DataFrame,
                     title="10:5 Hop Test - RSI"
                 )
                 if fig:
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, width='stretch')
             elif not hop_df.empty:
                 fig = create_benchmark_bar_chart(
                     hop_df, metric_col, 'Name', benchmarks,
                     "10:5 Hop Test - RSI", 'rsi', ''
                 )
                 if fig:
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, width='stretch')
             else:
                 st.info("No 10:5 Hop / reactive strength data available")
 
@@ -1066,7 +1066,7 @@ def create_group_report(df: pd.DataFrame,
                     title="NordBord - L/R Hamstring Strength"
                 )
                 if fig:
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, width='stretch')
             elif left_col and right_col and 'Name' in nb_df.columns:
                 # Fallback: Calculate average of left/right
                 nb_df['avg_hamstring_force'] = (nb_df[left_col] + nb_df[right_col]) / 2
@@ -1076,7 +1076,7 @@ def create_group_report(df: pd.DataFrame,
                     "NordBord - Hamstring Strength", 'nordbord_force', 'N'
                 )
                 if fig:
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, width='stretch')
             else:
                 st.info("NordBord data not available")
         else:
@@ -1105,14 +1105,14 @@ def create_group_report(df: pd.DataFrame,
                         title="SL ISO Squat - Net Peak Force"
                     )
                     if fig:
-                        st.plotly_chart(fig, use_container_width=True)
+                        st.plotly_chart(fig, width='stretch')
                 elif not latest_sliso.empty:
                     plot_df = latest_sliso.sort_values(sl_metric, ascending=True)
                     fig = go.Figure()
                     fig.add_trace(go.Bar(y=plot_df['Name'], x=plot_df[sl_metric], orientation='h', marker_color=TEAL_PRIMARY))
                     fig.update_layout(title="SL ISO Squat - Net Peak Force", plot_bgcolor='white', paper_bgcolor='white',
                                       height=max(250, len(plot_df) * 40), margin=dict(l=10, r=10, t=40, b=10))
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, width='stretch')
                 else:
                     st.info("SL ISO Squat data not available")
             else:
@@ -1144,14 +1144,14 @@ def create_group_report(df: pd.DataFrame,
                         title="SL IMTP - Net Peak Force"
                     )
                     if fig:
-                        st.plotly_chart(fig, use_container_width=True)
+                        st.plotly_chart(fig, width='stretch')
                 elif not latest_slimtp.empty:
                     plot_df = latest_slimtp.sort_values(sl_metric, ascending=True)
                     fig = go.Figure()
                     fig.add_trace(go.Bar(y=plot_df['Name'], x=plot_df[sl_metric], orientation='h', marker_color=TEAL_PRIMARY))
                     fig.update_layout(title="SL IMTP - Net Peak Force", plot_bgcolor='white', paper_bgcolor='white',
                                       height=max(250, len(plot_df) * 40), margin=dict(l=10, r=10, t=40, b=10))
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, width='stretch')
                 else:
                     st.info("SL IMTP data not available")
             else:
@@ -1185,14 +1185,14 @@ def create_group_report(df: pd.DataFrame,
                         title=f"SL CMJ - {title_suffix}"
                     )
                     if fig:
-                        st.plotly_chart(fig, use_container_width=True)
+                        st.plotly_chart(fig, width='stretch')
                 elif not latest_slcmj.empty:
                     plot_df = latest_slcmj.sort_values(sl_metric, ascending=True)
                     fig = go.Figure()
                     fig.add_trace(go.Bar(y=plot_df['Name'], x=plot_df[sl_metric], orientation='h', marker_color=TEAL_PRIMARY))
                     fig.update_layout(title=f"SL CMJ - {title_suffix}", plot_bgcolor='white', paper_bgcolor='white',
                                       height=max(250, len(plot_df) * 40), margin=dict(l=10, r=10, t=40, b=10))
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, width='stretch')
                 else:
                     st.info("SL CMJ data not available")
             else:
@@ -1241,7 +1241,7 @@ def create_group_report(df: pd.DataFrame,
                     "Bench Press - Peak Force", 'peak_force', 'N/kg'
                 )
                 if fig:
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, width='stretch')
         elif not sc_df.empty and 'exercise' in sc_df.columns:
             # Show S&C manual entry data as bar chart
             bench_sc = sc_df[sc_df['exercise'].str.contains('Bench', case=False, na=False)]
@@ -1270,7 +1270,7 @@ def create_group_report(df: pd.DataFrame,
                     height=max(250, min(350, len(best_bench) * 35)),
                     margin=dict(l=10, r=10, t=40, b=10)
                 )
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width='stretch')
             else:
                 st.info("Bench Press data not available - Use ✏️ Data Entry tab")
         else:
@@ -1287,7 +1287,7 @@ def create_group_report(df: pd.DataFrame,
                     "Pull Up - Peak Force", 'peak_force', 'N/kg'
                 )
                 if fig:
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, width='stretch')
         elif not sc_df.empty and 'exercise' in sc_df.columns:
             # Show S&C manual entry data as bar chart
             pullup_sc = sc_df[sc_df['exercise'].str.contains('Pull Up|Pullup|Pull-up|Chin', case=False, na=False)]
@@ -1316,7 +1316,7 @@ def create_group_report(df: pd.DataFrame,
                     height=max(250, min(350, len(best_pullup) * 35)),
                     margin=dict(l=10, r=10, t=40, b=10)
                 )
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width='stretch')
             else:
                 st.info("Pull Up data not available - Use ✏️ Data Entry tab")
         else:
@@ -1366,7 +1366,7 @@ def create_group_report(df: pd.DataFrame,
                         f'Plyo Pushup - {metric_name}'
                     )
                     if fig:
-                        st.plotly_chart(fig, use_container_width=True)
+                        st.plotly_chart(fig, width='stretch')
                 else:
                     # Fallback to simple bar chart
                     latest_ppu = latest_ppu.sort_values(metric_col, ascending=True)
@@ -1389,7 +1389,7 @@ def create_group_report(df: pd.DataFrame,
                         height=max(250, min(400, len(latest_ppu) * 35)),
                         margin=dict(l=10, r=10, t=40, b=10)
                     )
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, width='stretch')
             else:
                 st.info("Plyo Pushup metrics not found in data")
         else:
@@ -1443,7 +1443,7 @@ def create_group_report(df: pd.DataFrame,
                     height=max(250, min(400, len(latest) * 35)),
                     margin=dict(l=10, r=10, t=40, b=10)
                 )
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width='stretch')
             else:
                 st.info("No Left grip data in DynaMo")
         else:
@@ -1478,7 +1478,7 @@ def create_group_report(df: pd.DataFrame,
                     height=max(250, min(400, len(latest) * 35)),
                     margin=dict(l=10, r=10, t=40, b=10)
                 )
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width='stretch')
             else:
                 st.info("No Right grip data in DynaMo")
         else:
@@ -1518,7 +1518,7 @@ def create_group_report(df: pd.DataFrame,
                             vertical=True
                         )
                         if fig:
-                            st.plotly_chart(fig, use_container_width=True)
+                            st.plotly_chart(fig, width='stretch')
                     else:
                         # Inline fallback
                         plot_df = latest_shoulder.sort_values('IR_avg', ascending=True)
@@ -1527,7 +1527,7 @@ def create_group_report(df: pd.DataFrame,
                         fig.add_trace(go.Bar(y=plot_df['Name'], x=plot_df['ER_avg'], orientation='h', marker_color='#FF9800', name='ER'))
                         fig.update_layout(title="Shoulder IR/ER Profile", barmode='group', plot_bgcolor='white', paper_bgcolor='white',
                                           height=max(250, len(plot_df) * 40), margin=dict(l=10, r=10, t=40, b=10))
-                        st.plotly_chart(fig, use_container_width=True)
+                        st.plotly_chart(fig, width='stretch')
                 else:
                     st.info("Shoulder IR/ER force columns not found")
             else:
@@ -1567,7 +1567,7 @@ def create_group_report(df: pd.DataFrame,
                         height=max(250, len(plot_df) * 40),
                         margin=dict(l=10, r=10, t=40, b=10)
                     )
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, width='stretch')
                 else:
                     st.info("Insufficient data for Shoulder IR/ER ratio")
             else:
@@ -1612,7 +1612,7 @@ def create_group_report(df: pd.DataFrame,
                             vertical=True
                         )
                         if fig:
-                            st.plotly_chart(fig, use_container_width=True)
+                            st.plotly_chart(fig, width='stretch')
                     else:
                         # Inline fallback
                         plot_df = latest_hip.sort_values('ADD_avg', ascending=True)
@@ -1621,7 +1621,7 @@ def create_group_report(df: pd.DataFrame,
                         fig.add_trace(go.Bar(y=plot_df['Name'], x=plot_df['ABD_avg'], orientation='h', marker_color='#a08e66', name='ABD'))
                         fig.update_layout(title="Hip ADD/ABD Profile", barmode='group', plot_bgcolor='white', paper_bgcolor='white',
                                           height=max(250, len(plot_df) * 40), margin=dict(l=10, r=10, t=40, b=10))
-                        st.plotly_chart(fig, use_container_width=True)
+                        st.plotly_chart(fig, width='stretch')
                 else:
                     st.info("Hip AD/AB force columns not found")
             else:
@@ -1655,7 +1655,7 @@ def create_group_report(df: pd.DataFrame,
                             vertical=True
                         )
                         if fig:
-                            st.plotly_chart(fig, use_container_width=True)
+                            st.plotly_chart(fig, width='stretch')
                     else:
                         # Inline fallback
                         plot_df = latest_hip_irer.sort_values('IR_avg', ascending=True)
@@ -1664,7 +1664,7 @@ def create_group_report(df: pd.DataFrame,
                         fig.add_trace(go.Bar(y=plot_df['Name'], x=plot_df['ER_avg'], orientation='h', marker_color='#FF9800', name='ER'))
                         fig.update_layout(title="Hip IR/ER Profile", barmode='group', plot_bgcolor='white', paper_bgcolor='white',
                                           height=max(250, len(plot_df) * 40), margin=dict(l=10, r=10, t=40, b=10))
-                        st.plotly_chart(fig, use_container_width=True)
+                        st.plotly_chart(fig, width='stretch')
                 else:
                     st.info("Hip IR/ER force columns not found")
             else:
@@ -1774,7 +1774,7 @@ def create_group_report(df: pd.DataFrame,
                             height=max(250, min(450, len(latest) * 35)),
                             margin=dict(l=10, r=10, t=40, b=10)
                         )
-                        st.plotly_chart(fig, use_container_width=True)
+                        st.plotly_chart(fig, width='stretch')
                 else:
                     st.info("No exercises found in data.")
             else:
@@ -1825,7 +1825,7 @@ def create_group_report(df: pd.DataFrame,
                         title=f"{selected_sc_athlete} - Strength RM Progression"
                     )
                     if fig:
-                        st.plotly_chart(fig, use_container_width=True)
+                        st.plotly_chart(fig, width='stretch')
                     else:
                         st.info(f"No strength data found for {selected_sc_athlete}")
                 elif selected_sc_athlete and selected_exercises:
@@ -1875,7 +1875,7 @@ def create_group_report(df: pd.DataFrame,
                             title="IMTP - Individual Trends"
                         )
                         if fig:
-                            st.plotly_chart(fig, use_container_width=True)
+                            st.plotly_chart(fig, width='stretch')
                     else:
                         st.info("No IMTP trend data")
                 else:
@@ -1894,7 +1894,7 @@ def create_group_report(df: pd.DataFrame,
                             title="CMJ - Individual Trends"
                         )
                         if fig:
-                            st.plotly_chart(fig, use_container_width=True)
+                            st.plotly_chart(fig, width='stretch')
                     else:
                         st.info("No CMJ trend data")
                 else:
@@ -1920,7 +1920,7 @@ def create_group_report(df: pd.DataFrame,
                             title="CMJ Height - Individual Trends"
                         )
                         if fig:
-                            st.plotly_chart(fig, use_container_width=True)
+                            st.plotly_chart(fig, width='stretch')
                     else:
                         st.info("No CMJ height trend data")
                 else:
@@ -1941,7 +1941,7 @@ def create_group_report(df: pd.DataFrame,
                             title="10:5 Hop - Individual Trends"
                         )
                         if fig:
-                            st.plotly_chart(fig, use_container_width=True)
+                            st.plotly_chart(fig, width='stretch')
                     else:
                         st.info("No hop test trend data")
 
@@ -1967,7 +1967,7 @@ def create_group_report(df: pd.DataFrame,
                             title="NordBord - Individual Trends"
                         )
                         if fig:
-                            st.plotly_chart(fig, use_container_width=True)
+                            st.plotly_chart(fig, width='stretch')
 
         elif selected_athletes:
             st.warning("Individual line charts require S&C Diagnostics module")
@@ -2070,7 +2070,7 @@ def create_individual_report(df: pd.DataFrame,
                     "Jump Height", 'cmj_height', 'cm', athlete_name
                 )
                 if fig:
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, width='stretch')
 
     with col2:
         cmj_df = athlete_df[athlete_df['testType'].str.contains('CMJ|Counter', case=False, na=False)]
@@ -2082,7 +2082,7 @@ def create_individual_report(df: pd.DataFrame,
                     "Relative Peak Power", 'peak_power', 'W/kg', athlete_name
                 )
                 if fig:
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, width='stretch')
 
     # RSI and Force trends
     col1, col2 = st.columns(2)
@@ -2099,7 +2099,7 @@ def create_individual_report(df: pd.DataFrame,
                     "RSI Modified", 'rsi', '', athlete_name
                 )
                 if fig:
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, width='stretch')
 
     with col2:
         imtp_df = athlete_df[athlete_df['testType'].str.contains('IMTP|ISOT|Isometric', case=False, na=False)]
@@ -2111,7 +2111,7 @@ def create_individual_report(df: pd.DataFrame,
                     "IMTP Relative Peak Force", 'peak_force', 'N/kg', athlete_name
                 )
                 if fig:
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, width='stretch')
 
     # NordBord trend (if data available)
     if nordbord_df is not None and not nordbord_df.empty:
@@ -2144,7 +2144,7 @@ def create_individual_report(df: pd.DataFrame,
                             "Left Hamstring", 'nordbord_force', 'N', athlete_name
                         )
                         if fig:
-                            st.plotly_chart(fig, use_container_width=True)
+                            st.plotly_chart(fig, width='stretch')
 
                 # Right hamstring trend
                 with col2:
@@ -2154,7 +2154,7 @@ def create_individual_report(df: pd.DataFrame,
                             "Right Hamstring", 'nordbord_force', 'N', athlete_name
                         )
                         if fig:
-                            st.plotly_chart(fig, use_container_width=True)
+                            st.plotly_chart(fig, width='stretch')
 
     # Plyo Pushup trend (if PPU data available)
     ppu_df = athlete_df[athlete_df['testType'] == 'PPU'].copy() if 'testType' in athlete_df.columns else pd.DataFrame()
@@ -2172,7 +2172,7 @@ def create_individual_report(df: pd.DataFrame,
         if metric_col:
             fig = create_trend_chart(ppu_df, metric_col, date_col, benchmarks, metric_name, 'ppu', metric_unit, athlete_name)
             if fig:
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width='stretch')
 
     # Data directory for manual test files
     data_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data')
@@ -2204,7 +2204,7 @@ def create_individual_report(df: pd.DataFrame,
                                                 mode='lines+markers', name='Left Grip', line=dict(color=TEAL_PRIMARY)))
                         fig.update_layout(title='Left Grip Strength', xaxis_title='Date', yaxis_title='Force (N)',
                                          plot_bgcolor='white', paper_bgcolor='white')
-                        st.plotly_chart(fig, use_container_width=True)
+                        st.plotly_chart(fig, width='stretch')
                 with col2:
                     right_grip = athlete_grip[athlete_grip['laterality'].str.contains('Right', case=False, na=False)].sort_values(grip_date_col)
                     if not right_grip.empty:
@@ -2213,7 +2213,7 @@ def create_individual_report(df: pd.DataFrame,
                                                 mode='lines+markers', name='Right Grip', line=dict(color=GOLD_ACCENT)))
                         fig.update_layout(title='Right Grip Strength', xaxis_title='Date', yaxis_title='Force (N)',
                                          plot_bgcolor='white', paper_bgcolor='white')
-                        st.plotly_chart(fig, use_container_width=True)
+                        st.plotly_chart(fig, width='stretch')
 
     # Strength RM trends (Manual Entry)
     lower_body_path = os.path.join(data_dir, 'sc_lower_body.csv')
@@ -2250,7 +2250,7 @@ def create_individual_report(df: pd.DataFrame,
                                                 mode='lines+markers', name=ex, line=dict(color=colors[i % len(colors)])))
                     fig.update_layout(title='Strength RM Progression', xaxis_title='Date', yaxis_title='Estimated 1RM (kg)',
                                      plot_bgcolor='white', paper_bgcolor='white')
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, width='stretch')
 
     # Broad Jump trend (Manual Entry)
     broad_jump_path = os.path.join(data_dir, 'broad_jump.csv')
@@ -2271,7 +2271,7 @@ def create_individual_report(df: pd.DataFrame,
                     fig.add_hline(y=pb, line_dash="dash", line_color=GOLD_ACCENT, annotation_text=f"PB: {pb:.0f}cm")
                     fig.update_layout(title='Broad Jump Progression', xaxis_title='Date', yaxis_title='Distance (cm)',
                                      plot_bgcolor='white', paper_bgcolor='white')
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, width='stretch')
         except Exception:
             pass
 
@@ -2302,7 +2302,7 @@ def create_individual_report(df: pd.DataFrame,
                                                 mode='lines+markers', name='Shoulder Force', line=dict(color=TEAL_PRIMARY)))
                         fig.update_layout(title='Shoulder Strength Progression', xaxis_title='Date', yaxis_title='Force (N)',
                                          plot_bgcolor='white', paper_bgcolor='white')
-                        st.plotly_chart(fig, use_container_width=True)
+                        st.plotly_chart(fig, width='stretch')
 
     # =========================================================================
     # EXPORT SECTION - Download athlete data
@@ -2378,7 +2378,7 @@ def create_individual_report(df: pd.DataFrame,
 
             # Display preview
             st.markdown("**Data Preview:**")
-            st.dataframe(export_df.head(10), use_container_width=True, hide_index=True)
+            st.dataframe(export_df.head(10), width='stretch', hide_index=True)
 
             # Download button
             csv_data = export_df.to_csv(index=False)
@@ -2606,7 +2606,7 @@ def create_group_report_v2(df: pd.DataFrame,
 
             if upper_body_data:
                 upper_df = pd.DataFrame(upper_body_data)
-                st.dataframe(upper_df, use_container_width=True, hide_index=True)
+                st.dataframe(upper_df, width='stretch', hide_index=True)
         else:
             st.info("No ForceFrame data for this sport")
     else:
@@ -2664,7 +2664,7 @@ def create_group_report_v2(df: pd.DataFrame,
 
     if shoulder_data:
         shoulder_df = pd.DataFrame(shoulder_data)
-        st.dataframe(shoulder_df, use_container_width=True, hide_index=True)
+        st.dataframe(shoulder_df, width='stretch', hide_index=True)
     else:
         st.info("No shoulder health data available (ForceFrame Shoulder IR/ER tests)")
 
@@ -2720,7 +2720,7 @@ def create_group_report_v2(df: pd.DataFrame,
 
     if hip_data:
         hip_df = pd.DataFrame(hip_data)
-        st.dataframe(hip_df, use_container_width=True, hide_index=True)
+        st.dataframe(hip_df, width='stretch', hide_index=True)
     else:
         st.info("No hip health data available (ForceFrame Hip AD/AB tests)")
 
@@ -2761,7 +2761,7 @@ def create_group_report_v2(df: pd.DataFrame,
 
     if ppu_data:
         ppu_table = pd.DataFrame(ppu_data).sort_values(list(ppu_data[0].keys())[1], ascending=False)
-        st.dataframe(ppu_table, use_container_width=True, hide_index=True)
+        st.dataframe(ppu_table, width='stretch', hide_index=True)
     else:
         st.info("No Plyo Pushup (PPU) data available")
 
@@ -2814,7 +2814,7 @@ def create_group_report_v2(df: pd.DataFrame,
 
     if grip_data:
         grip_table = pd.DataFrame(grip_data)
-        st.dataframe(grip_table, use_container_width=True, hide_index=True)
+        st.dataframe(grip_table, width='stretch', hide_index=True)
     else:
         st.info("No DynaMo grip strength data available")
 
@@ -2877,7 +2877,7 @@ def create_group_report_v2(df: pd.DataFrame,
 
     if strength_data:
         strength_table = pd.DataFrame(strength_data)
-        st.dataframe(strength_table, use_container_width=True, hide_index=True)
+        st.dataframe(strength_table, width='stretch', hide_index=True)
     else:
         st.info(f"No Strength RM data available for {sport} athletes. Use ✏️ Data Entry tab to add.")
 
@@ -2911,7 +2911,7 @@ def create_group_report_v2(df: pd.DataFrame,
 
     if broad_data:
         broad_table = pd.DataFrame(broad_data).sort_values('Best Distance (cm)', ascending=False)
-        st.dataframe(broad_table, use_container_width=True, hide_index=True)
+        st.dataframe(broad_table, width='stretch', hide_index=True)
     else:
         st.info(f"No Broad Jump data available for {sport} athletes. Use ✏️ Data Entry tab to add.")
 
@@ -2945,7 +2945,7 @@ def create_group_report_v2(df: pd.DataFrame,
 
     if fitness_data:
         fitness_table = pd.DataFrame(fitness_data).sort_values('6 Min Aerobic (W/kg)', ascending=False)
-        st.dataframe(fitness_table, use_container_width=True, hide_index=True)
+        st.dataframe(fitness_table, width='stretch', hide_index=True)
     else:
         st.info(f"No Fitness test data available for {sport} athletes. Use ✏️ Data Entry tab to add.")
 
@@ -2997,7 +2997,7 @@ def _display_section_table(data: list, section_name: str):
         display_data.append(display_row)
 
     display_df = pd.DataFrame(display_data)
-    st.dataframe(display_df, use_container_width=True, hide_index=True)
+    st.dataframe(display_df, width='stretch', hide_index=True)
 
     st.markdown("""
     <div style="font-size: 12px; color: #666; margin-top: 5px;">
@@ -3075,7 +3075,7 @@ def _display_rag_table(df: pd.DataFrame):
     # Display as dataframe
     st.dataframe(
         display_df,
-        use_container_width=True,
+        width='stretch',
         hide_index=True
     )
 
@@ -3490,7 +3490,7 @@ def create_group_report_v3(df: pd.DataFrame,
                         'rsi': benchmarks.get('rsi', {})
                     }
                     fig = _create_radar_chart(metrics, radar_benchmarks, athlete)
-                    st.plotly_chart(fig, use_container_width=True, key=f"v3_radar_{i}")
+                    st.plotly_chart(fig, width='stretch', key=f"v3_radar_{i}")
                     st.caption(f"**{athlete.split()[0] if ' ' in str(athlete) else athlete}**")
                 else:
                     st.info(f"Limited data for {athlete}")
@@ -3516,7 +3516,7 @@ def create_group_report_v3(df: pd.DataFrame,
                     "IMTP - Relative Peak Force (N/kg)", 'peak_force'
                 )
                 if fig:
-                    st.plotly_chart(fig, use_container_width=True, key="v3_imtp_lollipop")
+                    st.plotly_chart(fig, width='stretch', key="v3_imtp_lollipop")
             else:
                 st.info("No IMTP data available")
         else:
@@ -3533,7 +3533,7 @@ def create_group_report_v3(df: pd.DataFrame,
                     "CMJ Jump Height - Team Distribution", 'cmj_height'
                 )
                 if fig:
-                    st.plotly_chart(fig, use_container_width=True, key="v3_cmj_box")
+                    st.plotly_chart(fig, width='stretch', key="v3_cmj_box")
             else:
                 st.info("No CMJ data available")
         else:
@@ -3553,7 +3553,7 @@ def create_group_report_v3(df: pd.DataFrame,
                     "CMJ Relative Power - Team Distribution", 'peak_power'
                 )
                 if fig:
-                    st.plotly_chart(fig, use_container_width=True, key="v3_cmj_power_box")
+                    st.plotly_chart(fig, width='stretch', key="v3_cmj_power_box")
             else:
                 st.info("No CMJ power data available")
         else:
@@ -3572,7 +3572,7 @@ def create_group_report_v3(df: pd.DataFrame,
                     "Reactive Strength - RSI", 'rsi'
                 )
                 if fig:
-                    st.plotly_chart(fig, use_container_width=True, key="v3_rsi_lollipop")
+                    st.plotly_chart(fig, width='stretch', key="v3_rsi_lollipop")
             else:
                 st.info("No reactive strength data (DJ/RSHIP) available")
         else:
@@ -3635,7 +3635,7 @@ def create_group_report_v3(df: pd.DataFrame,
                     height=350,
                     margin=dict(l=10, r=10, t=50, b=10)
                 )
-                st.plotly_chart(fig, use_container_width=True, key="v3_quadrant_cmj")
+                st.plotly_chart(fig, width='stretch', key="v3_quadrant_cmj")
             else:
                 st.info("Insufficient CMJ data for quadrant plot")
         else:
@@ -3713,7 +3713,7 @@ def create_group_report_v3(df: pd.DataFrame,
                     legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
                     margin=dict(l=10, r=10, t=60, b=10)
                 )
-                st.plotly_chart(fig, use_container_width=True, key="v3_nb_left_right")
+                st.plotly_chart(fig, width='stretch', key="v3_nb_left_right")
 
                 # Asymmetry indicator table
                 st.markdown("#### Asymmetry Status")
@@ -3733,7 +3733,7 @@ def create_group_report_v3(df: pd.DataFrame,
                         'Asymmetry': f"{asym:.1f}%",
                         'Status': status
                     })
-                st.dataframe(pd.DataFrame(asym_data), use_container_width=True, hide_index=True)
+                st.dataframe(pd.DataFrame(asym_data), width='stretch', hide_index=True)
             else:
                 st.info("No NordBord data after filtering")
         else:
@@ -3775,7 +3775,7 @@ def create_group_report_v3(df: pd.DataFrame,
                     "Bench Press - Peak Force", 'peak_force'
                 )
                 if fig:
-                    st.plotly_chart(fig, use_container_width=True, key="v3_bench_lollipop")
+                    st.plotly_chart(fig, width='stretch', key="v3_bench_lollipop")
             else:
                 st.info("Bench Press data not available - Use ✏️ Data Entry tab")
         elif not sc_df_v3.empty and 'exercise' in sc_df_v3.columns:
@@ -3805,7 +3805,7 @@ def create_group_report_v3(df: pd.DataFrame,
                     height=max(250, len(best_bench_v3) * 40),
                     margin=dict(l=10, r=10, t=40, b=10)
                 )
-                st.plotly_chart(fig, use_container_width=True, key="v3_bench_manual")
+                st.plotly_chart(fig, width='stretch', key="v3_bench_manual")
             else:
                 st.info("Bench Press data not available - Use ✏️ Data Entry tab")
         else:
@@ -3822,7 +3822,7 @@ def create_group_report_v3(df: pd.DataFrame,
                     "Pull Up - Peak Force", 'peak_force'
                 )
                 if fig:
-                    st.plotly_chart(fig, use_container_width=True, key="v3_pullup_lollipop")
+                    st.plotly_chart(fig, width='stretch', key="v3_pullup_lollipop")
             else:
                 st.info("Pull Up data not available - Use ✏️ Data Entry tab")
         elif not sc_df_v3.empty and 'exercise' in sc_df_v3.columns:
@@ -3851,7 +3851,7 @@ def create_group_report_v3(df: pd.DataFrame,
                     height=max(250, len(best_pullup_v3) * 40),
                     margin=dict(l=10, r=10, t=40, b=10)
                 )
-                st.plotly_chart(fig, use_container_width=True, key="v3_pullup_manual")
+                st.plotly_chart(fig, width='stretch', key="v3_pullup_manual")
             else:
                 st.info("Pull Up data not available - Use ✏️ Data Entry tab")
         else:
@@ -3868,7 +3868,7 @@ def create_group_report_v3(df: pd.DataFrame,
                     "Plyo Push Up - Power", 'peak_power'
                 )
                 if fig:
-                    st.plotly_chart(fig, use_container_width=True, key="v3_plyo_box")
+                    st.plotly_chart(fig, width='stretch', key="v3_plyo_box")
             else:
                 st.info("Plyo Push Up data not available")
         else:
@@ -3929,7 +3929,7 @@ def create_group_report_v3(df: pd.DataFrame,
             with cols[i % 2]:
                 fig = _create_bullet_chart(value, bench, name, unit)
                 if fig:
-                    st.plotly_chart(fig, use_container_width=True, key=f"v3_bullet_{i}")
+                    st.plotly_chart(fig, width='stretch', key=f"v3_bullet_{i}")
     else:
         st.info("No data available for team summary")
 
@@ -4001,7 +4001,7 @@ def create_group_report_v3(df: pd.DataFrame,
                         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
                         margin=dict(l=10, r=10, t=60, b=10)
                     )
-                    st.plotly_chart(fig, use_container_width=True, key="v3_ff_shoulder_lr")
+                    st.plotly_chart(fig, width='stretch', key="v3_ff_shoulder_lr")
 
                     # Asymmetry table for shoulder
                     asym_data = []
@@ -4024,7 +4024,7 @@ def create_group_report_v3(df: pd.DataFrame,
                             'Asymmetry': f"{asym:.1f}%",
                             'Status': status
                         })
-                    st.dataframe(pd.DataFrame(asym_data), use_container_width=True, hide_index=True)
+                    st.dataframe(pd.DataFrame(asym_data), width='stretch', hide_index=True)
                 else:
                     st.info("No shoulder data with left/right values")
             else:
@@ -4078,7 +4078,7 @@ def create_group_report_v3(df: pd.DataFrame,
                         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
                         margin=dict(l=10, r=10, t=60, b=10)
                     )
-                    st.plotly_chart(fig, use_container_width=True, key="v3_ff_hip_lr")
+                    st.plotly_chart(fig, width='stretch', key="v3_ff_hip_lr")
 
                     # Asymmetry table for hip
                     asym_data = []
@@ -4101,7 +4101,7 @@ def create_group_report_v3(df: pd.DataFrame,
                             'Asymmetry': f"{asym:.1f}%",
                             'Status': status
                         })
-                    st.dataframe(pd.DataFrame(asym_data), use_container_width=True, hide_index=True)
+                    st.dataframe(pd.DataFrame(asym_data), width='stretch', hide_index=True)
                 else:
                     st.info("No hip data with left/right values")
             else:
@@ -4341,7 +4341,7 @@ def create_shooting_group_report(df: pd.DataFrame, sport: str = "Shooting"):
                 margin=dict(l=10, r=10, t=10, b=30)
             )
 
-            st.plotly_chart(fig, use_container_width=True, key="shooting_excursion")
+            st.plotly_chart(fig, width='stretch', key="shooting_excursion")
 
     with col2:
         # Mean Velocity bar chart (lower is better)
@@ -4389,7 +4389,7 @@ def create_shooting_group_report(df: pd.DataFrame, sport: str = "Shooting"):
                 margin=dict(l=10, r=10, t=10, b=30)
             )
 
-            st.plotly_chart(fig, use_container_width=True, key="shooting_velocity")
+            st.plotly_chart(fig, width='stretch', key="shooting_velocity")
 
     # Area of CoP Ellipse
     if 'cop_ellipse_area_mm2' in latest_df.columns:
@@ -4436,7 +4436,7 @@ def create_shooting_group_report(df: pd.DataFrame, sport: str = "Shooting"):
             margin=dict(l=10, r=10, t=10, b=30)
         )
 
-        st.plotly_chart(fig, use_container_width=True, key="shooting_ellipse")
+        st.plotly_chart(fig, width='stretch', key="shooting_ellipse")
 
     # Summary table
     st.markdown("---")
@@ -4468,7 +4468,7 @@ def create_shooting_group_report(df: pd.DataFrame, sport: str = "Shooting"):
         if col not in ['Athlete', 'Test Date']:
             result_df[col] = result_df[col].apply(lambda x: f"{x:.1f}" if pd.notna(x) else "")
 
-    st.dataframe(result_df, use_container_width=True, hide_index=True)
+    st.dataframe(result_df, width='stretch', hide_index=True)
 
 
 def create_shooting_individual_report(df: pd.DataFrame, athlete_name: str, sport: str = "Shooting"):
@@ -4588,7 +4588,7 @@ def create_shooting_individual_report(df: pd.DataFrame, athlete_name: str, sport
                     showlegend=False
                 )
 
-                st.plotly_chart(fig, use_container_width=True, key="ind_excursion_trend")
+                st.plotly_chart(fig, width='stretch', key="ind_excursion_trend")
 
         with col2:
             if 'cop_ellipse_area_mm2' in athlete_df.columns:
@@ -4618,7 +4618,7 @@ def create_shooting_individual_report(df: pd.DataFrame, athlete_name: str, sport
                     showlegend=False
                 )
 
-                st.plotly_chart(fig, use_container_width=True, key="ind_ellipse_trend")
+                st.plotly_chart(fig, width='stretch', key="ind_ellipse_trend")
 
     # Test history table
     st.markdown("#### 📋 Test History")
@@ -4650,4 +4650,4 @@ def create_shooting_individual_report(df: pd.DataFrame, athlete_name: str, sport
             if col != 'Date':
                 history_df[col] = history_df[col].apply(lambda x: f"{x:.1f}" if pd.notna(x) else "")
 
-        st.dataframe(history_df.sort_values('Date', ascending=False), use_container_width=True, hide_index=True)
+        st.dataframe(history_df.sort_values('Date', ascending=False), width='stretch', hide_index=True)

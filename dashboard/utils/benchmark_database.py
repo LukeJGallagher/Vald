@@ -680,7 +680,7 @@ def _render_audit_log():
     # Style the dataframe
     st.dataframe(
         df[['timestamp', 'user', 'action', 'reason', 'summary']],
-        use_container_width=True,
+        width='stretch',
         hide_index=True,
         column_config={
             "timestamp": st.column_config.TextColumn("Date/Time", width="medium"),

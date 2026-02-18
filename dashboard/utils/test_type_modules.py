@@ -146,7 +146,7 @@ class CMJAnalysisModule:
                 xaxis=dict(tickformat='%d %b %Y')
             )
 
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
         else:
             st.info("Body weight data not available")
 
@@ -200,7 +200,7 @@ class CMJAnalysisModule:
                 xaxis=dict(tickformat='%d %b %Y')
             )
 
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
         else:
             st.info("Peak power bilateral data not available")
 
@@ -273,7 +273,7 @@ class CMJAnalysisModule:
                 plot_bgcolor='white'
             )
 
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
 
         elif trial_col:
             # Display progression over time using Trial-level data
@@ -299,7 +299,7 @@ class CMJAnalysisModule:
                 hovermode='x unified'
             )
 
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
 
         else:
             st.info("Relative power data not available")
@@ -371,7 +371,7 @@ class CMJAnalysisModule:
                 plot_bgcolor='white'
             )
 
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
 
         elif trial_col:
             # Display progression over time using Trial-level data
@@ -397,7 +397,7 @@ class CMJAnalysisModule:
                 hovermode='x unified'
             )
 
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
 
         else:
             st.info("Jump height data not available")
@@ -463,7 +463,7 @@ class CMJAnalysisModule:
                 plot_bgcolor='white'
             )
 
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
 
         elif trial_col:
             # Display progression over time using Trial-level data
@@ -489,7 +489,7 @@ class CMJAnalysisModule:
                 hovermode='x unified'
             )
 
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
 
         else:
             st.info("Contraction time data not available")
@@ -563,7 +563,7 @@ class CMJAnalysisModule:
                 plot_bgcolor='white'
             )
 
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
 
         elif trial_col:
             # Display progression over time using Trial-level data
@@ -592,7 +592,7 @@ class CMJAnalysisModule:
                 hovermode='x unified'
             )
 
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
 
         else:
             st.info("CMJ depth data not available")
@@ -743,7 +743,7 @@ class CMJAnalysisModule:
                 plot_bgcolor='white'
             )
 
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
 
 
 # ============================================================================
@@ -884,7 +884,7 @@ class IsometricSingleLegModule:
                 ]
             )
 
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
         else:
             st.info("Bilateral force data not available")
 
@@ -1005,7 +1005,7 @@ class IsometricDoubleLegModule:
                 xaxis=dict(tickformat='%d %b %Y')
             )
 
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
 
 
 # ============================================================================
@@ -1193,7 +1193,7 @@ class ThrowsTrainingModule:
                             xaxis=dict(showgrid=False),
                             yaxis=dict(title="m", showgrid=True, gridcolor='lightgray')
                         )
-                        st.plotly_chart(fig, use_container_width=True)
+                        st.plotly_chart(fig, width='stretch')
 
                     # Summary stats
                     total_throws = len(athlete_training)
@@ -1310,7 +1310,7 @@ class ThrowsTrainingModule:
                     font=dict(family='Inter, sans-serif')
                 )
 
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width='stretch')
             else:
                 st.info("No valid date data for trend chart")
         else:
@@ -1411,7 +1411,7 @@ class ThrowsTrainingModule:
                 xaxis=dict(tickformat='%d-%b')
             )
 
-            st.plotly_chart(fig_abs, use_container_width=True)
+            st.plotly_chart(fig_abs, width='stretch')
 
         if rel_power_col:
             # Relative Power
@@ -1443,7 +1443,7 @@ class ThrowsTrainingModule:
                 xaxis=dict(tickformat='%d-%b')
             )
 
-            st.plotly_chart(fig_rel, use_container_width=True)
+            st.plotly_chart(fig_rel, width='stretch')
 
         if not abs_power_col and not rel_power_col:
             st.info("Power data not found")
@@ -1539,7 +1539,7 @@ class ThrowsTrainingModule:
                 xaxis=dict(tickformat='%d-%b')
             )
 
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
         else:
             st.info("Depth data not found")
 
@@ -1734,7 +1734,7 @@ class WeightliftingDiagnosticsModule:
             yaxis=dict(showgrid=False)
         )
 
-        st.plotly_chart(fig, use_container_width=True, key="wl_asymmetry_chart")
+        st.plotly_chart(fig, width='stretch', key="wl_asymmetry_chart")
 
         # Asymmetry legend
         st.caption("Color: Green (<5%) | Gold (5-10%) | Red (>10% - flag)")
@@ -1799,7 +1799,7 @@ class WeightliftingDiagnosticsModule:
                 xaxis=dict(showgrid=True, gridcolor='lightgray', title='Force (N)'),
                 yaxis=dict(showgrid=False)
             )
-            st.plotly_chart(fig, use_container_width=True, key="wl_hip_profile")
+            st.plotly_chart(fig, width='stretch', key="wl_hip_profile")
         else:
             st.info("No ForceFrame hip data available")
 
@@ -2008,7 +2008,7 @@ class WeightliftingDiagnosticsModule:
                     yaxis=dict(title='Force (N)', showgrid=True, gridcolor='lightgray'),
                     xaxis=dict(showgrid=False)
                 )
-                st.plotly_chart(fig, use_container_width=True, key="wl_trunk_flex_ext")
+                st.plotly_chart(fig, width='stretch', key="wl_trunk_flex_ext")
 
         with col2:
             # Lateral Flexion L vs R
@@ -2033,7 +2033,7 @@ class WeightliftingDiagnosticsModule:
                     yaxis=dict(title='Force (N)', showgrid=True, gridcolor='lightgray'),
                     xaxis=dict(showgrid=False)
                 )
-                st.plotly_chart(fig, use_container_width=True, key="wl_trunk_lateral")
+                st.plotly_chart(fig, width='stretch', key="wl_trunk_lateral")
 
 
 def display_test_type_module(test_type: str, athlete_df: pd.DataFrame, athlete_name: str, sport: str = None):

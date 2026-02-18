@@ -1607,7 +1607,7 @@ with tabs[0]:  # Home
 
             st.dataframe(
                 recent_tests[display_cols],
-                use_container_width=True,
+                width='stretch',
                 hide_index=True
             )
 
@@ -1633,7 +1633,7 @@ with tabs[0]:  # Home
             showlegend=False
         )
 
-        st.plotly_chart(fig_sport_dist, use_container_width=True)
+        st.plotly_chart(fig_sport_dist, width='stretch')
 
     # Sport and Test Type Summary
     with st.expander("📋 Sports & Test Types Summary", expanded=False):
@@ -1672,7 +1672,7 @@ with tabs[0]:  # Home
 
             st.dataframe(
                 sport_test_summary,
-                use_container_width=True,
+                width='stretch',
                 hide_index=True,
                 column_config={
                     "Sport": st.column_config.TextColumn("Sport", width="medium"),
@@ -2381,7 +2381,7 @@ with tabs[4]:  # Data Entry
 
             st.dataframe(
                 recent_sc[available_cols],
-                use_container_width=True,
+                width='stretch',
                 hide_index=True
             )
 
@@ -2394,7 +2394,7 @@ with tabs[4]:  # Data Entry
 
                 st.dataframe(
                     pb_df.sort_values('Best Est. 1RM (kg)', ascending=False),
-                    use_container_width=True,
+                    width='stretch',
                     hide_index=True
                 )
         else:
@@ -2677,7 +2677,7 @@ with tabs[4]:  # Data Entry
 
             st.dataframe(
                 recent_lb[available_cols],
-                use_container_width=True,
+                width='stretch',
                 hide_index=True
             )
 
@@ -2690,7 +2690,7 @@ with tabs[4]:  # Data Entry
 
                 st.dataframe(
                     pb_lb_df.sort_values('Best Est. 1RM (kg)', ascending=False),
-                    use_container_width=True,
+                    width='stretch',
                     hide_index=True
                 )
         else:
@@ -2932,7 +2932,7 @@ with tabs[4]:  # Data Entry
                 fig_te.update_xaxes(showgrid=False)
                 fig_te.update_yaxes(showgrid=True, gridwidth=1, gridcolor='#e9ecef')
 
-                st.plotly_chart(fig_te, use_container_width=True)
+                st.plotly_chart(fig_te, width='stretch')
 
             # Recent entries table
             st.markdown("#### 📋 Recent Test Entries")
@@ -2943,7 +2943,7 @@ with tabs[4]:  # Data Entry
 
             st.dataframe(
                 recent_te[available_cols_te],
-                use_container_width=True,
+                width='stretch',
                 hide_index=True
             )
         else:
@@ -3090,7 +3090,7 @@ with tabs[4]:  # Data Entry
             st.markdown("---")
             st.markdown("#### 📋 Recent Aerobic Test Entries")
             recent_aero = aero_df.sort_values('date', ascending=False).head(10) if 'date' in aero_df.columns else aero_df.head(10)
-            st.dataframe(recent_aero, use_container_width=True, hide_index=True)
+            st.dataframe(recent_aero, width='stretch', hide_index=True)
         else:
             st.info("📭 No aerobic test data recorded yet. Use the form above to add entries.")
 
@@ -3230,13 +3230,13 @@ with tabs[4]:  # Data Entry
             st.markdown("---")
             st.markdown("#### 📋 Recent Broad Jump Entries")
             recent_bj = bj_df.sort_values('date', ascending=False).head(10) if 'date' in bj_df.columns else bj_df.head(10)
-            st.dataframe(recent_bj, use_container_width=True, hide_index=True)
+            st.dataframe(recent_bj, width='stretch', hide_index=True)
 
             # Best jumps per athlete
             st.markdown("#### 🏆 Personal Bests")
             pb_bj = bj_df.groupby('athlete')['distance_cm'].max().reset_index()
             pb_bj.columns = ['Athlete', 'Best (cm)']
-            st.dataframe(pb_bj.sort_values('Best (cm)', ascending=False), use_container_width=True, hide_index=True)
+            st.dataframe(pb_bj.sort_values('Best (cm)', ascending=False), width='stretch', hide_index=True)
         else:
             st.info("📭 No broad jump data recorded yet. Use the form above to add entries.")
 
@@ -3401,14 +3401,14 @@ with tabs[4]:  # Data Entry
             st.markdown("---")
             st.markdown("#### 📋 Recent Power Test Entries")
             recent_power = power_df.sort_values('date', ascending=False).head(10) if 'date' in power_df.columns else power_df.head(10)
-            st.dataframe(recent_power, use_container_width=True, hide_index=True)
+            st.dataframe(recent_power, width='stretch', hide_index=True)
 
             # Best results per athlete and test type
             st.markdown("#### 🏆 Personal Bests (Peak Relative Power)")
             if 'peak_relative_wattage' in power_df.columns:
                 pb_power = power_df.groupby(['athlete', 'test_type'])['peak_relative_wattage'].max().reset_index()
                 pb_power.columns = ['Athlete', 'Test Type', 'Best (W/kg)']
-                st.dataframe(pb_power.sort_values('Best (W/kg)', ascending=False), use_container_width=True, hide_index=True)
+                st.dataframe(pb_power.sort_values('Best (W/kg)', ascending=False), width='stretch', hide_index=True)
         else:
             st.info("📭 No power test data recorded yet. Use the form above to add entries.")
 
@@ -3507,7 +3507,7 @@ with tabs[4]:  # Data Entry
 
                 st.dataframe(
                     display_df_styled,
-                    use_container_width=True,
+                    width='stretch',
                     hide_index=True,
                     height=350
                 )
@@ -3740,7 +3740,7 @@ with tabs[4]:  # Data Entry
 
                 st.dataframe(
                     display_upper_df[available_cols],
-                    use_container_width=True,
+                    width='stretch',
                     hide_index=True,
                     height=350
                 )
@@ -3830,7 +3830,7 @@ with tabs[4]:  # Data Entry
 
                 st.dataframe(
                     display_lower_df[available_cols],
-                    use_container_width=True,
+                    width='stretch',
                     hide_index=True,
                     height=350
                 )
@@ -4010,7 +4010,7 @@ with tabs[4]:  # Data Entry
                     fig_throws.update_xaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
                     fig_throws.update_yaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
 
-                    st.plotly_chart(fig_throws, use_container_width=True)
+                    st.plotly_chart(fig_throws, width='stretch')
 
                     # Summary stats
                     st.markdown("#### 📋 Summary Statistics")
@@ -4098,7 +4098,7 @@ with tabs[4]:  # Data Entry
                     fig_upper_1rm.update_xaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
                     fig_upper_1rm.update_yaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
 
-                    st.plotly_chart(fig_upper_1rm, use_container_width=True)
+                    st.plotly_chart(fig_upper_1rm, width='stretch')
 
                     # Summary stats
                     st.markdown("#### 📋 Summary Statistics")
@@ -4124,7 +4124,7 @@ with tabs[4]:  # Data Entry
                         }).reset_index()
                         pb_upper_table.columns = ['Exercise', 'Best Est. 1RM (kg)', 'Max Weight (kg)', 'Last Session']
                         pb_upper_table = pb_upper_table.sort_values('Best Est. 1RM (kg)', ascending=False)
-                        st.dataframe(pb_upper_table, use_container_width=True, hide_index=True)
+                        st.dataframe(pb_upper_table, width='stretch', hide_index=True)
                 else:
                     st.info("No data for selected athlete and exercise")
             else:
@@ -4199,7 +4199,7 @@ with tabs[4]:  # Data Entry
                     fig_lower_1rm.update_xaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
                     fig_lower_1rm.update_yaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
 
-                    st.plotly_chart(fig_lower_1rm, use_container_width=True)
+                    st.plotly_chart(fig_lower_1rm, width='stretch')
 
                     # Summary stats
                     st.markdown("#### 📋 Summary Statistics")
@@ -4225,7 +4225,7 @@ with tabs[4]:  # Data Entry
                         }).reset_index()
                         pb_lower_table.columns = ['Exercise', 'Best Est. 1RM (kg)', 'Max Weight (kg)', 'Last Session']
                         pb_lower_table = pb_lower_table.sort_values('Best Est. 1RM (kg)', ascending=False)
-                        st.dataframe(pb_lower_table, use_container_width=True, hide_index=True)
+                        st.dataframe(pb_lower_table, width='stretch', hide_index=True)
                 else:
                     st.info("No data for selected athlete and exercise")
             else:
@@ -4350,7 +4350,7 @@ with tabs[5]:  # Trace
                             fig_single.update_xaxes(showgrid=True, gridwidth=1, gridcolor='#e9ecef')
                             fig_single.update_yaxes(showgrid=True, gridwidth=1, gridcolor='#e9ecef')
 
-                            st.plotly_chart(fig_single, use_container_width=True)
+                            st.plotly_chart(fig_single, width='stretch')
 
                             # Key metrics
                             m1, m2, m3, m4 = st.columns(4)
@@ -4368,7 +4368,7 @@ with tabs[5]:  # Trace
 
                             # Raw data expander
                             with st.expander("📋 View Raw Data"):
-                                st.dataframe(trace_data.head(100), use_container_width=True)
+                                st.dataframe(trace_data.head(100), width='stretch')
 
                         else:
                             st.error("❌ Could not fetch force trace data. This test may not have raw trace data available.")
@@ -4440,7 +4440,7 @@ with tabs[5]:  # Trace
             # Show the table
             st.dataframe(
                 test_table.round(2),
-                use_container_width=True,
+                width='stretch',
                 hide_index=True
             )
 
@@ -4587,7 +4587,7 @@ with tabs[5]:  # Trace
                                     legend=dict(orientation='h', yanchor='bottom', y=1.02)
                                 )
 
-                                st.plotly_chart(fig, use_container_width=True)
+                                st.plotly_chart(fig, width='stretch')
 
                                 # Metrics comparison
                                 st.markdown("#### 📊 Comparison Metrics")
@@ -4641,7 +4641,7 @@ with tabs[5]:  # Trace
                                         yaxis_title="Force Difference (N)",
                                         height=300
                                     )
-                                    st.plotly_chart(fig_diff, use_container_width=True)
+                                    st.plotly_chart(fig_diff, width='stretch')
                                 elif show_diff:
                                     st.info("Difference plot requires traces of equal length. Try normalizing time.")
 
@@ -4650,10 +4650,10 @@ with tabs[5]:  # Trace
                                     raw_col1, raw_col2 = st.columns(2)
                                     with raw_col1:
                                         st.markdown("**Trial 1 Data**")
-                                        st.dataframe(trace1.head(50), use_container_width=True)
+                                        st.dataframe(trace1.head(50), width='stretch')
                                     with raw_col2:
                                         st.markdown("**Trial 2 Data**")
-                                        st.dataframe(trace2.head(50), use_container_width=True)
+                                        st.dataframe(trace2.head(50), width='stretch')
 
                             else:
                                 st.error("❌ Could not fetch traces. Check API credentials and test IDs.")
@@ -4818,7 +4818,7 @@ Tenant: {env_creds['tenant_id']}
                                 test_type='CMJ',
                                 title="Multi-Athlete Force Trace Comparison"
                             )
-                            st.plotly_chart(fig_multi, use_container_width=True)
+                            st.plotly_chart(fig_multi, width='stretch')
 
                             # Metrics comparison table
                             st.markdown("#### 📊 Comparison Metrics")
@@ -4834,7 +4834,7 @@ Tenant: {env_creds['tenant_id']}
                                 })
 
                             metrics_df = pd.DataFrame(metrics_data)
-                            st.dataframe(metrics_df.round(1), use_container_width=True, hide_index=True)
+                            st.dataframe(metrics_df.round(1), width='stretch', hide_index=True)
 
                         if fetch_errors:
                             with st.expander("⚠️ Fetch Errors"):
@@ -4971,7 +4971,7 @@ Tenant: {env_creds['tenant_id']}
                                 show_phases=True,
                                 test_type='CMJ'
                             )
-                            st.plotly_chart(fig_live, use_container_width=True)
+                            st.plotly_chart(fig_live, width='stretch')
 
                             # Display metrics
                             live_metrics = calculate_trace_metrics(trace_data, test_type='CMJ')
@@ -5267,7 +5267,7 @@ Tenant: {env_creds['tenant_id']}
                                     template='plotly_white'
                                 )
 
-                                st.plotly_chart(fig_comp, use_container_width=True)
+                                st.plotly_chart(fig_comp, width='stretch')
 
                                 # Show difference plot if requested
                                 if show_difference:
@@ -5312,7 +5312,7 @@ Tenant: {env_creds['tenant_id']}
                                         template='plotly_white'
                                     )
 
-                                    st.plotly_chart(fig_diff, use_container_width=True)
+                                    st.plotly_chart(fig_diff, width='stretch')
 
                                 # Comparison Metrics
                                 st.markdown("#### 📊 Comparison Metrics")
@@ -5501,7 +5501,7 @@ with tabs[6]:  # Data
         # Display dataframe
         st.dataframe(
             display_df,
-            use_container_width=True,
+            width='stretch',
             height=600,
             hide_index=True
         )
@@ -5797,7 +5797,7 @@ with tabs[1]:  # Reports
                                     )
                                     fig_trunk.update_xaxes(showgrid=False)
                                     fig_trunk.update_yaxes(showgrid=True, gridwidth=1, gridcolor='#e9ecef')
-                                    st.plotly_chart(fig_trunk, use_container_width=True)
+                                    st.plotly_chart(fig_trunk, width='stretch')
 
                                     col1, col2, col3 = st.columns(3)
                                     with col1:
@@ -5863,7 +5863,7 @@ with tabs[1]:  # Reports
                                     height=max(250, min(400, len(latest_bj) * 35)),
                                     margin=dict(l=10, r=10, t=40, b=10)
                                 )
-                                st.plotly_chart(fig_bj, use_container_width=True)
+                                st.plotly_chart(fig_bj, width='stretch')
                             else:
                                 st.info("No broad jump data for the selected sport.")
                         except Exception as e:
@@ -5929,7 +5929,7 @@ with tabs[1]:  # Reports
                                     height=max(250, min(400, len(latest_aero) * 35)),
                                     margin=dict(l=10, r=10, t=40, b=10)
                                 )
-                                st.plotly_chart(fig_aero, use_container_width=True)
+                                st.plotly_chart(fig_aero, width='stretch')
                         else:
                             st.info("No aerobic test data available.")
                     else:
@@ -6215,7 +6215,7 @@ with tabs[1]:  # Reports
                                         st.metric("Event", sport_val)
 
                                 # Show data table
-                                st.dataframe(athlete_throws, use_container_width=True, hide_index=True)
+                                st.dataframe(athlete_throws, width='stretch', hide_index=True)
                     else:
                         st.info("No throws athletes found in the data")
                 else:
@@ -6293,7 +6293,7 @@ with tabs[1]:  # Reports
                                         bm = athlete_wl['bodyMassKg'].dropna()
                                         if not bm.empty:
                                             st.metric("Body Mass", f"{bm.iloc[0]:.1f} kg")
-                                st.dataframe(athlete_wl, use_container_width=True, hide_index=True)
+                                st.dataframe(athlete_wl, width='stretch', hide_index=True)
                     else:
                         st.info("No Weightlifting athletes found in the data")
                 else:
@@ -6467,7 +6467,7 @@ with tabs[2]:  # ForceFrame
                     showlegend=False,
                     height=400
                 )
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width='stretch')
 
             # Force comparison - Left vs Right
             st.markdown("### Left vs Right Force Comparison")
@@ -6490,7 +6490,7 @@ with tabs[2]:  # ForceFrame
                                  line=dict(color='red', dash='dash'))
                     fig.update_traces(marker=dict(color='#255035', size=10))
                     fig.update_layout(height=500)
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, width='stretch')
 
             # Data table
             st.markdown("### ForceFrame Data Table")
@@ -6502,7 +6502,7 @@ with tabs[2]:  # ForceFrame
                 display_ff = ff_data[available_cols].copy()
                 if 'testDateUtc' in display_ff.columns:
                     display_ff['testDateUtc'] = pd.to_datetime(display_ff['testDateUtc']).dt.strftime('%Y-%m-%d %H:%M')
-                st.dataframe(display_ff, use_container_width=True, height=400)
+                st.dataframe(display_ff, width='stretch', height=400)
 
             csv_ff = ff_data.to_csv(index=False)
             st.download_button("📥 Download ForceFrame Data", csv_ff,
@@ -6587,7 +6587,7 @@ with tabs[2]:  # ForceFrame
                         color_continuous_scale=['#255035', '#a08e66']
                     )
                     fig_region.update_layout(height=max(300, len(test_breakdown) * 40), showlegend=False)
-                    st.plotly_chart(fig_region, use_container_width=True)
+                    st.plotly_chart(fig_region, width='stretch')
 
                     # Force comparison by test type
                     st.markdown(f"#### {selected_region} - Force Comparison")
@@ -6623,7 +6623,7 @@ with tabs[2]:  # ForceFrame
                             height=max(350, len(test_forces) * 50),
                             legend=dict(orientation='h', yanchor='bottom', y=1.02)
                         )
-                        st.plotly_chart(fig_compare, use_container_width=True)
+                        st.plotly_chart(fig_compare, width='stretch')
 
                     # Athletes tested in this region
                     st.markdown(f"#### Athletes Tested - {selected_region}")
@@ -6633,7 +6633,7 @@ with tabs[2]:  # ForceFrame
                             force_cols[0] if force_cols else 'testId': 'max'
                         }).reset_index()
                         athlete_summary.columns = ['Athlete', 'Tests', 'Peak Force (N)' if force_cols else 'Tests']
-                        st.dataframe(athlete_summary.sort_values('Tests', ascending=False), use_container_width=True, hide_index=True)
+                        st.dataframe(athlete_summary.sort_values('Tests', ascending=False), width='stretch', hide_index=True)
             else:
                 st.warning("Test type information not available for body region grouping.")
 
@@ -6818,7 +6818,7 @@ with tabs[2]:  # ForceFrame
                                     plot_bgcolor='rgba(0,0,0,0)'
                                 )
 
-                                st.plotly_chart(fig_asym_hist, use_container_width=True)
+                                st.plotly_chart(fig_asym_hist, width='stretch')
 
                                 # Legend
                                 st.markdown("""
@@ -6880,7 +6880,7 @@ with tabs[2]:  # ForceFrame
                                 hovermode='x unified',
                                 legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
                             )
-                            st.plotly_chart(fig_time, use_container_width=True)
+                            st.plotly_chart(fig_time, width='stretch')
 
                         # Athlete test history for this test type
                         st.markdown(f"#### 📋 {selected_test_type} - Test History")
@@ -6891,7 +6891,7 @@ with tabs[2]:  # ForceFrame
                             display_hist = athlete_ff[hist_available].copy()
                             if 'testDateUtc' in display_hist.columns:
                                 display_hist['testDateUtc'] = pd.to_datetime(display_hist['testDateUtc']).dt.strftime('%Y-%m-%d')
-                            st.dataframe(display_hist.round(1), use_container_width=True, hide_index=True)
+                            st.dataframe(display_hist.round(1), width='stretch', hide_index=True)
                     else:
                         st.info("No data available for the selected athlete and test type.")
                 else:
@@ -6949,7 +6949,7 @@ with tabs[2]:  # ForceFrame
                         barmode='group',
                         height=450
                     )
-                    st.plotly_chart(fig_prog, use_container_width=True)
+                    st.plotly_chart(fig_prog, width='stretch')
 
                     # Progress metrics
                     if len(athlete_prog) >= 2:
@@ -7083,7 +7083,7 @@ with tabs[2]:  # ForceFrame
                         xaxis=dict(range=[-30, 30], zeroline=True),
                         margin=dict(l=150)
                     )
-                    st.plotly_chart(fig_ff_asym, use_container_width=True)
+                    st.plotly_chart(fig_ff_asym, width='stretch')
 
                 st.markdown("---")
 
@@ -7099,7 +7099,7 @@ with tabs[2]:  # ForceFrame
                 fig_asym.add_vline(x=15, line_dash='dot', line_color='red')
                 fig_asym.add_vline(x=-15, line_dash='dot', line_color='red')
                 fig_asym.update_layout(height=350)
-                st.plotly_chart(fig_asym, use_container_width=True)
+                st.plotly_chart(fig_asym, width='stretch')
 
                 # Athletes at risk table
                 st.markdown("#### ⚠️ Athletes Requiring Attention")
@@ -7117,7 +7117,7 @@ with tabs[2]:  # ForceFrame
                     rename_map = {'Name': 'Athlete', 'testTypeName': 'Test Type', 'Asymmetry (%)': 'Asymmetry (%)',
                                   'Risk Level': 'Risk', 'innerLeftMaxForce': 'Left (N)', 'innerRightMaxForce': 'Right (N)'}
                     display_risk.columns = [rename_map.get(c, c) for c in display_risk.columns]
-                    st.dataframe(display_risk.round(1), use_container_width=True, hide_index=True)
+                    st.dataframe(display_risk.round(1), width='stretch', hide_index=True)
                 else:
                     st.success("✅ All athletes within normal asymmetry thresholds!")
             else:
@@ -7196,7 +7196,7 @@ with tabs[3]:  # NordBord
                                  line=dict(color='red', dash='dash'))
                     fig.update_traces(marker=dict(color='#255035', size=12))
                     fig.update_layout(height=500)
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, width='stretch')
 
             # Data table
             st.markdown("### NordBord Data Table")
@@ -7208,7 +7208,7 @@ with tabs[3]:  # NordBord
                 display_nb = nb_data[available_cols].copy()
                 if 'testDateUtc' in display_nb.columns:
                     display_nb['testDateUtc'] = pd.to_datetime(display_nb['testDateUtc']).dt.strftime('%Y-%m-%d %H:%M')
-                st.dataframe(display_nb, use_container_width=True, height=400)
+                st.dataframe(display_nb, width='stretch', height=400)
 
             csv_nb = nb_data.to_csv(index=False)
             st.download_button("📥 Download NordBord Data", csv_nb,
@@ -7366,7 +7366,7 @@ with tabs[3]:  # NordBord
                         xaxis=dict(range=[-30, 30], zeroline=True),
                         margin=dict(l=150)
                     )
-                    st.plotly_chart(fig_asym_bars, use_container_width=True)
+                    st.plotly_chart(fig_asym_bars, width='stretch')
 
                 st.markdown("---")
 
@@ -7385,7 +7385,7 @@ with tabs[3]:  # NordBord
                     fig_left.add_vline(x=400, line_dash='dot', line_color='green',
                                        annotation_text='400N Target')
                     fig_left.update_layout(title='Left Hamstring', height=350)
-                    st.plotly_chart(fig_left, use_container_width=True)
+                    st.plotly_chart(fig_left, width='stretch')
 
                 with col2:
                     fig_right = px.histogram(
@@ -7398,7 +7398,7 @@ with tabs[3]:  # NordBord
                     fig_right.add_vline(x=400, line_dash='dot', line_color='green',
                                         annotation_text='400N Target')
                     fig_right.update_layout(title='Right Hamstring', height=350)
-                    st.plotly_chart(fig_right, use_container_width=True)
+                    st.plotly_chart(fig_right, width='stretch')
 
                 # Athletes below threshold
                 st.markdown("#### ⚠️ Athletes Below 337N Injury Threshold")
@@ -7416,7 +7416,7 @@ with tabs[3]:  # NordBord
                             lambda x: '🔴 High' if x > 50 else ('⚠️ Moderate' if x > 20 else '🟡 Low')
                         )
                         below_summary = below_summary.sort_values('Deficit to 337N', ascending=False)
-                        st.dataframe(below_summary.round(1), use_container_width=True, hide_index=True)
+                        st.dataframe(below_summary.round(1), width='stretch', hide_index=True)
                     else:
                         st.success("✅ All athletes meet the 337N injury threshold!")
             else:
@@ -7563,7 +7563,7 @@ with tabs[3]:  # NordBord
                                 xaxis=dict(range=[-30, 30], zeroline=True),
                                 margin=dict(l=100)
                             )
-                            st.plotly_chart(fig_athlete_asym, use_container_width=True)
+                            st.plotly_chart(fig_athlete_asym, width='stretch')
 
                         st.markdown("---")
 
@@ -7601,7 +7601,7 @@ with tabs[3]:  # NordBord
                                 height=400,
                                 hovermode='x unified'
                             )
-                            st.plotly_chart(fig_time, use_container_width=True)
+                            st.plotly_chart(fig_time, width='stretch')
 
                         # Asymmetry trend
                         if 'leftMaxForce' in athlete_nb.columns and 'rightMaxForce' in athlete_nb.columns:
@@ -7626,7 +7626,7 @@ with tabs[3]:  # NordBord
                                 yaxis_title="Asymmetry (%)",
                                 height=350
                             )
-                            st.plotly_chart(fig_asym_trend, use_container_width=True)
+                            st.plotly_chart(fig_asym_trend, width='stretch')
                 else:
                     st.info("No athlete names available in NordBord data. Athlete mapping may not be configured.")
             else:
@@ -7680,7 +7680,7 @@ with tabs[3]:  # NordBord
                         barmode='group',
                         height=450
                     )
-                    st.plotly_chart(fig_nb_prog, use_container_width=True)
+                    st.plotly_chart(fig_nb_prog, width='stretch')
 
                     # Progress summary
                     if len(athlete_nb_prog) >= 2:
@@ -7735,7 +7735,7 @@ with tabs[3]:  # NordBord
                 fig_nb_asym.add_vline(x=15, line_dash='dot', line_color='red')
                 fig_nb_asym.add_vline(x=-15, line_dash='dot', line_color='red')
                 fig_nb_asym.update_layout(height=400)
-                st.plotly_chart(fig_nb_asym, use_container_width=True)
+                st.plotly_chart(fig_nb_asym, width='stretch')
 
                 # Risk athletes
                 st.markdown("#### Athletes at Injury Risk")
@@ -7748,7 +7748,7 @@ with tabs[3]:  # NordBord
 
                     st.dataframe(
                         latest_risk[['Name', 'Asymmetry (%)', 'Risk', 'leftMaxForce', 'rightMaxForce']].round(1),
-                        use_container_width=True, hide_index=True
+                        width='stretch', hide_index=True
                     )
                 else:
                     st.success("✅ All athletes within safe asymmetry thresholds!")
