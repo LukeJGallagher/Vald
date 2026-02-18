@@ -12,71 +12,12 @@ from datetime import datetime, timedelta, timezone
 import time
 
 # ============================================================================
-# VALD Group to Category (Sport) Mapping
-# Categories are the actual sports. Groups are sub-divisions within sports.
+# Import centralized sport mapping from config
 # ============================================================================
-
-GROUP_TO_CATEGORY = {
-    # Fencing (split by weapon)
-    'Fencing - Epee ': 'Fencing - Epee', 'Epee': 'Fencing - Epee', 'Epee ': 'Fencing - Epee',
-    'Fencing - Epee - Mens - 2025': 'Fencing - Epee', 'Fencing - Epee - Womens - 2025': 'Fencing - Epee',
-    'Fencing - Foil': 'Fencing - Foil', 'Foil': 'Fencing - Foil',
-    'Fencing - Foil - Mens - 2025': 'Fencing - Foil', 'Fencing - Foil - Womens - 2025': 'Fencing - Foil',
-    'Fencing - Sabre': 'Fencing - Sabre', 'Sabre': 'Fencing - Sabre',
-    'Fencing - Sabre - Mens - 2025': 'Fencing - Sabre', 'Fencing - Sabre - Womens - 2025': 'Fencing - Sabre',
-    'Fencing - SOTC - 2026': 'Fencing - SOTC',
-    # Athletics (split by discipline)
-    'Athletics - Horizontal Jumps': 'Athletics - Jumps', 'Athletics - Middle distance': 'Athletics - Middle Distance',
-    'Athletics - Multi events': 'Athletics - Multi Events', 'Athletics - Short Sprints': 'Athletics - Sprints',
-    'Athletics - Throwers': 'Athletics - Throws', 'Athletics - TBC': 'Athletics',
-    'Short Sprints': 'Athletics - Sprints', 'Throwers': 'Athletics - Throws', 'Decathlon': 'Athletics - Multi Events',
-    # Wrestling (split by style)
-    'Freestyle': 'Wrestling - Freestyle', 'GS': 'Wrestling - Freestyle', 'RUS': 'Wrestling - Freestyle',
-    'Greco Roman': 'Wrestling - Greco Roman',
-    'Wrestling - Freestyle': 'Wrestling - Freestyle', 'Wrestling - Greco Roman': 'Wrestling - Greco Roman',
-    # Taekwondo (split by level)
-    'TKD Junior Female': 'Taekwondo - Junior', 'TKD Junior Male': 'Taekwondo - Junior',
-    'TKD Senior Female': 'Taekwondo - Senior', 'TKD Senior Male': 'Taekwondo - Senior',
-    'TKD TBC': 'Taekwondo',
-    # Swimming
-    'SOTC Swimming': 'Swimming', 'Swimming TBC': 'Swimming',
-    # Para Sports
-    'Para Swimming': 'Para Swimming', 'Para Sprints': 'Para Athletics', 'Para TBC': 'Para Athletics',
-    'Para TKD': 'Para Taekwondo', 'Para Cycling': 'Para Cycling', 'Wheel Chair': 'Wheelchair Sports',
-    # Combat sports
-    'Karate': 'Karate', 'Karate TBC': 'Karate',
-    'Judo': 'Judo', 'Judo TBC': 'Judo',
-    'Jiu-Jitsu': 'Jiu-Jitsu', 'Jiu Jitsu TBC': 'Jiu-Jitsu',
-    # Other sports
-    'Weightlifting': 'Weightlifting', 'Weightlifting TBC': 'Weightlifting',
-    'Weightlifting 2026': 'Weightlifting',
-    # Rowing (split by type)
-    'Rowing - Classic': 'Rowing - Classic', 'Rowing - Coastal': 'Rowing - Coastal', 'Coastal': 'Rowing - Coastal',
-    'Pistol 10m': 'Shooting', 'Shooting TBC': 'Shooting',
-    'Equestrian': 'Equestrian', 'Equestrian TBC': 'Equestrian',
-    'Snow Sports': 'Snow Sports',
-    # Excluded groups
-    'ARCHIVED': None, 'Staff': None, 'TBC': None, 'All Athletes': None,
-}
-
-SKIP_GROUPS = {
-    'ARCHIVED', 'Staff', 'TBC', 'All Athletes', 'All athletes',
-    'VALD HQ', 'Test Group', 'Performance Staff', 'Coaches', 'Medical', 'Admin'
-}
-
-
-def get_sport_from_groups(group_names):
-    """Get sport (category) from group names using centralized mapping."""
-    for name in group_names:
-        if name in SKIP_GROUPS:
-            continue
-        if name in GROUP_TO_CATEGORY:
-            category = GROUP_TO_CATEGORY[name]
-            if category:
-                return category
-        if name and name not in SKIP_GROUPS:
-            return name
-    return 'Unknown'
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from config.vald_categories import GROUP_TO_CATEGORY, SKIP_GROUPS, get_sport_from_groups
 
 
 def get_token():
@@ -746,6 +687,7 @@ def main():
                 df['athlete_sex'] = df[id_col].map(
                     lambda pid: profiles.get(pid, {}).get('athlete_sex', '')
                 )
+                df['Name'] = df['full_name']
 
             # Report sport distribution
             if 'athlete_sport' in df.columns:

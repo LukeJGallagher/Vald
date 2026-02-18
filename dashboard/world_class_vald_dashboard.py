@@ -61,6 +61,13 @@ try:
 except ImportError:
     THEME_MODULE_AVAILABLE = False
 
+# Import sport filter helper
+try:
+    from config.vald_categories import matches_sport_filter
+    SPORT_FILTER_AVAILABLE = True
+except ImportError:
+    SPORT_FILTER_AVAILABLE = False
+
 # Import configuration
 try:
     from config.sports_config import (
@@ -139,6 +146,30 @@ try:
 except ImportError:
     TEST_TYPE_MODULES_AVAILABLE = False
     st.sidebar.warning("⚠️ Test-type modules not loaded")
+
+# Import sport diagnostic configs and generic diagnostics module
+try:
+    from config.sport_diagnostic_configs import SPORT_DIAGNOSTIC_CONFIGS, has_sport_data
+    SPORT_DIAGNOSTICS_CONFIGS_AVAILABLE = True
+except ImportError:
+    SPORT_DIAGNOSTICS_CONFIGS_AVAILABLE = False
+    SPORT_DIAGNOSTIC_CONFIGS = {}
+
+try:
+    from utils.sport_diagnostics import SportDiagnosticsModule
+    SPORT_DIAGNOSTICS_MODULE_AVAILABLE = True
+except ImportError:
+    SPORT_DIAGNOSTICS_MODULE_AVAILABLE = False
+
+# Import report export for PDF/HTML generation
+try:
+    from utils.report_export import (
+        generate_group_pdf_report,
+        generate_group_html_report,
+    )
+    REPORT_EXPORT_AVAILABLE = True
+except ImportError:
+    REPORT_EXPORT_AVAILABLE = False
 
 # Import advanced analysis (Elite Insights features)
 try:
@@ -1951,6 +1982,14 @@ with tabs[4]:  # Data Entry
                     if implement_weight == "Other":
                         weight_value = str(custom_weight)
 
+                    # Look up athlete sport from VALD data
+                    _throws_sport = 'Athletics - Throws'
+                    if 'athlete_sport' in filtered_df.columns:
+                        _name_col = 'Name' if 'Name' in filtered_df.columns else 'full_name'
+                        _match = filtered_df[filtered_df[_name_col] == selected_athlete]['athlete_sport'].dropna()
+                        if not _match.empty:
+                            _throws_sport = _match.iloc[0]
+
                     # Create new entry
                     new_entry = pd.DataFrame([{
                         'date': entry_date,
@@ -1963,7 +2002,10 @@ with tabs[4]:  # Data Entry
                         'attempt': attempt_number,
                         'conditions': conditions,
                         'notes': notes,
-                        'created_at': datetime.now().isoformat()
+                        'created_at': datetime.now().isoformat(),
+                        'athlete_sport': _throws_sport,
+                        'Name': selected_athlete,
+                        'recordedDateUtc': entry_date.isoformat() if hasattr(entry_date, 'isoformat') else str(entry_date),
                     }])
 
                     # Append to existing data
@@ -2262,7 +2304,10 @@ with tabs[4]:  # Data Entry
                         'estimated_1rm': round(estimated_1rm, 1),
                         'location': sc_location,
                         'notes': sc_notes,
-                        'created_at': datetime.now().isoformat()
+                        'created_at': datetime.now().isoformat(),
+                        'athlete_sport': athlete_sport_map.get(sc_selected_athlete, ub_selected_sport if ub_selected_sport != 'All Sports' else 'Unknown'),
+                        'Name': sc_selected_athlete,
+                        'recordedDateUtc': sc_entry_date.isoformat() if hasattr(sc_entry_date, 'isoformat') else str(sc_entry_date),
                     }])
 
                     # Append to existing data
@@ -2555,7 +2600,10 @@ with tabs[4]:  # Data Entry
                         'estimated_1rm': round(estimated_1rm, 1),
                         'location': lb_location,
                         'notes': lb_notes,
-                        'created_at': datetime.now().isoformat()
+                        'created_at': datetime.now().isoformat(),
+                        'athlete_sport': lb_athlete_sport_map.get(lb_selected_athlete, lb_selected_sport if lb_selected_sport != 'All Sports' else 'Unknown'),
+                        'Name': lb_selected_athlete,
+                        'recordedDateUtc': lb_entry_date.isoformat() if hasattr(lb_entry_date, 'isoformat') else str(lb_entry_date),
                     }])
 
                     # Append to existing data
@@ -2768,6 +2816,14 @@ with tabs[4]:  # Data Entry
                         # Calculate total
                         te_total = te_supine + te_prone + te_lateral_left + te_lateral_right
 
+                        # Look up athlete sport from VALD data
+                        _te_sport = 'Unknown'
+                        if 'athlete_sport' in filtered_df.columns:
+                            _name_col = 'Name' if 'Name' in filtered_df.columns else 'full_name'
+                            _match = filtered_df[filtered_df[_name_col] == te_athlete]['athlete_sport'].dropna()
+                            if not _match.empty:
+                                _te_sport = _match.iloc[0]
+
                         # Create new entry
                         new_te_entry = {
                             'date': pd.Timestamp(te_date),
@@ -2778,7 +2834,10 @@ with tabs[4]:  # Data Entry
                             'lateral_right_sec': te_lateral_right,
                             'total_sec': te_total,
                             'session_type': te_session_type,
-                            'notes': te_notes
+                            'notes': te_notes,
+                            'athlete_sport': _te_sport,
+                            'Name': te_athlete,
+                            'recordedDateUtc': te_date.isoformat() if hasattr(te_date, 'isoformat') else str(te_date),
                         }
 
                         # Add to dataframe
@@ -2982,6 +3041,14 @@ with tabs[4]:  # Data Entry
                     # Calculate relative wattage
                     aero_relative = round(aero_avg_wattage / aero_body_mass, 2)
 
+                    # Look up athlete sport from VALD data
+                    _aero_sport = 'Unknown'
+                    if 'athlete_sport' in filtered_df.columns:
+                        _name_col = 'Name' if 'Name' in filtered_df.columns else 'full_name'
+                        _match = filtered_df[filtered_df[_name_col] == aero_athlete]['athlete_sport'].dropna()
+                        if not _match.empty:
+                            _aero_sport = _match.iloc[0]
+
                     new_aero_entry = {
                         'date': pd.Timestamp(aero_date),
                         'athlete': aero_athlete,
@@ -2989,7 +3056,10 @@ with tabs[4]:  # Data Entry
                         'body_mass_kg': aero_body_mass,
                         'avg_relative_wattage': aero_relative,
                         'session_type': aero_session_type,
-                        'notes': aero_notes
+                        'notes': aero_notes,
+                        'athlete_sport': _aero_sport,
+                        'Name': aero_athlete,
+                        'recordedDateUtc': aero_date.isoformat() if hasattr(aero_date, 'isoformat') else str(aero_date),
                     }
 
                     if st.session_state.aerobic_tests.empty:
@@ -3112,13 +3182,24 @@ with tabs[4]:  # Data Entry
 
             if bj_submitted:
                 if bj_athlete and bj_athlete != "No athletes loaded" and bj_distance > 0:
+                    # Look up athlete sport from VALD data
+                    _bj_sport = 'Unknown'
+                    if 'athlete_sport' in filtered_df.columns:
+                        _name_col = 'Name' if 'Name' in filtered_df.columns else 'full_name'
+                        _match = filtered_df[filtered_df[_name_col] == bj_athlete]['athlete_sport'].dropna()
+                        if not _match.empty:
+                            _bj_sport = _match.iloc[0]
+
                     new_bj_entry = {
                         'date': pd.Timestamp(bj_date),
                         'athlete': bj_athlete,
                         'distance_cm': bj_distance,
                         'attempt': bj_attempt,
                         'session_type': bj_session_type,
-                        'notes': bj_notes
+                        'notes': bj_notes,
+                        'athlete_sport': _bj_sport,
+                        'Name': bj_athlete,
+                        'recordedDateUtc': bj_date.isoformat() if hasattr(bj_date, 'isoformat') else str(bj_date),
                     }
 
                     if st.session_state.broad_jump.empty:
@@ -3268,6 +3349,14 @@ with tabs[4]:  # Data Entry
                     power_peak_relative = round(power_peak_wattage / power_body_mass, 2)
                     power_avg_relative = round(power_avg_wattage / power_body_mass, 2) if power_avg_wattage > 0 else 0
 
+                    # Look up athlete sport from VALD data
+                    _power_sport = 'Unknown'
+                    if 'athlete_sport' in filtered_df.columns:
+                        _name_col = 'Name' if 'Name' in filtered_df.columns else 'full_name'
+                        _match = filtered_df[filtered_df[_name_col] == power_athlete]['athlete_sport'].dropna()
+                        if not _match.empty:
+                            _power_sport = _match.iloc[0]
+
                     new_power_entry = {
                         'date': pd.Timestamp(power_date),
                         'athlete': power_athlete,
@@ -3278,7 +3367,10 @@ with tabs[4]:  # Data Entry
                         'peak_relative_wattage': power_peak_relative,
                         'avg_relative_wattage': power_avg_relative,
                         'session_type': power_session_type,
-                        'notes': power_notes
+                        'notes': power_notes,
+                        'athlete_sport': _power_sport,
+                        'Name': power_athlete,
+                        'recordedDateUtc': power_date.isoformat() if hasattr(power_date, 'isoformat') else str(power_date),
                     }
 
                     if st.session_state.power_tests.empty:
@@ -5504,7 +5596,23 @@ with tabs[1]:  # Reports
         if available_sports or selected_report_sport:
 
             # Report section selector - segmented_control persists via key (st.tabs resets on widget interaction)
-            report_tab_options = ["💪 Strength", "🎯 Shooting", "🥏 Throws", "🏋️ Weightlifting", "⚙️ Settings"]
+            report_tab_options = ["💪 Strength", "🎯 Shooting", "🥏 Throws", "🏋️ Weightlifting"]
+
+            # Dynamically add sport diagnostic tabs for sports that have data
+            _sport_tab_map = {}  # Maps tab label -> sport_key
+            if SPORT_DIAGNOSTICS_CONFIGS_AVAILABLE and SPORT_DIAGNOSTICS_MODULE_AVAILABLE:
+                for _sk, _cfg in SPORT_DIAGNOSTIC_CONFIGS.items():
+                    # Skip sports that already have dedicated tabs
+                    if _sk in ('weightlifting', 'shooting'):
+                        continue
+                    if has_sport_data(df, _cfg['sub_sports']):
+                        _tab_label = f"{_cfg['icon']} {_cfg['display_name']}"
+                        report_tab_options.append(_tab_label)
+                        _sport_tab_map[_tab_label] = _sk
+
+            # Settings always last
+            report_tab_options.append("⚙️ Settings")
+
             selected_report_tab = st.segmented_control(
                 "Report Section",
                 options=report_tab_options,
@@ -5646,7 +5754,10 @@ with tabs[1]:  # Reports
                                 trunk_df['date'] = pd.to_datetime(trunk_df['date'], errors='coerce')
 
                             if selected_report_sport and selected_report_sport != "All Sports":
-                                if 'Name' in sport_data.columns:
+                                if 'athlete_sport' in trunk_df.columns and SPORT_FILTER_AVAILABLE:
+                                    trunk_df = trunk_df[trunk_df['athlete_sport'].apply(
+                                        lambda s: matches_sport_filter(str(s), selected_report_sport) if pd.notna(s) else False)]
+                                elif 'Name' in sport_data.columns:
                                     sport_athletes = sport_data['Name'].dropna().unique()
                                     trunk_df = trunk_df[trunk_df['athlete'].isin(sport_athletes)]
 
@@ -5711,9 +5822,13 @@ with tabs[1]:  # Reports
                             if 'date' in bj_df.columns:
                                 bj_df['date'] = pd.to_datetime(bj_df['date'], errors='coerce')
 
-                            if selected_report_sport and selected_report_sport != "All Sports" and 'Name' in sport_data.columns:
-                                sport_athletes = sport_data['Name'].dropna().unique()
-                                bj_df = bj_df[bj_df['athlete'].isin(sport_athletes)]
+                            if selected_report_sport and selected_report_sport != "All Sports":
+                                if 'athlete_sport' in bj_df.columns and SPORT_FILTER_AVAILABLE:
+                                    bj_df = bj_df[bj_df['athlete_sport'].apply(
+                                        lambda s: matches_sport_filter(str(s), selected_report_sport) if pd.notna(s) else False)]
+                                elif 'Name' in sport_data.columns:
+                                    sport_athletes = sport_data['Name'].dropna().unique()
+                                    bj_df = bj_df[bj_df['athlete'].isin(sport_athletes)]
 
                             if not bj_df.empty and 'distance_cm' in bj_df.columns:
                                 latest_bj = bj_df.sort_values('date').groupby('athlete').last().reset_index()
@@ -5770,9 +5885,12 @@ with tabs[1]:  # Reports
                                 pass
 
                     if not fitness_df.empty:
-                        if selected_report_sport and selected_report_sport != "All Sports" and 'Name' in sport_data.columns:
-                            sport_athletes = sport_data['Name'].dropna().unique()
-                            if 'athlete' in fitness_df.columns:
+                        if selected_report_sport and selected_report_sport != "All Sports":
+                            if 'athlete_sport' in fitness_df.columns and SPORT_FILTER_AVAILABLE:
+                                fitness_df = fitness_df[fitness_df['athlete_sport'].apply(
+                                    lambda s: matches_sport_filter(str(s), selected_report_sport) if pd.notna(s) else False)]
+                            elif 'Name' in sport_data.columns and 'athlete' in fitness_df.columns:
+                                sport_athletes = sport_data['Name'].dropna().unique()
                                 fitness_df = fitness_df[fitness_df['athlete'].isin(sport_athletes)]
 
                         # 6 Minute Aerobic Test
@@ -5807,6 +5925,122 @@ with tabs[1]:  # Reports
                             st.info("No aerobic test data available.")
                     else:
                         st.info("📭 No fitness test data. Use ✏️ Data Entry to add.")
+
+                    # =====================================================================
+                    # EXPORT BUTTONS (PDF / HTML / Excel)
+                    # =====================================================================
+                    if REPORT_EXPORT_AVAILABLE:
+                        st.markdown("---")
+                        st.markdown("""
+                        <div style="background: linear-gradient(135deg, #235032 0%, #1a3d25 100%);
+                             padding: 1rem; border-radius: 8px; margin-bottom: 1rem;
+                             border-left: 4px solid #a08e66;">
+                            <h3 style="color: white; margin: 0;">Export Report</h3>
+                            <p style="color: rgba(255,255,255,0.8); margin: 0.25rem 0 0 0; font-size: 0.9rem;">
+                                Download this Classic Layout report as PDF, HTML, or Excel</p>
+                        </div>
+                        """, unsafe_allow_html=True)
+
+                        # Build summary data table for export
+                        try:
+                            from utils.sport_reports import get_metric_column, _latest_per_athlete
+                            _export_rows = []
+                            _export_athletes = sorted(sport_data['Name'].dropna().unique()) if 'Name' in sport_data.columns else []
+                            for _ath in _export_athletes:
+                                _ath_df = sport_data[sport_data['Name'] == _ath]
+                                _row = {'Athlete': _ath}
+
+                                # IMTP
+                                _imtp = _ath_df[_ath_df['testType'].str.contains('IMTP', case=False, na=False)] if 'testType' in _ath_df.columns else pd.DataFrame()
+                                if not _imtp.empty:
+                                    _mc = get_metric_column(_imtp, 'peak_force')
+                                    if _mc and _mc in _imtp.columns:
+                                        _v = pd.to_numeric(_imtp[_mc], errors='coerce').dropna()
+                                        if not _v.empty:
+                                            _row['IMTP Rel Force (N/kg)'] = round(_v.iloc[-1], 1)
+
+                                # CMJ
+                                _cmj = _ath_df[_ath_df['testType'].str.contains('CMJ|ABCMJ', case=False, na=False)] if 'testType' in _ath_df.columns else pd.DataFrame()
+                                if not _cmj.empty:
+                                    _mc = get_metric_column(_cmj, 'cmj_height')
+                                    if _mc and _mc in _cmj.columns:
+                                        _v = pd.to_numeric(_cmj[_mc], errors='coerce').dropna()
+                                        if not _v.empty:
+                                            val = _v.iloc[-1]
+                                            _row['CMJ Height (cm)'] = round(val * 100 if val < 1 else val, 1)
+                                    _mc2 = get_metric_column(_cmj, 'relative_power')
+                                    if _mc2 and _mc2 in _cmj.columns:
+                                        _v2 = pd.to_numeric(_cmj[_mc2], errors='coerce').dropna()
+                                        if not _v2.empty:
+                                            _row['CMJ Rel Power (W/kg)'] = round(_v2.iloc[-1], 1)
+
+                                # Hop RSI
+                                _hop = _ath_df[_ath_df['testType'].isin(['HJ', 'SLHJ', 'RSHIP', 'RSKIP', 'RSAIP'])] if 'testType' in _ath_df.columns else pd.DataFrame()
+                                if not _hop.empty:
+                                    _mc = get_metric_column(_hop, 'rsi')
+                                    if _mc and _mc in _hop.columns:
+                                        _v = pd.to_numeric(_hop[_mc], errors='coerce').dropna()
+                                        if not _v.empty:
+                                            val = _v.iloc[-1]
+                                            _row['RSI'] = round(val / 100 if val > 10 else val, 2)
+
+                                _export_rows.append(_row)
+
+                            _export_summary = pd.DataFrame(_export_rows) if _export_rows else pd.DataFrame()
+                        except Exception:
+                            _export_summary = pd.DataFrame()
+
+                        _export_meta = {
+                            'sport': selected_report_sport or 'All Sports',
+                            'athlete_count': len(sport_data['Name'].dropna().unique()) if 'Name' in sport_data.columns else 0,
+                            'test_count': len(sport_data),
+                        }
+
+                        exp_col1, exp_col2, exp_col3 = st.columns(3)
+                        with exp_col1:
+                            try:
+                                _pdf_bytes = generate_group_pdf_report(
+                                    sport=selected_report_sport or 'All Sports',
+                                    data_tables={'Athlete Summary': _export_summary} if not _export_summary.empty else {},
+                                    metadata=_export_meta,
+                                )
+                                st.download_button(
+                                    label="📥 Download PDF",
+                                    data=_pdf_bytes,
+                                    file_name=f"classic_report_{(selected_report_sport or 'all').replace(' ', '_').lower()}.pdf",
+                                    mime="application/pdf",
+                                    key="classic_export_pdf"
+                                )
+                            except Exception as e:
+                                st.warning(f"PDF export requires ReportLab: {e}")
+
+                        with exp_col2:
+                            try:
+                                _html_str = generate_group_html_report(
+                                    sport=selected_report_sport or 'All Sports',
+                                    data_tables={'Athlete Summary': _export_summary} if not _export_summary.empty else {},
+                                    metadata=_export_meta,
+                                )
+                                st.download_button(
+                                    label="📥 Download HTML",
+                                    data=_html_str,
+                                    file_name=f"classic_report_{(selected_report_sport or 'all').replace(' ', '_').lower()}.html",
+                                    mime="text/html",
+                                    key="classic_export_html"
+                                )
+                            except Exception as e:
+                                st.warning(f"HTML export error: {e}")
+
+                        with exp_col3:
+                            if not _export_summary.empty:
+                                _csv_data = _export_summary.to_csv(index=False)
+                                st.download_button(
+                                    label="📥 Download Excel (CSV)",
+                                    data=_csv_data,
+                                    file_name=f"classic_report_{(selected_report_sport or 'all').replace(' ', '_').lower()}.csv",
+                                    mime="text/csv",
+                                    key="classic_export_csv"
+                                )
 
                 with view_tabs[2]:  # Group V2 (Summary)
                     # Group Report v2 - Summary table with RAG status
@@ -6055,6 +6289,87 @@ with tabs[1]:  # Reports
                         st.info("No Weightlifting athletes found in the data")
                 else:
                     st.info("No Weightlifting athletes found. Looking for athletes with 'Weightlifting' in their sport.")
+
+            elif selected_report_tab in _sport_tab_map:
+                # Dynamic sport diagnostic tab
+                _active_sport_key = _sport_tab_map[selected_report_tab]
+                _active_cfg = SPORT_DIAGNOSTIC_CONFIGS[_active_sport_key]
+                _sport_display = _active_cfg['display_name']
+
+                st.markdown(f"### {_active_cfg['icon']} {_sport_display} Diagnostics")
+                st.caption(f"Physical diagnostics summary for {_sport_display} athletes")
+
+                # Filter for this sport's athletes (use original df so they always appear)
+                _sd_mask = df['athlete_sport'].isin(_active_cfg['sub_sports']) if 'athlete_sport' in df.columns else pd.Series([False] * len(df))
+                # Also try parent sport match
+                if not _sd_mask.any():
+                    _sd_mask = df['athlete_sport'].str.contains(
+                        _sport_display, case=False, na=False
+                    ) if 'athlete_sport' in df.columns else pd.Series([False] * len(df))
+                _sd_df = df[_sd_mask].copy()
+
+                # Ensure Name column exists
+                if not _sd_df.empty:
+                    if 'Name' not in _sd_df.columns or _sd_df['Name'].isna().all():
+                        if 'full_name' in _sd_df.columns:
+                            _sd_df['Name'] = _sd_df['full_name']
+
+                if not _sd_df.empty:
+                    _sd_athletes = sorted(_sd_df['Name'].dropna().unique()) if 'Name' in _sd_df.columns else []
+
+                    if _sd_athletes:
+                        # Persist selection across reruns
+                        _sd_key = f"sd_{_active_sport_key}_athlete_selector"
+                        _sd_idx = 0
+                        _prev_sd = st.session_state.get(_sd_key)
+                        if _prev_sd and _prev_sd in _sd_athletes:
+                            _sd_idx = _sd_athletes.index(_prev_sd)
+                        _selected_sd_athlete = st.selectbox(
+                            f"Select {_sport_display} Athlete:",
+                            options=_sd_athletes,
+                            index=_sd_idx,
+                            key=_sd_key
+                        )
+
+                        # Get this athlete's data across all devices
+                        _athlete_fd = _sd_df[_sd_df['Name'] == _selected_sd_athlete].copy()
+
+                        _athlete_ff = pd.DataFrame()
+                        if not df_forceframe.empty:
+                            for _nc in ['Name', 'full_name']:
+                                if _nc in df_forceframe.columns:
+                                    _athlete_ff = df_forceframe[df_forceframe[_nc] == _selected_sd_athlete].copy()
+                                    if not _athlete_ff.empty:
+                                        break
+
+                        _athlete_dyn = pd.DataFrame()
+                        if df_dynamo is not None and not df_dynamo.empty:
+                            for _nc in ['Name', 'full_name']:
+                                if _nc in df_dynamo.columns:
+                                    _athlete_dyn = df_dynamo[df_dynamo[_nc] == _selected_sd_athlete].copy()
+                                    if not _athlete_dyn.empty:
+                                        break
+
+                        _athlete_nb = pd.DataFrame()
+                        if not df_nordbord.empty:
+                            for _nc in ['Name', 'full_name']:
+                                if _nc in df_nordbord.columns:
+                                    _athlete_nb = df_nordbord[df_nordbord[_nc] == _selected_sd_athlete].copy()
+                                    if not _athlete_nb.empty:
+                                        break
+
+                        SportDiagnosticsModule.display_dashboard(
+                            sport_key=_active_sport_key,
+                            forcedecks_df=_athlete_fd,
+                            athlete_name=_selected_sd_athlete,
+                            forceframe_df=_athlete_ff if not _athlete_ff.empty else None,
+                            dynamo_df=_athlete_dyn if not _athlete_dyn.empty else None,
+                            nordbord_df=_athlete_nb if not _athlete_nb.empty else None,
+                        )
+                    else:
+                        st.info(f"No {_sport_display} athletes found in the data")
+                else:
+                    st.info(f"No {_sport_display} athletes found.")
 
             elif selected_report_tab == "⚙️ Settings":
                 # Benchmark Settings - S&C staff can edit VALD norms

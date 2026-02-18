@@ -949,13 +949,29 @@ def create_ranked_bar_chart(
     if 'Name' not in df.columns or metric_col not in df.columns:
         return None
 
-    # Get data and sort
-    plot_df = df[['Name', metric_col]].dropna()
+    # Get data and sort - keep date columns if available for hover
+    keep_cols = ['Name', metric_col]
+    date_col = None
+    for dc in ['recordedDateUtc', 'date', 'testDateUtc']:
+        if dc in df.columns:
+            keep_cols.append(dc)
+            date_col = dc
+            break
+    plot_df = df[keep_cols].dropna(subset=[metric_col])
     if plot_df.empty:
         return None
 
     # Sort ascending for horizontal (so best performers appear at top)
     plot_df = plot_df.sort_values(metric_col, ascending=True)
+
+    # Build hover text with date if available
+    hover_texts = []
+    for _, row in plot_df.iterrows():
+        hover = f"<b>{row['Name']}</b><br>{metric_name}: {row[metric_col]:.1f} {unit}"
+        if date_col and pd.notna(row.get(date_col)):
+            date_str = str(row[date_col])[:10]  # YYYY-MM-DD
+            hover += f"<br>Date: {date_str}"
+        hover_texts.append(hover)
 
     # Calculate squad average
     squad_avg = plot_df[metric_col].mean()
@@ -973,7 +989,9 @@ def create_ranked_bar_chart(
             text=[f"{v:.1f}" for v in plot_df[metric_col]],
             textposition='auto',
             textfont=dict(size=10),
-            name='Athletes'
+            name='Athletes',
+            hovertext=hover_texts,
+            hoverinfo='text'
         ))
 
         # Add squad average line (vertical)
@@ -1018,6 +1036,14 @@ def create_ranked_bar_chart(
     else:
         # Vertical bars (original format)
         plot_df = plot_df.sort_values(metric_col, ascending=False)
+        # Rebuild hover texts for sorted order
+        hover_texts_v = []
+        for _, row in plot_df.iterrows():
+            hover = f"<b>{row['Name']}</b><br>{metric_name}: {row[metric_col]:.1f} {unit}"
+            if date_col and pd.notna(row.get(date_col)):
+                date_str = str(row[date_col])[:10]
+                hover += f"<br>Date: {date_str}"
+            hover_texts_v.append(hover)
 
         fig.add_trace(go.Bar(
             x=plot_df['Name'],
@@ -1026,7 +1052,9 @@ def create_ranked_bar_chart(
             text=[f"{v:.1f}" for v in plot_df[metric_col]],
             textposition='outside',
             textfont=dict(size=10),
-            name='Athletes'
+            name='Athletes',
+            hovertext=hover_texts_v,
+            hoverinfo='text'
         ))
 
         # Add squad average line (horizontal)
@@ -1092,8 +1120,15 @@ def create_ranked_side_by_side_chart(
     if left_col not in df.columns or right_col not in df.columns:
         return None
 
-    # Get data
-    plot_df = df[['Name', left_col, right_col]].dropna()
+    # Get data - keep date columns if available for hover
+    keep_cols = ['Name', left_col, right_col]
+    date_col = None
+    for dc in ['recordedDateUtc', 'date', 'testDateUtc']:
+        if dc in df.columns:
+            keep_cols.append(dc)
+            date_col = dc
+            break
+    plot_df = df[keep_cols].dropna(subset=[left_col, right_col])
     if plot_df.empty:
         return None
 
@@ -1107,6 +1142,15 @@ def create_ranked_side_by_side_chart(
     # Use appropriate text format: ratios need decimals, force/power use integers
     text_fmt = '.2f' if unit == 'ratio' else '.0f'
 
+    # Build hover text with date
+    def _build_hover(row, side, col):
+        hover = f"<b>{row['Name']}</b><br>{side}: {row[col]:{text_fmt}} {unit}"
+        asym = abs(row[left_col] - row[right_col]) / max(row[left_col], row[right_col]) * 100 if max(row[left_col], row[right_col]) > 0 else 0
+        hover += f"<br>Asymmetry: {asym:.1f}%"
+        if date_col and pd.notna(row.get(date_col)):
+            hover += f"<br>Date: {str(row[date_col])[:10]}"
+        return hover
+
     # Add left bars
     fig.add_trace(go.Bar(
         y=plot_df['Name'],
@@ -1115,7 +1159,9 @@ def create_ranked_side_by_side_chart(
         marker_color=TEAL_PRIMARY,
         text=[f"{v:{text_fmt}}" for v in plot_df[left_col]],
         textposition='auto',
-        name='Left'
+        name='Left',
+        hovertext=[_build_hover(row, 'Left', left_col) for _, row in plot_df.iterrows()],
+        hoverinfo='text'
     ))
 
     # Add right bars
@@ -1126,7 +1172,9 @@ def create_ranked_side_by_side_chart(
         marker_color=TEAL_LIGHT,
         text=[f"{v:{text_fmt}}" for v in plot_df[right_col]],
         textposition='auto',
-        name='Right'
+        name='Right',
+        hovertext=[_build_hover(row, 'Right', right_col) for _, row in plot_df.iterrows()],
+        hoverinfo='text'
     ))
 
     # Add benchmark line if provided

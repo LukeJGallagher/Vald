@@ -19,6 +19,13 @@ import os
 import io
 import base64
 
+# Import sport filter helper for direct CSV sport filtering
+try:
+    from config.vald_categories import matches_sport_filter
+    SPORT_FILTER_AVAILABLE = True
+except ImportError:
+    SPORT_FILTER_AVAILABLE = False
+
 # Import benchmark database for dynamic VALD norms and Saudi population norms
 try:
     from .benchmark_database import (
@@ -74,6 +81,30 @@ TEAL_DARK = '#1C3D28'         # Dark green
 TEAL_LIGHT = '#2E6040'        # Light green
 GRAY_BLUE = '#78909C'         # Neutral gray
 INFO_BLUE = '#0077B6'         # Info/testing blue
+
+def _filter_manual_csv_by_sport(csv_df: pd.DataFrame, sport: str, sport_df: pd.DataFrame = None, name_col: str = 'athlete') -> pd.DataFrame:
+    """Filter manual entry CSV data by sport using athlete_sport column directly.
+
+    Falls back to VALD athlete name matching if athlete_sport column is not available.
+    """
+    if csv_df.empty or not sport or sport == "All Sports":
+        return csv_df
+
+    # Prefer direct athlete_sport column (set during data entry)
+    if 'athlete_sport' in csv_df.columns and SPORT_FILTER_AVAILABLE:
+        filtered = csv_df[csv_df['athlete_sport'].apply(
+            lambda s: matches_sport_filter(str(s), sport) if pd.notna(s) else False)]
+        if not filtered.empty:
+            return filtered
+
+    # Fallback: match by athlete names from VALD data
+    if sport_df is not None and 'Name' in sport_df.columns and name_col in csv_df.columns:
+        sport_athletes = sport_df['Name'].dropna().unique().tolist()
+        if sport_athletes:
+            return csv_df[csv_df[name_col].isin(sport_athletes)]
+
+    return csv_df
+
 
 def _load_dynamo_df() -> pd.DataFrame:
     """Load DynaMo data from local files, GitHub repo, or VALD API."""
@@ -337,6 +368,8 @@ METRIC_COLUMNS = {
     'rsi': [
         'RSI_MODIFIED',  # local_sync format
         'RSI_MODIFIED_IMP_MOM',
+        'HOP_BEST_RSI',  # Hop tests (HJ, SLHJ, RSHIP, RSKIP, RSAIP)
+        'HOP_MEAN_RSI',  # Hop tests mean RSI
         'RSI',  # local_sync format
         'RSI-modified_Trial',  # legacy API format
         'RSI (Flight/Contact Time)_Trial',
@@ -614,6 +647,19 @@ def add_benchmark_zones(fig: go.Figure, benchmarks: Dict,
     return fig
 
 
+def _latest_per_athlete(df: pd.DataFrame, metric_col: str) -> pd.DataFrame:
+    """Get the latest metric value per athlete, preserving date column for hover."""
+    date_col = None
+    for dc in ['recordedDateUtc', 'date', 'testDateUtc']:
+        if dc in df.columns:
+            date_col = dc
+            break
+    if date_col:
+        agg_dict = {metric_col: 'last', date_col: 'last'}
+        return df.sort_values(date_col).groupby('Name').agg(agg_dict).reset_index()
+    return df.groupby('Name')[metric_col].last().reset_index()
+
+
 def create_benchmark_bar_chart(df: pd.DataFrame,
                                 metric_col: str,
                                 name_col: str,
@@ -875,12 +921,12 @@ def create_group_report(df: pd.DataFrame,
 
     # IMTP - Relative Peak Force (Ranked Bar with Squad Avg + Benchmark)
     with col1:
-        metric_col = get_metric_column(sport_df, 'peak_force')
+        imtp_df = sport_df[sport_df['testType'].str.contains('IMTP|ISOT|Isometric', case=False, na=False)]
+        metric_col = get_metric_column(imtp_df, 'peak_force') if not imtp_df.empty else None
         if metric_col:
-            imtp_df = sport_df[sport_df['testType'].str.contains('IMTP|ISOT|Isometric', case=False, na=False)]
             if not imtp_df.empty and SNC_CHARTS_AVAILABLE:
                 # Get latest per athlete
-                latest_imtp = imtp_df.groupby('Name')[metric_col].last().reset_index()
+                latest_imtp = _latest_per_athlete(imtp_df, metric_col)
                 fig = create_ranked_bar_chart(
                     latest_imtp, metric_col,
                     "Relative Peak Force", "N/kg",
@@ -904,11 +950,11 @@ def create_group_report(df: pd.DataFrame,
 
     # CMJ - Relative Peak Power (Ranked Bar)
     with col2:
-        metric_col = get_metric_column(sport_df, 'relative_power')
+        cmj_df = sport_df[sport_df['testType'].str.contains('CMJ|Counter', case=False, na=False)]
+        metric_col = get_metric_column(cmj_df, 'relative_power') if not cmj_df.empty else None
         if metric_col:
-            cmj_df = sport_df[sport_df['testType'].str.contains('CMJ|Counter', case=False, na=False)]
             if not cmj_df.empty and SNC_CHARTS_AVAILABLE:
-                latest_cmj = cmj_df.groupby('Name')[metric_col].last().reset_index()
+                latest_cmj = _latest_per_athlete(cmj_df, metric_col)
                 fig = create_ranked_bar_chart(
                     latest_cmj, metric_col,
                     "Relative Peak Power", "W/kg",
@@ -934,11 +980,11 @@ def create_group_report(df: pd.DataFrame,
 
     # CMJ - Jump Height
     with col1:
-        metric_col = get_metric_column(sport_df, 'cmj_height')
+        cmj_df = sport_df[sport_df['testType'].str.contains('CMJ|Counter', case=False, na=False)]
+        metric_col = get_metric_column(cmj_df, 'cmj_height') if not cmj_df.empty else None
         if metric_col:
-            cmj_df = sport_df[sport_df['testType'].str.contains('CMJ|Counter', case=False, na=False)]
             if not cmj_df.empty and SNC_CHARTS_AVAILABLE:
-                latest_cmj = cmj_df.groupby('Name')[metric_col].last().reset_index()
+                latest_cmj = _latest_per_athlete(cmj_df, metric_col)
                 # Convert m to cm if needed
                 if latest_cmj[metric_col].max() < 1:
                     latest_cmj[metric_col] = latest_cmj[metric_col] * 100
@@ -964,14 +1010,14 @@ def create_group_report(df: pd.DataFrame,
 
     # 10:5 Hop Test - RSI (Ranked Bar)
     with col2:
-        metric_col = get_metric_column(sport_df, 'rsi')
+        # RSHIP = 10:5 Repeat Single Hop In Place
+        hop_df = sport_df[sport_df['testType'].isin(['HJ', 'SLHJ', 'RSHIP', 'RSKIP', 'RSAIP'])]
+        metric_col = get_metric_column(hop_df, 'rsi') if not hop_df.empty else None
         if metric_col:
-            # RSHIP = 10:5 Repeat Single Hop In Place
-            hop_df = sport_df[sport_df['testType'].isin(['HJ', 'SLHJ', 'RSHIP', 'RSKIP', 'RSAIP'])]
             # Apply RSI unit conversion if needed
             hop_df = apply_metric_conversion(hop_df, 'rsi', metric_col)
             if not hop_df.empty and SNC_CHARTS_AVAILABLE:
-                latest_hop = hop_df.groupby('Name')[metric_col].last().reset_index()
+                latest_hop = _latest_per_athlete(hop_df, metric_col)
                 fig = create_ranked_bar_chart(
                     latest_hop, metric_col,
                     "RSI", "",
@@ -1006,7 +1052,13 @@ def create_group_report(df: pd.DataFrame,
 
             if left_col and right_col and 'Name' in nb_df.columns and SNC_CHARTS_AVAILABLE:
                 # Get latest per athlete
-                latest_nb = nb_df.groupby('Name').agg({left_col: 'last', right_col: 'last'}).reset_index()
+                agg_dict = {left_col: 'last', right_col: 'last'}
+                for dc in ['recordedDateUtc', 'date', 'testDateUtc']:
+                    if dc in nb_df.columns:
+                        agg_dict[dc] = 'last'
+                        nb_df = nb_df.sort_values(dc)
+                        break
+                latest_nb = nb_df.groupby('Name').agg(agg_dict).reset_index()
                 fig = create_ranked_side_by_side_chart(
                     latest_nb, left_col, right_col,
                     "Hamstring Force", "N",
@@ -1030,39 +1082,39 @@ def create_group_report(df: pd.DataFrame,
         else:
             st.info("NordBord data not available")
 
-    # SL ISO Squat - Unilateral (Side-by-Side Bar)
+    # SL ISO Squat - Peak Force (Ranked Bar)
     with col2:
         # Look for Single Leg Isometric Squat tests
         sliso_df = sport_df[sport_df['testType'].str.contains('SLISOSQT|SLISO|SL.*Squat', case=False, na=False)]
-        if not sliso_df.empty:
-            # Try to find left/right force columns
-            left_col = None
-            right_col = None
-            for col in sliso_df.columns:
-                if 'Left' in col and ('Force' in col or 'Peak' in col):
-                    left_col = col
-                elif 'Right' in col and ('Force' in col or 'Peak' in col):
-                    right_col = col
+        if not sliso_df.empty and 'Name' in sliso_df.columns:
+            # SL tests store each leg as separate rows - no _Left/_Right columns
+            # Find the best available force metric (unsuffixed)
+            sl_metric = None
+            for candidate in ['NET_PEAK_VERTICAL_FORCE', 'PEAK_VERTICAL_FORCE', 'ISO_BM_REL_FORCE_PEAK']:
+                if candidate in sliso_df.columns and sliso_df[candidate].notna().any():
+                    sl_metric = candidate
+                    break
 
-            if left_col and right_col and 'Name' in sliso_df.columns:
-                latest_sliso = sliso_df.groupby('Name').agg({left_col: 'last', right_col: 'last'}).reset_index()
-                if SNC_CHARTS_AVAILABLE:
-                    fig = create_ranked_side_by_side_chart(
-                        latest_sliso, left_col, right_col,
-                        "Relative Peak Force", "N/kg",
-                        title="SL ISO Squat - L/R"
+            if sl_metric:
+                latest_sliso = _latest_per_athlete(sliso_df, sl_metric)
+                latest_sliso = latest_sliso.dropna(subset=[sl_metric])
+                if not latest_sliso.empty and SNC_CHARTS_AVAILABLE:
+                    fig = create_ranked_bar_chart(
+                        latest_sliso, sl_metric,
+                        "Net Peak Force", "N",
+                        title="SL ISO Squat - Net Peak Force"
                     )
                     if fig:
                         st.plotly_chart(fig, use_container_width=True)
-                else:
-                    # Inline fallback chart
-                    plot_df = latest_sliso.sort_values(left_col, ascending=True)
+                elif not latest_sliso.empty:
+                    plot_df = latest_sliso.sort_values(sl_metric, ascending=True)
                     fig = go.Figure()
-                    fig.add_trace(go.Bar(y=plot_df['Name'], x=plot_df[left_col], orientation='h', marker_color=TEAL_PRIMARY, name='Left'))
-                    fig.add_trace(go.Bar(y=plot_df['Name'], x=plot_df[right_col], orientation='h', marker_color=GOLD_ACCENT, name='Right'))
-                    fig.update_layout(title="SL ISO Squat - L/R", barmode='group', plot_bgcolor='white', paper_bgcolor='white',
+                    fig.add_trace(go.Bar(y=plot_df['Name'], x=plot_df[sl_metric], orientation='h', marker_color=TEAL_PRIMARY))
+                    fig.update_layout(title="SL ISO Squat - Net Peak Force", plot_bgcolor='white', paper_bgcolor='white',
                                       height=max(250, len(plot_df) * 40), margin=dict(l=10, r=10, t=40, b=10))
                     st.plotly_chart(fig, use_container_width=True)
+                else:
+                    st.info("SL ISO Squat data not available")
             else:
                 st.info("SL ISO Squat data not available")
         else:
@@ -1071,72 +1123,78 @@ def create_group_report(df: pd.DataFrame,
     # Row 4: SL IMTP and SL CMJ (Tier 2 - Unilateral Side-by-Side)
     col1, col2 = st.columns(2)
 
-    # SL IMTP - Unilateral
+    # SL IMTP - Peak Force (Ranked Bar)
     with col1:
         slimtp_df = sport_df[sport_df['testType'].str.contains('SLIMTP', case=False, na=False)]
-        if not slimtp_df.empty:
-            left_col = None
-            right_col = None
-            for col in slimtp_df.columns:
-                if 'Left' in col and ('Force' in col or 'Peak' in col):
-                    left_col = col
-                elif 'Right' in col and ('Force' in col or 'Peak' in col):
-                    right_col = col
+        if not slimtp_df.empty and 'Name' in slimtp_df.columns:
+            # SL tests store each leg as separate rows - no _Left/_Right columns
+            sl_metric = None
+            for candidate in ['NET_PEAK_VERTICAL_FORCE', 'PEAK_VERTICAL_FORCE', 'ISO_BM_REL_FORCE_PEAK']:
+                if candidate in slimtp_df.columns and slimtp_df[candidate].notna().any():
+                    sl_metric = candidate
+                    break
 
-            if left_col and right_col and 'Name' in slimtp_df.columns:
-                latest_slimtp = slimtp_df.groupby('Name').agg({left_col: 'last', right_col: 'last'}).reset_index()
-                if SNC_CHARTS_AVAILABLE:
-                    fig = create_ranked_side_by_side_chart(
-                        latest_slimtp, left_col, right_col,
-                        "Relative Peak Force", "N/kg",
-                        title="SL IMTP - L/R"
+            if sl_metric:
+                latest_slimtp = _latest_per_athlete(slimtp_df, sl_metric)
+                latest_slimtp = latest_slimtp.dropna(subset=[sl_metric])
+                if not latest_slimtp.empty and SNC_CHARTS_AVAILABLE:
+                    fig = create_ranked_bar_chart(
+                        latest_slimtp, sl_metric,
+                        "Net Peak Force", "N",
+                        title="SL IMTP - Net Peak Force"
                     )
                     if fig:
                         st.plotly_chart(fig, use_container_width=True)
-                else:
-                    plot_df = latest_slimtp.sort_values(left_col, ascending=True)
+                elif not latest_slimtp.empty:
+                    plot_df = latest_slimtp.sort_values(sl_metric, ascending=True)
                     fig = go.Figure()
-                    fig.add_trace(go.Bar(y=plot_df['Name'], x=plot_df[left_col], orientation='h', marker_color=TEAL_PRIMARY, name='Left'))
-                    fig.add_trace(go.Bar(y=plot_df['Name'], x=plot_df[right_col], orientation='h', marker_color=GOLD_ACCENT, name='Right'))
-                    fig.update_layout(title="SL IMTP - L/R", barmode='group', plot_bgcolor='white', paper_bgcolor='white',
+                    fig.add_trace(go.Bar(y=plot_df['Name'], x=plot_df[sl_metric], orientation='h', marker_color=TEAL_PRIMARY))
+                    fig.update_layout(title="SL IMTP - Net Peak Force", plot_bgcolor='white', paper_bgcolor='white',
                                       height=max(250, len(plot_df) * 40), margin=dict(l=10, r=10, t=40, b=10))
                     st.plotly_chart(fig, use_container_width=True)
+                else:
+                    st.info("SL IMTP data not available")
             else:
                 st.info("SL IMTP data not available")
         else:
             st.info("SL IMTP data not available")
 
-    # SL CMJ - Unilateral
+    # SL CMJ - Jump Height (Ranked Bar)
     with col2:
-        slcmj_df = sport_df[sport_df['testType'].str.contains('SLCMJ|SLCMRJ|SL.*CMJ', case=False, na=False)]
-        if not slcmj_df.empty:
-            # Try to find left/right power columns
-            left_col = None
-            right_col = None
-            for col in slcmj_df.columns:
-                if 'Left' in col and ('Power' in col or 'Peak' in col):
-                    left_col = col
-                elif 'Right' in col and ('Power' in col or 'Peak' in col):
-                    right_col = col
+        slcmj_df = sport_df[sport_df['testType'].str.contains('SLCMJ|SLCMRJ|SL.*CMJ|SLJ', case=False, na=False)]
+        if not slcmj_df.empty and 'Name' in slcmj_df.columns:
+            # SL tests store each leg as separate rows - no _Left/_Right columns
+            sl_metric = None
+            for candidate in ['JUMP_HEIGHT_IMP_MOM', 'JUMP_HEIGHT', 'BODYMASS_RELATIVE_TAKEOFF_POWER', 'PEAK_TAKEOFF_POWER']:
+                if candidate in slcmj_df.columns and slcmj_df[candidate].notna().any():
+                    sl_metric = candidate
+                    break
 
-            if left_col and right_col and 'Name' in slcmj_df.columns:
-                latest_slcmj = slcmj_df.groupby('Name').agg({left_col: 'last', right_col: 'last'}).reset_index()
-                if SNC_CHARTS_AVAILABLE:
-                    fig = create_ranked_side_by_side_chart(
-                        latest_slcmj, left_col, right_col,
-                        "Relative Peak Power", "W/kg",
-                        title="SL CMJ - L/R Peak Power"
+            if sl_metric:
+                latest_slcmj = _latest_per_athlete(slcmj_df, sl_metric)
+                latest_slcmj = latest_slcmj.dropna(subset=[sl_metric])
+                # Convert m to cm if needed
+                unit = "cm" if 'HEIGHT' in sl_metric else "W/kg"
+                title_suffix = "Jump Height" if 'HEIGHT' in sl_metric else "Peak Power"
+                if 'HEIGHT' in sl_metric and latest_slcmj[sl_metric].max() < 1:
+                    latest_slcmj[sl_metric] = latest_slcmj[sl_metric] * 100
+                if not latest_slcmj.empty and SNC_CHARTS_AVAILABLE:
+                    fig = create_ranked_bar_chart(
+                        latest_slcmj, sl_metric,
+                        title_suffix, unit,
+                        title=f"SL CMJ - {title_suffix}"
                     )
                     if fig:
                         st.plotly_chart(fig, use_container_width=True)
-                else:
-                    plot_df = latest_slcmj.sort_values(left_col, ascending=True)
+                elif not latest_slcmj.empty:
+                    plot_df = latest_slcmj.sort_values(sl_metric, ascending=True)
                     fig = go.Figure()
-                    fig.add_trace(go.Bar(y=plot_df['Name'], x=plot_df[left_col], orientation='h', marker_color=TEAL_PRIMARY, name='Left'))
-                    fig.add_trace(go.Bar(y=plot_df['Name'], x=plot_df[right_col], orientation='h', marker_color=GOLD_ACCENT, name='Right'))
-                    fig.update_layout(title="SL CMJ - L/R Peak Power", barmode='group', plot_bgcolor='white', paper_bgcolor='white',
+                    fig.add_trace(go.Bar(y=plot_df['Name'], x=plot_df[sl_metric], orientation='h', marker_color=TEAL_PRIMARY))
+                    fig.update_layout(title=f"SL CMJ - {title_suffix}", plot_bgcolor='white', paper_bgcolor='white',
                                       height=max(250, len(plot_df) * 40), margin=dict(l=10, r=10, t=40, b=10))
                     st.plotly_chart(fig, use_container_width=True)
+                else:
+                    st.info("SL CMJ data not available")
             else:
                 st.info("SL CMJ data not available")
         else:
@@ -1163,14 +1221,11 @@ def create_group_report(df: pd.DataFrame,
         except Exception:
             pass
 
-    # Filter S&C data by sport athletes (use Name or athlete column)
-    if not sc_df.empty and 'Name' in sport_df.columns:
-        sport_athletes = sport_df['Name'].dropna().unique().tolist()
-        # Try to match by athlete column first, then Name
-        if 'athlete' in sc_df.columns:
-            sc_df = sc_df[sc_df['athlete'].isin(sport_athletes)]
-        elif 'Name' in sc_df.columns:
-            sc_df = sc_df[sc_df['Name'].isin(sport_athletes)]
+    # Filter S&C data by sport (prefer athlete_sport column, fallback to name matching)
+    if not sc_df.empty:
+        name_col = 'athlete' if 'athlete' in sc_df.columns else ('Name' if 'Name' in sc_df.columns else None)
+        if name_col:
+            sc_df = _filter_manual_csv_by_sport(sc_df, sport, sport_df, name_col=name_col)
 
     # Row 1: Bench Press and Pull Up
     col1, col2 = st.columns(2)
@@ -1661,13 +1716,11 @@ def create_group_report(df: pd.DataFrame,
             pass
 
     if not sc_df.empty and 'athlete' in sc_df.columns:
-        # Filter S&C data to athletes in the current sport group (skip for "All Sports")
+        # Filter S&C data by sport (prefer athlete_sport column, fallback to name matching)
         if sport != "All Sports":
-            sport_athletes = sport_df['Name'].dropna().unique().tolist() if 'Name' in sport_df.columns else []
-            if sport_athletes:
-                sc_df_filtered = sc_df[sc_df['athlete'].isin(sport_athletes)]
-                if not sc_df_filtered.empty:
-                    sc_df = sc_df_filtered
+            sc_df_filtered = _filter_manual_csv_by_sport(sc_df, sport, sport_df, name_col='athlete')
+            if not sc_df_filtered.empty:
+                sc_df = sc_df_filtered
 
         # Tab view like Canvas
         # Use selectbox + session state for persistence
@@ -1811,9 +1864,9 @@ def create_group_report(df: pd.DataFrame,
 
             with col1:
                 # IMTP Trend Line Chart
-                metric_col = get_metric_column(sport_df, 'peak_force')
+                imtp_df = sport_df[sport_df['testType'].str.contains('IMTP|ISOT|Isometric', case=False, na=False)]
+                metric_col = get_metric_column(imtp_df, 'peak_force') if not imtp_df.empty else None
                 if metric_col:
-                    imtp_df = sport_df[sport_df['testType'].str.contains('IMTP|ISOT|Isometric', case=False, na=False)]
                     if not imtp_df.empty:
                         fig = create_individual_line_chart(
                             imtp_df, selected_athletes, metric_col,
@@ -1830,9 +1883,9 @@ def create_group_report(df: pd.DataFrame,
 
             with col2:
                 # CMJ Power Trend Line Chart
-                metric_col = get_metric_column(sport_df, 'relative_power')
+                cmj_df = sport_df[sport_df['testType'].str.contains('CMJ|Counter', case=False, na=False)]
+                metric_col = get_metric_column(cmj_df, 'relative_power') if not cmj_df.empty else None
                 if metric_col:
-                    cmj_df = sport_df[sport_df['testType'].str.contains('CMJ|Counter', case=False, na=False)]
                     if not cmj_df.empty:
                         fig = create_individual_line_chart(
                             cmj_df, selected_athletes, metric_col,
@@ -1852,9 +1905,9 @@ def create_group_report(df: pd.DataFrame,
 
             with col1:
                 # CMJ Height Trend
-                metric_col = get_metric_column(sport_df, 'cmj_height')
+                cmj_df = sport_df[sport_df['testType'].str.contains('CMJ|Counter', case=False, na=False)]
+                metric_col = get_metric_column(cmj_df, 'cmj_height') if not cmj_df.empty else None
                 if metric_col:
-                    cmj_df = sport_df[sport_df['testType'].str.contains('CMJ|Counter', case=False, na=False)]
                     if not cmj_df.empty:
                         # Create a copy and convert if needed
                         cmj_plot = cmj_df.copy()
@@ -1875,9 +1928,9 @@ def create_group_report(df: pd.DataFrame,
 
             with col2:
                 # 10:5 Hop RSI Trend
-                metric_col = get_metric_column(sport_df, 'rsi')
+                hop_df = sport_df[sport_df['testType'].isin(['HJ', 'SLHJ', 'RSHIP', 'RSKIP', 'RSAIP'])]
+                metric_col = get_metric_column(hop_df, 'rsi') if not hop_df.empty else None
                 if metric_col:
-                    hop_df = sport_df[sport_df['testType'].isin(['HJ', 'SLHJ', 'RSHIP', 'RSKIP', 'RSAIP'])]
                     # Apply RSI unit conversion if needed
                     hop_df = apply_metric_conversion(hop_df, 'rsi', metric_col)
                     if not hop_df.empty:
@@ -2008,9 +2061,9 @@ def create_individual_report(df: pd.DataFrame,
     col1, col2 = st.columns(2)
 
     with col1:
-        metric_col = get_metric_column(athlete_df, 'cmj_height')
+        cmj_df = athlete_df[athlete_df['testType'].str.contains('CMJ|Counter', case=False, na=False)]
+        metric_col = get_metric_column(cmj_df, 'cmj_height') if not cmj_df.empty else None
         if metric_col:
-            cmj_df = athlete_df[athlete_df['testType'].str.contains('CMJ|Counter', case=False, na=False)]
             if not cmj_df.empty:
                 fig = create_trend_chart(
                     cmj_df, metric_col, date_col, benchmarks,
@@ -2020,9 +2073,9 @@ def create_individual_report(df: pd.DataFrame,
                     st.plotly_chart(fig, use_container_width=True)
 
     with col2:
-        metric_col = get_metric_column(athlete_df, 'peak_power')
+        cmj_df = athlete_df[athlete_df['testType'].str.contains('CMJ|Counter', case=False, na=False)]
+        metric_col = get_metric_column(cmj_df, 'relative_power') if not cmj_df.empty else None
         if metric_col:
-            cmj_df = athlete_df[athlete_df['testType'].str.contains('CMJ|Counter', case=False, na=False)]
             if not cmj_df.empty:
                 fig = create_trend_chart(
                     cmj_df, metric_col, date_col, benchmarks,
@@ -2035,9 +2088,9 @@ def create_individual_report(df: pd.DataFrame,
     col1, col2 = st.columns(2)
 
     with col1:
-        metric_col = get_metric_column(athlete_df, 'rsi')
+        hop_df = athlete_df[athlete_df['testType'].isin(['HJ', 'SLHJ', 'RSHIP', 'RSKIP', 'RSAIP'])]
+        metric_col = get_metric_column(hop_df, 'rsi') if not hop_df.empty else None
         if metric_col:
-            hop_df = athlete_df[athlete_df['testType'].isin(['HJ', 'SLHJ', 'RSHIP', 'RSKIP', 'RSAIP'])]
             # Apply RSI unit conversion if needed
             hop_df = apply_metric_conversion(hop_df, 'rsi', metric_col)
             if not hop_df.empty:
@@ -2049,9 +2102,9 @@ def create_individual_report(df: pd.DataFrame,
                     st.plotly_chart(fig, use_container_width=True)
 
     with col2:
-        metric_col = get_metric_column(athlete_df, 'peak_force')
+        imtp_df = athlete_df[athlete_df['testType'].str.contains('IMTP|ISOT|Isometric', case=False, na=False)]
+        metric_col = get_metric_column(imtp_df, 'peak_force') if not imtp_df.empty else None
         if metric_col:
-            imtp_df = athlete_df[athlete_df['testType'].str.contains('IMTP|ISOT|Isometric', case=False, na=False)]
             if not imtp_df.empty:
                 fig = create_trend_chart(
                     imtp_df, metric_col, date_col, benchmarks,
@@ -2449,9 +2502,9 @@ def create_group_report_v2(df: pd.DataFrame,
         row = {'Athlete': athlete}
 
         # IMTP - Relative Peak Force
-        force_col = get_metric_column(athlete_data, 'peak_force')
+        imtp_df = athlete_data[athlete_data['testType'].str.contains('IMTP|ISOT|Isometric', case=False, na=False)]
+        force_col = get_metric_column(imtp_df, 'peak_force') if not imtp_df.empty else None
         if force_col:
-            imtp_df = athlete_data[athlete_data['testType'].str.contains('IMTP|ISOT|Isometric', case=False, na=False)]
             if not imtp_df.empty:
                 val = imtp_df[force_col].dropna().iloc[-1] if not imtp_df[force_col].dropna().empty else None
                 if val is not None:
@@ -2459,9 +2512,9 @@ def create_group_report_v2(df: pd.DataFrame,
                     row['IMTP_status'] = _get_rag_status(val, benchmarks.get('peak_force', {}))
 
         # CMJ - Relative Peak Power
-        power_col = get_metric_column(athlete_data, 'relative_power')
+        cmj_df = athlete_data[athlete_data['testType'].str.contains('CMJ|Counter', case=False, na=False)]
+        power_col = get_metric_column(cmj_df, 'relative_power') if not cmj_df.empty else None
         if power_col:
-            cmj_df = athlete_data[athlete_data['testType'].str.contains('CMJ|Counter', case=False, na=False)]
             if not cmj_df.empty:
                 val = cmj_df[power_col].dropna().iloc[-1] if not cmj_df[power_col].dropna().empty else None
                 if val is not None:
@@ -2469,9 +2522,9 @@ def create_group_report_v2(df: pd.DataFrame,
                     row['CMJPower_status'] = _get_rag_status(val, benchmarks.get('peak_power', {}))
 
         # CMJ - Jump Height
-        height_col = get_metric_column(athlete_data, 'cmj_height')
+        cmj_df = athlete_data[athlete_data['testType'].str.contains('CMJ|Counter', case=False, na=False)]
+        height_col = get_metric_column(cmj_df, 'cmj_height') if not cmj_df.empty else None
         if height_col:
-            cmj_df = athlete_data[athlete_data['testType'].str.contains('CMJ|Counter', case=False, na=False)]
             if not cmj_df.empty:
                 val = cmj_df[height_col].dropna().iloc[-1] if not cmj_df[height_col].dropna().empty else None
                 if val is not None:
@@ -2481,9 +2534,9 @@ def create_group_report_v2(df: pd.DataFrame,
                     row['CMJHeight_status'] = _get_rag_status(val, benchmarks.get('cmj_height', {}))
 
         # 10:5 Hop - RSI
-        rsi_col = get_metric_column(athlete_data, 'rsi')
+        hop_df = athlete_data[athlete_data['testType'].isin(['HJ', 'SLHJ', 'RSHIP', 'RSKIP', 'RSAIP'])]
+        rsi_col = get_metric_column(hop_df, 'rsi') if not hop_df.empty else None
         if rsi_col:
-            hop_df = athlete_data[athlete_data['testType'].isin(['HJ', 'SLHJ', 'RSHIP', 'RSKIP', 'RSAIP'])]
             if not hop_df.empty:
                 val = hop_df[rsi_col].dropna().iloc[-1] if not hop_df[rsi_col].dropna().empty else None
                 if val is not None:
@@ -2772,9 +2825,6 @@ def create_group_report_v2(df: pd.DataFrame,
     # =========================================================================
     st.markdown("### Strength RM (Manual Entry)")
 
-    # Get list of athletes from this sport for filtering manual data
-    sport_athletes = sport_df['Name'].dropna().unique().tolist() if 'Name' in sport_df.columns else []
-
     strength_data = []
     data_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data')
     lower_body_path = os.path.join(data_dir, 'sc_lower_body.csv')
@@ -2801,9 +2851,9 @@ def create_group_report_v2(df: pd.DataFrame,
         if 'athlete' in strength_df.columns and 'Name' not in strength_df.columns:
             strength_df['Name'] = strength_df['athlete']
 
-        # Filter by sport athletes (only show athletes from the selected sport)
-        if sport_athletes and 'Name' in strength_df.columns:
-            strength_df = strength_df[strength_df['Name'].isin(sport_athletes)]
+        # Filter by sport (prefer athlete_sport column, fallback to name matching)
+        name_col = 'athlete' if 'athlete' in strength_df.columns else 'Name'
+        strength_df = _filter_manual_csv_by_sport(strength_df, sport, sport_df, name_col=name_col)
 
         # Get latest 1RM per athlete per exercise
         if 'estimated_1rm' in strength_df.columns and 'exercise' in strength_df.columns and not strength_df.empty:
@@ -2845,9 +2895,8 @@ def create_group_report_v2(df: pd.DataFrame,
         try:
             bj_df = pd.read_csv(broad_jump_path)
             if 'athlete' in bj_df.columns and 'distance_cm' in bj_df.columns:
-                # Filter by sport athletes
-                if sport_athletes:
-                    bj_df = bj_df[bj_df['athlete'].isin(sport_athletes)]
+                # Filter by sport (prefer athlete_sport column, fallback to name matching)
+                bj_df = _filter_manual_csv_by_sport(bj_df, sport, sport_df, name_col='athlete')
 
                 if not bj_df.empty:
                     # Get best jump per athlete
@@ -2881,9 +2930,8 @@ def create_group_report_v2(df: pd.DataFrame,
         try:
             aero_df = pd.read_csv(aerobic_path)
             if 'athlete' in aero_df.columns and 'avg_relative_wattage' in aero_df.columns:
-                # Filter by sport athletes
-                if sport_athletes:
-                    aero_df = aero_df[aero_df['athlete'].isin(sport_athletes)]
+                # Filter by sport (prefer athlete_sport column, fallback to name matching)
+                aero_df = _filter_manual_csv_by_sport(aero_df, sport, sport_df, name_col='athlete')
 
                 if not aero_df.empty:
                     latest_aero = aero_df.groupby('athlete')['avg_relative_wattage'].last().reset_index()
@@ -3401,30 +3449,30 @@ def create_group_report_v3(df: pd.DataFrame,
             metrics = {}
 
             # CMJ Height
-            cmj_col = get_metric_column(athlete_data, 'cmj_height')
+            cmj_df = athlete_data[athlete_data['testType'].str.contains('CMJ|Counter', case=False, na=False)]
+            cmj_col = get_metric_column(cmj_df, 'cmj_height') if not cmj_df.empty else None
             if cmj_col:
-                cmj_df = athlete_data[athlete_data['testType'].str.contains('CMJ|Counter', case=False, na=False)]
                 if not cmj_df.empty and not cmj_df[cmj_col].dropna().empty:
                     metrics['CMJ Height'] = cmj_df[cmj_col].dropna().iloc[-1]
 
             # Power
-            power_col = get_metric_column(athlete_data, 'relative_power')
+            cmj_df = athlete_data[athlete_data['testType'].str.contains('CMJ|Counter', case=False, na=False)]
+            power_col = get_metric_column(cmj_df, 'relative_power') if not cmj_df.empty else None
             if power_col:
-                cmj_df = athlete_data[athlete_data['testType'].str.contains('CMJ|Counter', case=False, na=False)]
                 if not cmj_df.empty and not cmj_df[power_col].dropna().empty:
                     metrics['Power'] = cmj_df[power_col].dropna().iloc[-1]
 
             # IMTP
-            force_col = get_metric_column(athlete_data, 'peak_force')
+            imtp_df = athlete_data[athlete_data['testType'].str.contains('IMTP|ISOT|Isometric', case=False, na=False)]
+            force_col = get_metric_column(imtp_df, 'peak_force') if not imtp_df.empty else None
             if force_col:
-                imtp_df = athlete_data[athlete_data['testType'].str.contains('IMTP|ISOT|Isometric', case=False, na=False)]
                 if not imtp_df.empty and not imtp_df[force_col].dropna().empty:
                     metrics['IMTP'] = imtp_df[force_col].dropna().iloc[-1]
 
             # RSI
-            rsi_col = get_metric_column(athlete_data, 'rsi')
+            hop_df = athlete_data[athlete_data['testType'].isin(['HJ', 'SLHJ', 'RSHIP', 'RSKIP', 'RSAIP'])]
+            rsi_col = get_metric_column(hop_df, 'rsi') if not hop_df.empty else None
             if rsi_col:
-                hop_df = athlete_data[athlete_data['testType'].isin(['HJ', 'SLHJ', 'RSHIP', 'RSKIP', 'RSAIP'])]
                 if not hop_df.empty and not hop_df[rsi_col].dropna().empty:
                     rsi_val = hop_df[rsi_col].dropna().iloc[-1]
                     # Apply RSI conversion if value is too high (likely *100)
@@ -3459,9 +3507,9 @@ def create_group_report_v3(df: pd.DataFrame,
 
     with col1:
         # IMTP - Lollipop Chart
-        metric_col = get_metric_column(sport_df, 'peak_force')
+        imtp_df = sport_df[sport_df['testType'].str.contains('IMTP|ISOT|Isometric', case=False, na=False)]
+        metric_col = get_metric_column(imtp_df, 'peak_force') if not imtp_df.empty else None
         if metric_col:
-            imtp_df = sport_df[sport_df['testType'].str.contains('IMTP|ISOT|Isometric', case=False, na=False)]
             if not imtp_df.empty:
                 fig = _create_lollipop_chart(
                     imtp_df, metric_col, 'Name', benchmarks,
@@ -3476,9 +3524,9 @@ def create_group_report_v3(df: pd.DataFrame,
 
     with col2:
         # CMJ Box Plot - Team Distribution with dots
-        metric_col = get_metric_column(sport_df, 'cmj_height')
+        cmj_df = sport_df[sport_df['testType'].str.contains('CMJ|Counter', case=False, na=False)]
+        metric_col = get_metric_column(cmj_df, 'cmj_height') if not cmj_df.empty else None
         if metric_col:
-            cmj_df = sport_df[sport_df['testType'].str.contains('CMJ|Counter', case=False, na=False)]
             if not cmj_df.empty:
                 fig = _create_box_plot(
                     cmj_df, metric_col, 'Name', benchmarks,
@@ -3496,9 +3544,9 @@ def create_group_report_v3(df: pd.DataFrame,
 
     with col1:
         # CMJ Power - Box plot with dots
-        power_col = get_metric_column(sport_df, 'relative_power')
+        cmj_df = sport_df[sport_df['testType'].str.contains('CMJ|Counter', case=False, na=False)]
+        power_col = get_metric_column(cmj_df, 'relative_power') if not cmj_df.empty else None
         if power_col:
-            cmj_df = sport_df[sport_df['testType'].str.contains('CMJ|Counter', case=False, na=False)]
             if not cmj_df.empty:
                 fig = _create_box_plot(
                     cmj_df, power_col, 'Name', benchmarks,
@@ -3513,10 +3561,9 @@ def create_group_report_v3(df: pd.DataFrame,
 
     with col2:
         # Reactive Strength RSI (DJ/RSHIP) - Lollipop Chart
-        rsi_col = get_metric_column(sport_df, 'rsi')
+        hop_df = sport_df[sport_df['testType'].isin(['HJ', 'SLHJ', 'RSHIP', 'RSKIP', 'RSAIP'])]
+        rsi_col = get_metric_column(hop_df, 'rsi') if not hop_df.empty else None
         if rsi_col:
-            # RSHIP = Repeat Single Hop In Place (10-5), DJ = Drop Jump
-            hop_df = sport_df[sport_df['testType'].isin(['HJ', 'SLHJ', 'RSHIP', 'RSKIP', 'RSAIP'])]
             # Apply RSI unit conversion if needed
             hop_df = apply_metric_conversion(hop_df, 'rsi', rsi_col)
             if not hop_df.empty:
@@ -3533,10 +3580,10 @@ def create_group_report_v3(df: pd.DataFrame,
 
     # Row 3: Performance Quadrant - Power vs Height
     st.markdown("#### Performance Quadrant: Height vs Power")
-    height_col = get_metric_column(sport_df, 'cmj_height')
-    power_col = get_metric_column(sport_df, 'relative_power')
+    cmj_df = sport_df[sport_df['testType'].str.contains('CMJ|Counter', case=False, na=False)]
+    height_col = get_metric_column(cmj_df, 'cmj_height') if not cmj_df.empty else None
+    power_col = get_metric_column(cmj_df, 'relative_power') if not cmj_df.empty else None
     if height_col and power_col:
-        cmj_df = sport_df[sport_df['testType'].str.contains('CMJ|Counter', case=False, na=False)]
         if not cmj_df.empty and 'Name' in cmj_df.columns:
             # Create quadrant scatter with distinct styling
             latest = cmj_df.groupby('Name').agg({
@@ -3839,27 +3886,27 @@ def create_group_report_v3(df: pd.DataFrame,
     metrics_summary = []
 
     # CMJ Height average
-    cmj_col = get_metric_column(sport_df, 'cmj_height')
+    cmj_df = sport_df[sport_df['testType'].str.contains('CMJ|Counter', case=False, na=False)]
+    cmj_col = get_metric_column(cmj_df, 'cmj_height') if not cmj_df.empty else None
     if cmj_col:
-        cmj_df = sport_df[sport_df['testType'].str.contains('CMJ|Counter', case=False, na=False)]
         if not cmj_df.empty:
             avg_val = cmj_df.groupby('Name')[cmj_col].last().mean()
             if pd.notna(avg_val):
                 metrics_summary.append(('CMJ Height', avg_val, benchmarks.get('cmj_height', {}), 'cm'))
 
     # Power average
-    power_col = get_metric_column(sport_df, 'relative_power')
+    cmj_df = sport_df[sport_df['testType'].str.contains('CMJ|Counter', case=False, na=False)]
+    power_col = get_metric_column(cmj_df, 'relative_power') if not cmj_df.empty else None
     if power_col:
-        cmj_df = sport_df[sport_df['testType'].str.contains('CMJ|Counter', case=False, na=False)]
         if not cmj_df.empty:
             avg_val = cmj_df.groupby('Name')[power_col].last().mean()
             if pd.notna(avg_val):
                 metrics_summary.append(('Relative Power', avg_val, benchmarks.get('peak_power', {}), 'W/kg'))
 
     # IMTP average
-    force_col = get_metric_column(sport_df, 'peak_force')
+    imtp_df = sport_df[sport_df['testType'].str.contains('IMTP|ISOT|Isometric', case=False, na=False)]
+    force_col = get_metric_column(imtp_df, 'peak_force') if not imtp_df.empty else None
     if force_col:
-        imtp_df = sport_df[sport_df['testType'].str.contains('IMTP|ISOT|Isometric', case=False, na=False)]
         if not imtp_df.empty:
             avg_val = imtp_df.groupby('Name')[force_col].last().mean()
             if pd.notna(avg_val):

@@ -34,51 +34,8 @@ SYNC_STATE_FILE = Path(__file__).parent.parent / 'config' / 'sync_state.json'
 # Output directory - vald-data repo location
 OUTPUT_DIR = Path(r"c:\Users\l.gallagher\OneDrive - Team Saudi\Documents\Performance Analysis\vald-data\data")
 
-# Group to sport mapping - Maps VALD group names to sport categories
-# IMPORTANT: Include exact VALD group names (check API for current groups)
-GROUP_TO_CATEGORY = {
-    # Fencing (split by weapon)
-    'Fencing - Epee ': 'Fencing - Epee', 'Epee': 'Fencing - Epee', 'Epee ': 'Fencing - Epee',
-    'Fencing - Epee - Mens - 2025': 'Fencing - Epee', 'Fencing - Epee - Womens - 2025': 'Fencing - Epee',
-    'Fencing - Foil': 'Fencing - Foil', 'Foil': 'Fencing - Foil',
-    'Fencing - Foil - Mens - 2025': 'Fencing - Foil', 'Fencing - Foil - Womens - 2025': 'Fencing - Foil',
-    'Fencing - Sabre': 'Fencing - Sabre', 'Sabre': 'Fencing - Sabre',
-    'Fencing - Sabre - Mens - 2025': 'Fencing - Sabre', 'Fencing - Sabre - Womens - 2025': 'Fencing - Sabre',
-    'Fencing - SOTC - 2026': 'Fencing - SOTC',
-    # Athletics (split by discipline)
-    'Athletics - Horizontal Jumps': 'Athletics - Jumps', 'Athletics - Middle distance': 'Athletics - Middle Distance',
-    'Athletics - Multi events': 'Athletics - Multi Events', 'Athletics - Short Sprints': 'Athletics - Sprints',
-    'Athletics - Throwers': 'Athletics - Throws', 'Athletics - TBC': 'Athletics',
-    'Short Sprints': 'Athletics - Sprints', 'Throwers': 'Athletics - Throws', 'Decathlon': 'Athletics - Multi Events',
-    # Wrestling (split by style)
-    'Freestyle': 'Wrestling - Freestyle', 'GS': 'Wrestling - Freestyle', 'RUS': 'Wrestling - Freestyle',
-    'Greco Roman': 'Wrestling - Greco Roman',
-    'Wrestling - Freestyle': 'Wrestling - Freestyle', 'Wrestling - Greco Roman': 'Wrestling - Greco Roman',
-    # Taekwondo (split by level)
-    'TKD Junior Female': 'Taekwondo - Junior', 'TKD Junior Male': 'Taekwondo - Junior',
-    'TKD Senior Female': 'Taekwondo - Senior', 'TKD Senior Male': 'Taekwondo - Senior',
-    'TKD TBC': 'Taekwondo',
-    # Swimming
-    'SOTC Swimming': 'Swimming', 'Swimming TBC': 'Swimming',
-    # Para sports
-    'Para Swimming': 'Para Swimming', 'Para Sprints': 'Para Athletics', 'Para TBC': 'Para Athletics',
-    'Para TKD': 'Para Taekwondo', 'Para Cycling': 'Para Cycling', 'Wheel Chair': 'Wheelchair Sports',
-    # Combat sports
-    'Karate': 'Karate', 'Karate TBC': 'Karate',
-    'Judo': 'Judo', 'Judo TBC': 'Judo',
-    'Jiu-Jitsu': 'Jiu-Jitsu', 'Jiu Jitsu TBC': 'Jiu-Jitsu',
-    # Other sports
-    'Weightlifting': 'Weightlifting', 'Weightlifting TBC': 'Weightlifting',
-    'Weightlifting 2026': 'Weightlifting',
-    # Rowing (split by type)
-    'Rowing - Classic': 'Rowing - Classic', 'Rowing - Coastal': 'Rowing - Coastal', 'Coastal': 'Rowing - Coastal',
-    'Pistol 10m': 'Shooting', 'Shooting TBC': 'Shooting',
-    'Equestrian TBC': 'Equestrian', 'Snow Sports': 'Snow Sports',
-    # Skip groups (return None - these become "Unknown")
-    'ARCHIVED': None, 'Staff': None, 'TBC': None, 'All Athletes': None,
-}
-
-SKIP_GROUPS = {'ARCHIVED', 'Staff', 'TBC', 'All Athletes', 'All athletes', 'VALD HQ', 'Test Group'}
+# Import centralized sport mapping from config
+from config.vald_categories import GROUP_TO_CATEGORY, SKIP_GROUPS
 
 
 def load_sync_state():
@@ -118,18 +75,8 @@ def get_sync_from_date(force_all=False, days=None):
     return from_date.strftime('%Y-%m-%dT00:00:00.000Z')
 
 
-def get_sport_from_groups(group_names):
-    """Derive sport from group names."""
-    for name in group_names:
-        if name in SKIP_GROUPS:
-            continue
-        if name in GROUP_TO_CATEGORY:
-            cat = GROUP_TO_CATEGORY[name]
-            if cat:
-                return cat
-        if name and name not in SKIP_GROUPS:
-            return name
-    return 'Unknown'
+# Import centralized function
+from config.vald_categories import get_sport_from_groups
 
 
 def get_token():
@@ -701,6 +648,7 @@ def main():
         df['full_name'] = df[id_col].map(lambda pid: profiles.get(pid, {}).get('full_name', f'Athlete_{str(pid)[:8]}'))
         df['athlete_sport'] = df[id_col].map(lambda pid: profiles.get(pid, {}).get('athlete_sport', 'Unknown'))
         df['athlete_sex'] = df[id_col].map(lambda pid: profiles.get(pid, {}).get('athlete_sex', ''))
+        df['Name'] = df['full_name']
 
         df.to_csv(output_file, index=False)
         print(f"    Saved: {output_file}")
@@ -736,6 +684,7 @@ def main():
         df['full_name'] = df[id_col].map(lambda pid: profiles.get(pid, {}).get('full_name', f'Athlete_{str(pid)[:8]}'))
         df['athlete_sport'] = df[id_col].map(lambda pid: profiles.get(pid, {}).get('athlete_sport', 'Unknown'))
         df['athlete_sex'] = df[id_col].map(lambda pid: profiles.get(pid, {}).get('athlete_sex', ''))
+        df['Name'] = df['full_name']
 
         df.to_csv(output_file, index=False)
         print(f"    Saved: {output_file}")
@@ -761,6 +710,7 @@ def main():
         df['full_name'] = df[id_col].map(lambda pid: profiles.get(pid, {}).get('full_name', f'Athlete_{str(pid)[:8]}'))
         df['athlete_sport'] = df[id_col].map(lambda pid: profiles.get(pid, {}).get('athlete_sport', 'Unknown'))
         df['athlete_sex'] = df[id_col].map(lambda pid: profiles.get(pid, {}).get('athlete_sex', ''))
+        df['Name'] = df['full_name']
 
         df.to_csv(output_file, index=False)
         print(f"    Saved: {output_file}")
@@ -786,6 +736,7 @@ def main():
         df['full_name'] = df[id_col].map(lambda pid: profiles.get(pid, {}).get('full_name', f'Athlete_{str(pid)[:8]}'))
         df['athlete_sport'] = df[id_col].map(lambda pid: profiles.get(pid, {}).get('athlete_sport', 'Unknown'))
         df['athlete_sex'] = df[id_col].map(lambda pid: profiles.get(pid, {}).get('athlete_sex', ''))
+        df['Name'] = df['full_name']
 
         df.to_csv(output_file, index=False)
         print(f"    Saved: {output_file}")
