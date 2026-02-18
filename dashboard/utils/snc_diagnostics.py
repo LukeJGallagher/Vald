@@ -598,18 +598,23 @@ TEST_CONFIG = {
         'tier': 1,
         'group_chart': 'ranked_bar',
         'individual_chart': 'line_squad_avg',
-        'metric1': ['ISO_BM_REL_FORCE_PEAK', 'Peak Force / BM_Trial'],  # local_sync, legacy
+        # Match Classic Layout metric fallbacks (sport_reports.py METRIC_COLUMNS['peak_force'])
+        'metric1': ['ISO_BM_REL_FORCE_PEAK', 'RELATIVE_PEAK_TAKEOFF_FORCE', 'PEAK_VERTICAL_FORCE',
+                     'Peak Force / BM_Trial', 'Peak Vertical Force / BM_Trial'],
         'metric1_name': 'Relative Peak Force',
         'unit1': 'N/kg',
         'metric2': None,
         'source': 'VALD',
-        'test_type_filter': ['IMTP', 'ISOT']
+        # Match Classic Layout: str.contains('IMTP|ISOT|Isometric')
+        'test_type_filter': ['IMTP', 'ISOT', 'Isometric']
     },
     'CMJ': {
         'tier': 1,
         'group_chart': 'ranked_bar',
         'individual_chart': 'line_squad_avg',
-        'metric1': ['BODYMASS_RELATIVE_TAKEOFF_POWER', 'Peak Power / BM_Trial'],
+        # Match Classic Layout metric fallbacks (sport_reports.py METRIC_COLUMNS['relative_power'])
+        'metric1': ['BODYMASS_RELATIVE_TAKEOFF_POWER', 'BODYMASS_RELATIVE_MEAN_CONCENTRIC_POWER',
+                     'Peak Power / BM_Trial'],
         'metric1_name': 'Relative Peak Power',
         'unit1': 'W/kg',
         'metric2': ['JUMP_HEIGHT_IMP_MOM', 'Jump Height (Imp-Mom)_Trial'],
@@ -785,19 +790,34 @@ def resolve_metric_column(df: pd.DataFrame, metric_spec, require_data: bool = Tr
 # Default benchmarks - These are fallbacks if benchmark database not available
 # Actual benchmarks are loaded from benchmark_database.py which uses VALD norms
 DEFAULT_BENCHMARKS = {
-    'IMTP': {'benchmark': 35.0, 'unit': 'N/kg'},
-    'CMJ': {'benchmark': 50.0, 'unit': 'W/kg'},
-    '6_Min_Aerobic': {'benchmark': 3.0, 'unit': 'W/kg'},  # Typical recreational cyclist
-    'SL_ISO_Squat': {'benchmark': 1200.0, 'unit': 'N'},  # Typical bilateral target per leg
+    'IMTP': {'benchmark': 35.0, 'unit': 'N/kg', 'db_metric': 'Peak Force / BM_Trial'},
+    'CMJ': {'benchmark': 50.0, 'unit': 'W/kg', 'db_metric': 'Peak Power / BM_Trial'},
+    '6_Min_Aerobic': {'benchmark': 3.0, 'unit': 'W/kg'},
+    'SL_ISO_Squat': {'benchmark': 1200.0, 'unit': 'N'},
     'SL_IMTP': {'benchmark': 1200.0, 'unit': 'N'},
     'Strength_RM': {'benchmark': 1.5, 'unit': 'kg/BM'},
-    'SL_CMJ': {'benchmark': 25.0, 'unit': 'W/kg'},
+    'SL_CMJ': {'benchmark': 25.0, 'unit': 'W/kg', 'db_metric': 'Peak Power / BM_Left'},
     'Broad_Jump': {'benchmark': 250.0, 'unit': 'cm'},
-    '10_5_Hop': {'benchmark': 2.0, 'unit': ''},  # RSI (absolute)
+    '10_5_Hop': {'benchmark': 2.0, 'unit': '', 'db_metric': 'RSI-modified_Trial'},
     'Peak_Power_10s': {'benchmark': 10.0, 'unit': 'W/kg'},
     'Repeat_Power': {'benchmark': 8.0, 'unit': 'W/kg'},
     'Glycolytic_Power': {'benchmark': 6.0, 'unit': 'W/kg'},
-    'NordBord': {'benchmark': 337.0, 'unit': 'N'},  # Injury risk threshold
+    'NordBord': {'benchmark': 337.0, 'unit': 'N', 'db_metric': 'leftMaxForce'},
+    'Plyo_Pushup': {'benchmark': 5.0, 'unit': 'cm'},
+}
+
+# Mapping from local_sync column names to benchmark DB metric keys
+# This bridges the gap between resolve_metric_column() results and benchmark_database.py keys
+COLUMN_TO_BENCHMARK_KEY = {
+    'ISO_BM_REL_FORCE_PEAK': 'Peak Force / BM_Trial',
+    'BODYMASS_RELATIVE_TAKEOFF_POWER': 'Peak Power / BM_Trial',
+    'JUMP_HEIGHT_IMP_MOM': 'Jump Height (Imp-Mom)_Trial',
+    'PEAK_VERTICAL_FORCE_Left': 'Peak Vertical Force_Left',
+    'PEAK_VERTICAL_FORCE_Right': 'Peak Vertical Force_Right',
+    'BODYMASS_RELATIVE_TAKEOFF_POWER_Left': 'Peak Power / BM_Left',
+    'BODYMASS_RELATIVE_TAKEOFF_POWER_Right': 'Peak Power / BM_Right',
+    'HOP_BEST_RSI': 'RSI-modified_Trial',
+    'NET_PEAK_VERTICAL_FORCE': 'Peak Force / BM_Trial',
 }
 
 
@@ -807,7 +827,7 @@ def get_benchmark_value(test_type: str, metric: str = None, gender: str = "male"
 
     Args:
         test_type: Test type code (CMJ, IMTP, etc.)
-        metric: Specific metric column name (optional)
+        metric: Specific metric column name (local_sync or legacy/benchmark key)
         gender: 'male' or 'female'
 
     Returns:
@@ -816,18 +836,24 @@ def get_benchmark_value(test_type: str, metric: str = None, gender: str = "male"
     if BENCHMARK_DB_AVAILABLE:
         # Try to get from database with specific metric
         if metric:
+            # First try direct lookup
             benchmark = get_benchmark_for_test(test_type, metric, gender, "good")
             if benchmark is not None:
                 return benchmark
 
-        # If no metric specified, try to get first available metric from test type
-        benchmarks = load_benchmarks()
-        if test_type in benchmarks:
-            metrics = benchmarks[test_type].get("metrics", {})
-            for metric_key, metric_config in metrics.items():
-                gender_values = metric_config.get(gender.lower(), {})
-                if "good" in gender_values:
-                    return gender_values["good"]
+            # Try mapping local_sync column name to benchmark DB key
+            db_key = COLUMN_TO_BENCHMARK_KEY.get(metric)
+            if db_key:
+                benchmark = get_benchmark_for_test(test_type, db_key, gender, "good")
+                if benchmark is not None:
+                    return benchmark
+
+        # Try the default db_metric key from DEFAULT_BENCHMARKS
+        db_metric = DEFAULT_BENCHMARKS.get(test_type, {}).get('db_metric')
+        if db_metric:
+            benchmark = get_benchmark_for_test(test_type, db_metric, gender, "good")
+            if benchmark is not None:
+                return benchmark
 
     # Fallback to simple defaults
     return DEFAULT_BENCHMARKS.get(test_type, {}).get('benchmark', 0)
@@ -896,19 +922,22 @@ def render_filters(df: pd.DataFrame, key_prefix: str = "snc") -> Tuple[pd.DataFr
     return filtered_df, selected_sport, selected_gender
 
 
-def render_benchmark_input(test_key: str, key_prefix: str = "snc", gender: str = "male") -> float:
+def render_benchmark_input(test_key: str, key_prefix: str = "snc", gender: str = "male", metric: str = None) -> float:
     """
     Render benchmark display with value from VALD norms database.
 
-    Benchmarks are now managed through the Benchmark Settings tab.
-    This shows the current benchmark value from the database.
+    Args:
+        test_key: Test type key (e.g., 'CMJ', 'IMTP')
+        key_prefix: Streamlit widget key prefix
+        gender: 'male' or 'female'
+        metric: Specific metric column name for benchmark lookup
     """
     default = DEFAULT_BENCHMARKS.get(test_key, {}).get('benchmark', 0)
     unit = DEFAULT_BENCHMARKS.get(test_key, {}).get('unit', '')
 
     # Try to get from benchmark database
     if BENCHMARK_DB_AVAILABLE:
-        db_benchmark = get_benchmark_value(test_key, None, gender)
+        db_benchmark = get_benchmark_value(test_key, metric, gender)
         if db_benchmark > 0:
             default = db_benchmark
 
@@ -2228,8 +2257,8 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
     if selected_test_tab == "📊 IMTP":
         st.markdown("### Isometric Mid-Thigh Pull (IMTP)")
 
-        # Filter for IMTP tests
-        imtp_df = forcedecks_df[forcedecks_df['testType'] == 'IMTP'].copy() if 'testType' in forcedecks_df.columns else pd.DataFrame()
+        # Filter for IMTP tests - match Classic Layout: str.contains('IMTP|ISOT|Isometric')
+        imtp_df = forcedecks_df[forcedecks_df['testType'].str.contains('IMTP|ISOT|Isometric', case=False, na=False)].copy() if 'testType' in forcedecks_df.columns else pd.DataFrame()
 
         if imtp_df.empty:
             st.warning("No IMTP test data available.")
@@ -2237,18 +2266,18 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
             # Filters
             filtered_df, sport, gender = render_filters(imtp_df, "imtp")
 
+            # Resolve metric column first (needed for benchmark lookup)
+            metric_col = resolve_metric_column(filtered_df, TEST_CONFIG['IMTP']['metric1'])
+
             # Benchmark input
             col1, col2 = st.columns([3, 1])
             with col2:
-                benchmark = render_benchmark_input('IMTP', 'imtp')
+                benchmark = render_benchmark_input('IMTP', 'imtp', metric=metric_col)
 
             # Sub-tabs for Group vs Individual
             selected_view = st.radio("View:", ["👥 Group View", "🏃 Individual View"], horizontal=True, key="imtp_view")
 
             if selected_view == "👥 Group View":
-                # Group ranked bar chart - use config for column resolution
-                metric_col = resolve_metric_column(filtered_df, TEST_CONFIG['IMTP']['metric1'])
-
                 if metric_col:
                     fig = create_ranked_bar_chart(
                         filtered_df,
@@ -2261,7 +2290,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                     if fig:
                         st.plotly_chart(fig, use_container_width=True, key="imtp_group_bar")
                 else:
-                    st.warning("Peak Force metric not found in data.")
+                    st.warning(f"Peak Force metric not found in data. Available columns: {len(filtered_df.columns)}, rows: {len(filtered_df)}. Looking for: {TEST_CONFIG['IMTP']['metric1']}")
 
             if selected_view == "🏃 Individual View":
                 # Individual line chart with multi-select
@@ -2277,7 +2306,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
 
                     if selected_athletes:
                         # Get all data (not just most recent) for trends
-                        all_imtp = forcedecks_df[forcedecks_df['testType'] == 'IMTP'].copy()
+                        all_imtp = forcedecks_df[forcedecks_df['testType'].str.contains('IMTP|ISOT|Isometric', case=False, na=False)].copy()
 
                         if sport != 'All' and 'athlete_sport' in all_imtp.columns:
                             all_imtp = all_imtp[all_imtp['athlete_sport'] == sport]
@@ -2305,23 +2334,24 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
     elif selected_test_tab == "🦘 CMJ":
         st.markdown("### Counter Movement Jump (CMJ)")
 
-        cmj_df = forcedecks_df[forcedecks_df['testType'].isin(['CMJ', 'ABCMJ'])].copy() if 'testType' in forcedecks_df.columns else pd.DataFrame()
+        # Match Classic Layout: str.contains('CMJ|Counter') to catch CMJ + ABCMJ + any CMJ variant
+        cmj_df = forcedecks_df[forcedecks_df['testType'].str.contains('CMJ|Counter', case=False, na=False)].copy() if 'testType' in forcedecks_df.columns else pd.DataFrame()
 
         if cmj_df.empty:
             st.warning("No CMJ test data available.")
         else:
             filtered_df, sport, gender = render_filters(cmj_df, "cmj")
 
+            # Resolve metric column first (needed for benchmark lookup)
+            metric_col = resolve_metric_column(filtered_df, TEST_CONFIG['CMJ']['metric1'])
+
             col1, col2 = st.columns([3, 1])
             with col2:
-                benchmark = render_benchmark_input('CMJ', 'cmj')
+                benchmark = render_benchmark_input('CMJ', 'cmj', metric=metric_col)
 
             selected_view = st.radio("View:", ["👥 Group View", "🏃 Individual View"], horizontal=True, key="cmj_view")
 
             if selected_view == "👥 Group View":
-                # Use config for column resolution
-                metric_col = resolve_metric_column(filtered_df, TEST_CONFIG['CMJ']['metric1'])
-
                 if metric_col:
                     fig = create_ranked_bar_chart(
                         filtered_df,
@@ -2354,7 +2384,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                         if fig2:
                             st.plotly_chart(fig2, use_container_width=True, key="cmj_height_bar")
                 else:
-                    st.warning("CMJ Power metric not found in data.")
+                    st.warning(f"CMJ Power metric not found in data. Available columns: {len(filtered_df.columns)}, rows: {len(filtered_df)}. Looking for: {TEST_CONFIG['CMJ']['metric1']}")
 
             if selected_view == "🏃 Individual View":
                 athletes = sorted(filtered_df['Name'].dropna().unique()) if 'Name' in filtered_df.columns else []
@@ -2368,7 +2398,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                     )
 
                     if selected_athletes:
-                        all_cmj = forcedecks_df[forcedecks_df['testType'].isin(['CMJ', 'ABCMJ'])].copy()
+                        all_cmj = forcedecks_df[forcedecks_df['testType'].str.contains('CMJ|Counter', case=False, na=False)].copy()
 
                         if sport != 'All' and 'athlete_sport' in all_cmj.columns:
                             all_cmj = all_cmj[all_cmj['athlete_sport'] == sport]
@@ -2394,22 +2424,22 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
     elif selected_test_tab == "🦵 SL Tests":
         st.markdown("### Single Leg Tests")
 
-        # Map display names to actual VALD test type codes
+        # Map display names to actual VALD test type codes (use lists for wider matching like Classic)
         sl_test_mapping = {
-            'SL ISO Squat': 'SLISOSQT',
-            'SL IMTP': 'SLIMTP',
-            'SL CMJ': 'SLCMRJ',
-            'SL Drop Jump': 'SLDJ',
-            'SL Jump': 'SLJ',
-            'SL Hop Jump': 'SLHJ',
-            'Ash Test (ForceFrame)': 'ASH'  # ForceFrame Shoulder Assessment
+            'SL ISO Squat': ['SLISOSQT', 'ISOSQT'],
+            'SL IMTP': ['SLIMTP', 'SLISOT'],
+            'SL CMJ': ['SLJ', 'SLCMRJ'],
+            'SL Drop Jump': ['SLDJ'],
+            'SL Jump': ['SLJ'],
+            'SL Hop Jump': ['SLHJ'],
+            'Ash Test (ForceFrame)': ['ASH']
         }
 
         sl_test_options = list(sl_test_mapping.keys())
         selected_sl_test = st.selectbox("Select Test:", sl_test_options, key="sl_test_select")
 
-        # Get the actual test type code
-        test_type_code = sl_test_mapping.get(selected_sl_test, selected_sl_test)
+        # Get the actual test type codes (list for wider matching)
+        test_type_codes = sl_test_mapping.get(selected_sl_test, [selected_sl_test])
 
         # Handle Ash Test separately (uses ForceFrame data)
         if 'Ash Test' in selected_sl_test:
@@ -2421,9 +2451,9 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                 sl_df = pd.DataFrame()
                 st.info("Ash Test requires ForceFrame data. No ForceFrame data available.")
         else:
-            # Filter for selected SL test using exact match (ForceDecks)
+            # Filter for selected SL test using isin() to match multiple codes (like Classic)
             if 'testType' in forcedecks_df.columns:
-                sl_df = forcedecks_df[forcedecks_df['testType'] == test_type_code].copy()
+                sl_df = forcedecks_df[forcedecks_df['testType'].isin(test_type_codes)].copy()
             else:
                 sl_df = pd.DataFrame()
 
@@ -2484,7 +2514,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                     st.markdown("### Asymmetry Status")
                     asym_table = create_asymmetry_table(filtered_df, left_col, right_col, unit)
                     if not asym_table.empty:
-                        st.dataframe(asym_table, use_container_width=True, hide_index=True)
+                        st.dataframe(asym_table, width='stretch', hide_index=True)
                 else:
                     st.warning(f"Left/Right metrics not found for {selected_sl_test}.")
 
@@ -2502,7 +2532,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                     show_squad = st.checkbox("Show Squad Average", value=True, key="sl_show_squad")
 
                     if selected_athletes:
-                        all_sl = forcedecks_df[forcedecks_df['testType'].str.contains(selected_sl_test, case=False, na=False)].copy()
+                        all_sl = forcedecks_df[forcedecks_df['testType'].isin(test_type_codes)].copy()
 
                         if sport != 'All' and 'athlete_sport' in all_sl.columns:
                             all_sl = all_sl[all_sl['athlete_sport'] == sport]
@@ -2535,7 +2565,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
 
             col1, col2 = st.columns([3, 1])
             with col2:
-                benchmark = render_benchmark_input('NordBord', 'nordbord')
+                benchmark = render_benchmark_input('NordBord', 'nordbord', metric='leftMaxForce')
 
             selected_view = st.radio("View:", ["👥 Group View", "🏃 Individual View"], horizontal=True, key="nordbord_view")
 
@@ -2573,7 +2603,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                     st.markdown("### Asymmetry Status")
                     asym_table = create_asymmetry_table(filtered_df, left_col, right_col, 'N')
                     if not asym_table.empty:
-                        st.dataframe(asym_table, use_container_width=True, hide_index=True)
+                        st.dataframe(asym_table, width='stretch', hide_index=True)
                 else:
                     st.warning("NordBord force columns not found.")
 
@@ -2621,7 +2651,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
 
             col1, col2 = st.columns([3, 1])
             with col2:
-                benchmark = render_benchmark_input('10_5_Hop', 'hop')
+                benchmark = render_benchmark_input('10_5_Hop', 'hop', metric='HOP_BEST_RSI')
 
             selected_view = st.radio("View:", ["👥 Group View", "🏃 Individual View"], horizontal=True, key="hop_view")
 
@@ -2807,7 +2837,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                                     if summary_df[col].dtype in ['float64', 'float32']:
                                         summary_df[col] = summary_df[col].round(1)
 
-                                st.dataframe(summary_df, use_container_width=True, hide_index=True)
+                                st.dataframe(summary_df, width='stretch', hide_index=True)
                             else:
                                 st.info("No athlete data available for display.")
 
@@ -3100,7 +3130,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                 summary = create_hip_summary_table(summary_adab, summary_flex, ext_pivot, unit=unit_label)
 
                 if not summary.empty:
-                    st.dataframe(summary, use_container_width=True, hide_index=True)
+                    st.dataframe(summary, width='stretch', hide_index=True)
                 else:
                     st.info("Not enough data across metrics to generate summary table.")
 
@@ -3249,7 +3279,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                                     asym_table = create_asymmetry_table(latest, left_col, right_col, unit=unit_label)
                                     if not asym_table.empty:
                                         st.markdown(f"**{selected_metric} - Asymmetry Summary**")
-                                        st.dataframe(asym_table, use_container_width=True, hide_index=True)
+                                        st.dataframe(asym_table, width='stretch', hide_index=True)
 
     # =====================
     # Shoulder Health Tab (ForceFrame IR/ER)
@@ -3408,7 +3438,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                             if summary_sh[col].dtype in ['float64', 'float32']:
                                 summary_sh[col] = summary_sh[col].round(2)
 
-                        st.dataframe(summary_sh, use_container_width=True, hide_index=True)
+                        st.dataframe(summary_sh, width='stretch', hide_index=True)
 
                     if selected_view == "🏃 Individual View":
                         athletes = sorted(filtered_shoulder['Name'].dropna().unique())
@@ -3446,7 +3476,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                                     asym_table = create_asymmetry_table(latest, left_col, right_col, unit=unit_label)
                                     if not asym_table.empty:
                                         st.markdown(f"**{selected_metric} - Asymmetry Summary**")
-                                        st.dataframe(asym_table, use_container_width=True, hide_index=True)
+                                        st.dataframe(asym_table, width='stretch', hide_index=True)
                                 else:
                                     st.info(f"No {selected_metric} data for selected athletes.")
         else:

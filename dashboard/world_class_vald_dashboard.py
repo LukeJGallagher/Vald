@@ -192,9 +192,14 @@ except ImportError:
     # Fallback data loading
     @st.cache_data
     def load_vald_data(device='forcedecks'):
+        # Dashboard data directory (relative to this script)
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        dashboard_data_dir = os.path.join(script_dir, 'data')
         # Primary source: vald-data repo
         vald_data_dir = r"c:\Users\l.gallagher\OneDrive - Team Saudi\Documents\Performance Analysis\vald-data\data"
         file_paths = [
+            # Dashboard data directory (works on both local and Streamlit Cloud)
+            os.path.join(dashboard_data_dir, f'{device}_allsports_with_athletes.csv'),
             os.path.join(vald_data_dir, f'{device}_allsports_with_athletes.csv'),
             os.path.join(vald_data_dir, f'{device}_allsports.csv'),
             f'{device}_allsports_with_athletes.csv',

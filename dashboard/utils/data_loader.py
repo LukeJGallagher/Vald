@@ -148,7 +148,7 @@ def fetch_from_github_repo(device: str = 'forcedecks') -> pd.DataFrame:
 
                 if response.status_code == 200:
                     from io import StringIO
-                    df = pd.read_csv(StringIO(response.text))
+                    df = pd.read_csv(StringIO(response.text), low_memory=False)
 
                     # Parse dates
                     date_columns = ['recordedDateUtc', 'testDateUtc', 'modifiedDateUtc']
@@ -451,7 +451,7 @@ def load_vald_data(device: str = 'forcedecks') -> pd.DataFrame:
     for file_path in file_paths:
         if os.path.exists(file_path):
             try:
-                df = pd.read_csv(file_path)
+                df = pd.read_csv(file_path, low_memory=False)
 
                 # Parse dates
                 date_columns = ['recordedDateUtc', 'testDateUtc', 'modifiedDateUtc']
