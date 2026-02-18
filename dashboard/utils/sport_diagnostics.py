@@ -1041,13 +1041,13 @@ class SportDiagnosticsModule:
 
     # Mapping from benchmark config keys to ForceDecks columns + test types
     BENCHMARK_METRIC_MAP: Dict[str, Dict[str, Any]] = {
-        'cmj_height': {'col': 'JUMP_HEIGHT_IMP_MOM', 'test_types': ['CMJ', 'ABCMJ'], 'multiplier': 100.0, 'higher_is_better': True},
+        'cmj_height': {'col': 'JUMP_HEIGHT_IMP_MOM', 'test_types': ['CMJ', 'ABCMJ'], 'multiplier': 1.0, 'higher_is_better': True},
         'imtp_relative': {'col': 'NET_PEAK_VERTICAL_FORCE', 'test_types': ['IMTP'], 'multiplier': 1.0, 'higher_is_better': True, 'relative': True},
         'imtp_absolute': {'col': 'NET_PEAK_VERTICAL_FORCE', 'test_types': ['IMTP'], 'multiplier': 1.0, 'higher_is_better': True},
         'rsi': {'col': 'RSI_MODIFIED', 'test_types': ['HJ', 'SLHJ', 'RSHIP'], 'multiplier': 1.0, 'higher_is_better': True},
         'concentric_rfd': {'col': 'CONCENTRIC_RFD', 'test_types': ['CMJ', 'ABCMJ'], 'multiplier': 1.0, 'higher_is_better': True},
-        'sj_height': {'col': 'JUMP_HEIGHT_IMP_MOM', 'test_types': ['SJ'], 'multiplier': 100.0, 'higher_is_better': True},
-        'ppu_height': {'col': 'PUSHUP_HEIGHT', 'test_types': ['PPU'], 'multiplier': 100.0, 'higher_is_better': True},
+        'sj_height': {'col': 'JUMP_HEIGHT_IMP_MOM', 'test_types': ['SJ'], 'multiplier': 1.0, 'higher_is_better': True},
+        'ppu_height': {'col': 'PUSHUP_HEIGHT', 'test_types': ['PPU'], 'multiplier': 1.0, 'higher_is_better': True},
         'dj_rsi': {'col': 'RSI', 'test_types': ['DJ', 'SLDJ'], 'multiplier': 1.0, 'higher_is_better': True},
         'eccentric_decel_rfd': {'col': 'ECCENTRIC_DECELERATION_RFD', 'test_types': ['CMJ', 'ABCMJ'], 'multiplier': 1.0, 'higher_is_better': True},
         'peak_relative_power': {'col': 'PEAK_RELATIVE_PROPULSIVE_POWER', 'test_types': ['CMJ', 'ABCMJ'], 'multiplier': 1.0, 'higher_is_better': True},
@@ -1057,13 +1057,13 @@ class SportDiagnosticsModule:
         'eccentric_peak_force': {'col': 'ECCENTRIC_PEAK_FORCE', 'test_types': ['CMJ', 'ABCMJ'], 'multiplier': 1.0, 'higher_is_better': True},
         'concentric_peak_force': {'col': 'CONCENTRIC_PEAK_FORCE', 'test_types': ['CMJ', 'ABCMJ'], 'multiplier': 1.0, 'higher_is_better': True},
         # Sport-specific discipline variants (same metric, different test types or context)
-        'cmj_height_sprinters': {'col': 'JUMP_HEIGHT_IMP_MOM', 'test_types': ['CMJ'], 'multiplier': 100.0, 'higher_is_better': True},
-        'cmj_height_jumpers': {'col': 'JUMP_HEIGHT_IMP_MOM', 'test_types': ['CMJ'], 'multiplier': 100.0, 'higher_is_better': True},
-        'cmj_height_throwers': {'col': 'JUMP_HEIGHT_IMP_MOM', 'test_types': ['CMJ'], 'multiplier': 100.0, 'higher_is_better': True},
-        'cmj_height_mid_distance': {'col': 'JUMP_HEIGHT_IMP_MOM', 'test_types': ['CMJ'], 'multiplier': 100.0, 'higher_is_better': True},
+        'cmj_height_sprinters': {'col': 'JUMP_HEIGHT_IMP_MOM', 'test_types': ['CMJ'], 'multiplier': 1.0, 'higher_is_better': True},
+        'cmj_height_jumpers': {'col': 'JUMP_HEIGHT_IMP_MOM', 'test_types': ['CMJ'], 'multiplier': 1.0, 'higher_is_better': True},
+        'cmj_height_throwers': {'col': 'JUMP_HEIGHT_IMP_MOM', 'test_types': ['CMJ'], 'multiplier': 1.0, 'higher_is_better': True},
+        'cmj_height_mid_distance': {'col': 'JUMP_HEIGHT_IMP_MOM', 'test_types': ['CMJ'], 'multiplier': 1.0, 'higher_is_better': True},
         'rsi_sprinters': {'col': 'RSI_MODIFIED', 'test_types': ['HJ', 'SLHJ', 'RSHIP'], 'multiplier': 1.0, 'higher_is_better': True},
         'rsi_moguls': {'col': 'RSI_MODIFIED', 'test_types': ['HJ', 'SLHJ', 'RSHIP'], 'multiplier': 1.0, 'higher_is_better': True},
-        'ppu_throwers': {'col': 'PUSHUP_HEIGHT', 'test_types': ['PPU'], 'multiplier': 100.0, 'higher_is_better': True},
+        'ppu_throwers': {'col': 'PUSHUP_HEIGHT', 'test_types': ['PPU'], 'multiplier': 1.0, 'higher_is_better': True},
         'cmj_relative_power': {'col': 'PEAK_RELATIVE_PROPULSIVE_POWER', 'test_types': ['CMJ', 'ABCMJ'], 'multiplier': 1.0, 'higher_is_better': True},
         # Balance metrics (Shooting)
         'qsb_cop_excursion': {'col': 'BAL_COP_TOTAL_EXCURSION', 'test_types': ['QSB'], 'multiplier': 1000.0, 'higher_is_better': False},
@@ -1506,10 +1506,39 @@ class SportDiagnosticsModule:
                             matched[ff_date_col] = pd.to_datetime(matched[ff_date_col], errors='coerce')
                             matched = matched.sort_values(ff_date_col, ascending=False)
                         row = matched.iloc[0]
+                        _metric_type = ind.get('metric', '')
                         if ff_col:
                             raw = pd.to_numeric(row.get(ff_col, np.nan), errors='coerce')
+                            if pd.notna(raw):
+                                athlete_val = float(raw) * multiplier
+                        elif _metric_type == 'ir_er_ratio':
+                            # Compute Inner:Outer ratio (IR:ER for shoulder, Add:Abd for hip)
+                            inner_l = pd.to_numeric(row.get('innerLeftMaxForce', np.nan), errors='coerce')
+                            inner_r = pd.to_numeric(row.get('innerRightMaxForce', np.nan), errors='coerce')
+                            outer_l = pd.to_numeric(row.get('outerLeftMaxForce', np.nan), errors='coerce')
+                            outer_r = pd.to_numeric(row.get('outerRightMaxForce', np.nan), errors='coerce')
+                            inner_vals = [v for v in [inner_l, inner_r] if pd.notna(v)]
+                            outer_vals = [v for v in [outer_l, outer_r] if pd.notna(v)]
+                            if inner_vals and outer_vals:
+                                inner_avg = sum(inner_vals) / len(inner_vals)
+                                outer_avg = sum(outer_vals) / len(outer_vals)
+                                if outer_avg > 0:
+                                    athlete_val = inner_avg / outer_avg
+                        elif _metric_type == 'add_abd_ratio':
+                            # Compute Add:Abd ratio (inner=Add, outer=Abd)
+                            inner_l = pd.to_numeric(row.get('innerLeftMaxForce', np.nan), errors='coerce')
+                            inner_r = pd.to_numeric(row.get('innerRightMaxForce', np.nan), errors='coerce')
+                            outer_l = pd.to_numeric(row.get('outerLeftMaxForce', np.nan), errors='coerce')
+                            outer_r = pd.to_numeric(row.get('outerRightMaxForce', np.nan), errors='coerce')
+                            inner_vals = [v for v in [inner_l, inner_r] if pd.notna(v)]
+                            outer_vals = [v for v in [outer_l, outer_r] if pd.notna(v)]
+                            if inner_vals and outer_vals:
+                                inner_avg = sum(inner_vals) / len(inner_vals)
+                                outer_avg = sum(outer_vals) / len(outer_vals)
+                                if outer_avg > 0:
+                                    athlete_val = inner_avg / outer_avg
                         else:
-                            # Average all four quadrants
+                            # Default: average all four quadrants
                             vals = []
                             for prefix in ['inner', 'outer']:
                                 for side in ['Left', 'Right']:
@@ -1517,8 +1546,8 @@ class SportDiagnosticsModule:
                                     if pd.notna(v):
                                         vals.append(v)
                             raw = np.mean(vals) if vals else np.nan
-                        if pd.notna(raw):
-                            athlete_val = float(raw) * multiplier
+                            if pd.notna(raw):
+                                athlete_val = float(raw) * multiplier
 
             elif metric_source == 'nordbord':
                 if nordbord_df is not None and not nordbord_df.empty:
@@ -1876,16 +1905,8 @@ class SportDiagnosticsModule:
             return
 
         # Default: infer CMJ and SJ types
-        # Read test types from section config if available
         cmj_types = ['CMJ', 'ABCMJ']
         sj_types = ['SJ']
-        if section_config:
-            _num = section_config.get('test_types_num')
-            _den = section_config.get('test_types_den')
-            if _num:
-                cmj_types = _num
-            if _den:
-                sj_types = _den
 
         # Allow config override via the section dict (test_types can be split)
         # Convention: test_types = ['CMJ', 'ABCMJ', 'SJ'] - but we separate them
