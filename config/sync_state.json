@@ -1,9 +1,9 @@
 {
-  "last_sync": "2026-02-17T14:21:46.000Z",
+  "last_sync": "2026-02-17T19:26:38.000Z",
   "devices": {
-    "forcedecks": 2369,
-    "forceframe": 0,
-    "nordbord": 0,
-    "dynamo": 0
+    "forcedecks": 2370,
+    "forceframe": 153,
+    "nordbord": 128,
+    "dynamo": 880
   }
 }

@@ -713,10 +713,13 @@ def main():
                 print(f"      {sport}: {count}")
 
     # --- ForceFrame, NordBord, DynaMo: wrap each in try/except so one failure doesn't block others ---
+    # Refresh token before each device since ForceDecks trial fetch can take 40+ min
 
     forceframe_tests = []
     print(f"\n[6] Fetching ForceFrame data...")
     try:
+        print("    Refreshing token...")
+        token = get_token()
         forceframe_tests = fetch_forceframe(token, region, tenant_id, from_date=from_date)
         print(f"    Total ForceFrame tests: {len(forceframe_tests)}")
     except Exception as e:
@@ -740,6 +743,8 @@ def main():
     nordbord_tests = []
     print(f"\n[7] Fetching NordBord data...")
     try:
+        print("    Refreshing token...")
+        token = get_token()
         nordbord_tests = fetch_nordbord(token, region, tenant_id, from_date=from_date)
         print(f"    Total NordBord tests: {len(nordbord_tests)}")
     except Exception as e:
@@ -763,6 +768,8 @@ def main():
     dynamo_tests = []
     print(f"\n[8] Fetching DynaMo data...")
     try:
+        print("    Refreshing token...")
+        token = get_token()
         dynamo_tests = fetch_dynamo(token, region, tenant_id, from_date=from_date)
         print(f"    Total DynaMo tests: {len(dynamo_tests)}")
     except Exception as e:
