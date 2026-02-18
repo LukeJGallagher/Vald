@@ -156,9 +156,10 @@ def fetch_from_github_repo(device: str = 'forcedecks') -> pd.DataFrame:
                         if col in df.columns:
                             df[col] = pd.to_datetime(df[col], errors='coerce')
 
-                    # Create Name column from full_name (critical for athlete display)
-                    if 'Name' not in df.columns:
-                        if 'full_name' in df.columns:
+                    # Create Name column from full_name if missing or mostly NaN
+                    name_ok = 'Name' in df.columns and df['Name'].notna().sum() > len(df) * 0.5
+                    if not name_ok:
+                        if 'full_name' in df.columns and df['full_name'].notna().sum() > 0:
                             df['Name'] = df['full_name']
                         elif 'athleteId' in df.columns:
                             df['Name'] = df['athleteId'].apply(lambda x: f"Athlete_{str(x)[:8]}" if pd.notna(x) else "Unknown")
@@ -464,8 +465,10 @@ def load_vald_data(device: str = 'forcedecks') -> pd.DataFrame:
                     df['athlete_sport'] = df['Groups'].apply(extract_sport_from_group)
 
                 # Standardize Name column (dashboard uses 'Name' for athlete names)
-                if 'Name' not in df.columns:
-                    if 'full_name' in df.columns:
+                # Also fix if Name exists but is mostly NaN (corrupted CSV)
+                name_ok = 'Name' in df.columns and df['Name'].notna().sum() > len(df) * 0.5
+                if not name_ok:
+                    if 'full_name' in df.columns and df['full_name'].notna().sum() > 0:
                         df['Name'] = df['full_name']
                     elif 'athleteId' in df.columns:
                         # Fallback to athleteId if no name available

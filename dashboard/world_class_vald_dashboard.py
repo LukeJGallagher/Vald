@@ -214,9 +214,10 @@ except ImportError:
                     df['recordedDateUtc'] = pd.to_datetime(df['recordedDateUtc'], errors='coerce')
                 if 'testDateUtc' in df.columns:
                     df['testDateUtc'] = pd.to_datetime(df['testDateUtc'], errors='coerce')
-                # Create Name column from full_name if missing
-                if 'Name' not in df.columns:
-                    if 'full_name' in df.columns:
+                # Create Name column from full_name if missing or mostly NaN
+                name_ok = 'Name' in df.columns and df['Name'].notna().sum() > len(df) * 0.5
+                if not name_ok:
+                    if 'full_name' in df.columns and df['full_name'].notna().sum() > 0:
                         df['Name'] = df['full_name']
                     elif 'athleteId' in df.columns:
                         df['Name'] = df['athleteId'].apply(lambda x: f"Athlete_{str(x)[:8]}" if pd.notna(x) else "Unknown")
@@ -346,8 +347,15 @@ def normalize_dataframe_columns(df, athlete_mapping=None):
     if df.empty:
         return df
 
-    # Create Name column if it doesn't exist
-    if 'Name' not in df.columns:
+    # Create Name column if it doesn't exist OR if it's mostly NaN (corrupted)
+    name_needs_fix = 'Name' not in df.columns
+    if not name_needs_fix and 'Name' in df.columns:
+        # Check if Name column is mostly NaN - if so, rebuild from full_name
+        non_null_ratio = df['Name'].notna().sum() / max(len(df), 1)
+        if non_null_ratio < 0.5 and 'full_name' in df.columns and df['full_name'].notna().sum() > df['Name'].notna().sum():
+            name_needs_fix = True
+
+    if name_needs_fix:
         # Priority 1: Use full_name column if it exists (already has real names from API)
         if 'full_name' in df.columns:
             df['Name'] = df['full_name'].fillna('')
