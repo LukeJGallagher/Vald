@@ -234,7 +234,12 @@ except AttributeError:
 ```
 
 ### Streamlit Deprecations
-`use_container_width` is deprecated (remove after 2025-12-31). Use `width='stretch'` instead.
+`use_container_width` was REMOVED after 2025-12-31. **NEVER use `use_container_width=True`** for:
+- `st.plotly_chart()` → use `width='stretch'`
+- `st.dataframe()` → use `width='stretch'`
+- `st.table()` → use `width='stretch'`
+
+**EXCEPTION**: `st.button()` and `st.form_submit_button()` still use `use_container_width=True` (different API, NOT deprecated).
 
 ### Date Column Type Safety
 Always convert date columns before sorting to prevent TypeError on mixed types:

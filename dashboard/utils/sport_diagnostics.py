@@ -1639,10 +1639,10 @@ class SportDiagnosticsModule:
             threshold_info = ''
             if ri['higher_is_safer']:
                 if ri['safe_threshold'] is not None:
-                    threshold_info = f"Safe >= {ri['safe_threshold']:.0f}{ri['unit']}"
+                    threshold_info = f"Threshold >= {ri['safe_threshold']:.0f}{ri['unit']}"
             else:
                 if ri['safe_threshold'] is not None:
-                    threshold_info = f"Safe <= {ri['safe_threshold']:.0f}{ri['unit']}"
+                    threshold_info = f"Threshold <= {ri['safe_threshold']:.0f}{ri['unit']}"
 
             citation_html = ''
             if ri['citation']:
