@@ -69,6 +69,29 @@ BENCHMARK_COLOR = '#0077B6'  # Blue dashed
 
 
 # =====================
+# Chart Collection for Export
+# =====================
+def _collect_chart(fig, title=None):
+    """Store a chart in session_state for later report export.
+
+    Call this after st.plotly_chart() to collect the figure for PDF/HTML export.
+    """
+    if fig is None:
+        return
+    chart_store = st.session_state.get('canvas_charts')
+    if not isinstance(chart_store, dict):
+        return
+    if not title:
+        if hasattr(fig, 'layout') and hasattr(fig.layout, 'title'):
+            t = fig.layout.title
+            if hasattr(t, 'text') and t.text:
+                title = t.text
+    if not title:
+        title = f"Chart {len(chart_store) + 1}"
+    chart_store[title] = fig
+
+
+# =====================
 # Export Helper Functions
 # =====================
 def export_to_excel(df: pd.DataFrame, sheet_name: str = "Data") -> bytes:
@@ -2199,6 +2222,9 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
     """
     Main function to render the S&C Diagnostics Canvas tab.
     """
+    # Initialize chart collection for export
+    st.session_state['canvas_charts'] = {}
+
     # Ensure Name column exists (map from full_name if needed)
     if 'Name' not in forcedecks_df.columns and 'full_name' in forcedecks_df.columns:
         forcedecks_df = forcedecks_df.copy()
@@ -2300,6 +2326,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                     )
                     if fig:
                         st.plotly_chart(fig, width='stretch', key="imtp_group_bar")
+                        _collect_chart(fig, "IMTP - Relative Peak Force")
                 else:
                     st.warning(f"Peak Force metric not found in data. Available columns: {len(filtered_df.columns)}, rows: {len(filtered_df)}. Looking for: {TEST_CONFIG['IMTP']['metric1']}")
 
@@ -2377,6 +2404,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                     )
                     if fig:
                         st.plotly_chart(fig, width='stretch', key="cmj_group_bar")
+                        _collect_chart(fig, "CMJ - Relative Peak Power")
 
                     # Also show jump height if available
                     height_col = resolve_metric_column(filtered_df, TEST_CONFIG['CMJ']['metric2'])
@@ -2397,6 +2425,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                         )
                         if fig2:
                             st.plotly_chart(fig2, width='stretch', key="cmj_height_bar")
+                            _collect_chart(fig2, "CMJ - Jump Height")
                 else:
                     st.warning(f"CMJ Power metric not found in data. Available columns: {len(filtered_df.columns)}, rows: {len(filtered_df)}. Looking for: {TEST_CONFIG['CMJ']['metric1']}")
 
@@ -2523,6 +2552,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                     )
                     if fig:
                         st.plotly_chart(fig, width='stretch', key="sl_group_bar")
+                        _collect_chart(fig)
 
                     # Asymmetry table
                     st.markdown("### Asymmetry Status")
@@ -2612,6 +2642,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                     )
                     if fig:
                         st.plotly_chart(fig, width='stretch', key="nordbord_group_bar")
+                        _collect_chart(fig, "NordBord - L/R Hamstring Strength")
 
                     # Asymmetry table
                     st.markdown("### Asymmetry Status")
@@ -2708,6 +2739,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                     )
                     if fig:
                         st.plotly_chart(fig, width='stretch', key="hop_group_bar")
+                        _collect_chart(fig, "10:5 Hop - RSI")
                 else:
                     st.warning("RSI metric not found in data.")
 
@@ -2832,6 +2864,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                                 fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
 
                                 st.plotly_chart(fig, width='stretch', key="quadrant_group_chart")
+                                _collect_chart(fig)
 
                                 # Summary table
                                 st.markdown("### Summary Table")
@@ -3027,6 +3060,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                             )
                             if fig:
                                 st.plotly_chart(fig, width='stretch', key="hip_add_group")
+                                _collect_chart(fig, "Hip Adduction")
                             else:
                                 st.info("No Adduction data to display.")
                         else:
@@ -3043,6 +3077,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                             )
                             if fig:
                                 st.plotly_chart(fig, width='stretch', key="hip_abd_group")
+                                _collect_chart(fig, "Hip Abduction")
                             else:
                                 st.info("No Abduction data to display.")
                         else:
@@ -3085,6 +3120,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                                     text=[f"{v:.2f}" for v in t.x]
                                 ))
                                 st.plotly_chart(fig, width='stretch', key="hip_addabd_ratio_chart")
+                                _collect_chart(fig, "Hip Add/Abd Ratio")
                         else:
                             st.info("Insufficient data for Add/Abd ratio calculation.")
 
@@ -3111,6 +3147,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                             )
                             if fig:
                                 st.plotly_chart(fig, width='stretch', key="hip_flx_group")
+                                _collect_chart(fig, "Hip Flexion")
                             else:
                                 st.info("No Flexion data to display.")
                         else:
@@ -3127,6 +3164,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                         )
                         if fig:
                             st.plotly_chart(fig, width='stretch', key="hip_ext_group")
+                            _collect_chart(fig, "Hip Extension")
                         else:
                             st.info("Not enough Hip Extension data to chart.")
                     else:
@@ -3377,6 +3415,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                                 fig = create_ranked_side_by_side_chart(latest_sh, ir_l, ir_r, 'Internal Rotation', unit_label, title='Shoulder IR - Left vs Right')
                                 if fig:
                                     st.plotly_chart(fig, width='stretch', key="shoulder_ir_group")
+                                    _collect_chart(fig, "Shoulder Internal Rotation")
                                 else:
                                     st.info("No IR data to display.")
 
@@ -3386,6 +3425,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                                 fig = create_ranked_side_by_side_chart(latest_sh, er_l, er_r, 'External Rotation', unit_label, title='Shoulder ER - Left vs Right')
                                 if fig:
                                     st.plotly_chart(fig, width='stretch', key="shoulder_er_group")
+                                    _collect_chart(fig, "Shoulder External Rotation")
                                 else:
                                     st.info("No ER data to display.")
 
@@ -3405,6 +3445,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                                 fig = create_ranked_side_by_side_chart(ratio_df, 'IR/ER Left', 'IR/ER Right', 'IR/ER Ratio', 'ratio', title='Shoulder IR/ER Ratio - Left vs Right')
                                 if fig:
                                     st.plotly_chart(fig, width='stretch', key="shoulder_ratio_chart")
+                                    _collect_chart(fig, "Shoulder IR/ER Ratio")
 
                         st.markdown("---")
 
@@ -3611,6 +3652,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                             )
                             if group_fig_rm:
                                 st.plotly_chart(group_fig_rm, width='stretch', key="strength_group_bar")
+                                _collect_chart(group_fig_rm)
                         else:
                             st.info("No estimated 1RM data available.")
 
@@ -3733,6 +3775,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                             )
                             if fig:
                                 st.plotly_chart(fig, width='stretch', key="broad_jump_group_bar")
+                                _collect_chart(fig, "Broad Jump")
 
                     if selected_view == "🏃 Individual View":
                         athletes = sorted(filtered_df['Name'].dropna().unique()) if 'Name' in filtered_df.columns else []
@@ -3827,6 +3870,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                                 )
                                 if fig:
                                     st.plotly_chart(fig, width='stretch', key="fitness_group_bar")
+                                    _collect_chart(fig)
 
                         if selected_view == "🏃 Individual View":
                             athletes = sorted(filtered_df['Name'].dropna().unique()) if 'Name' in filtered_df.columns else []
@@ -3960,6 +4004,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                     )
                     if fig:
                         st.plotly_chart(fig, width='stretch', key="plyo_pushup_group_bar")
+                        _collect_chart(fig, "Plyo Pushup")
                 else:
                     st.warning("Plyo Pushup metrics not found in data.")
                     # Show available columns for debugging
@@ -4086,6 +4131,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                             )
                             if fig:
                                 st.plotly_chart(fig, width='stretch', key="dynamo_group_bar")
+                                _collect_chart(fig, "DynaMo - Grip Strength")
 
                         if selected_view == "🏃 Individual View":
                             athletes = sorted(filtered_df['Name'].dropna().unique()) if 'Name' in filtered_df.columns else []
@@ -4192,6 +4238,7 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                         )
                         if fig:
                             st.plotly_chart(fig, width='stretch', key="balance_group_bar")
+                            _collect_chart(fig, "Balance")
                     else:
                         st.warning(f"Metric {metric_col} not found in data.")
 
@@ -4223,3 +4270,93 @@ def render_snc_diagnostics_tab(forcedecks_df: pd.DataFrame, nordbord_df: pd.Data
                                 st.plotly_chart(fig, width='stretch', key="balance_ind_line")
                     else:
                         st.warning("No athletes found in filtered data.")
+
+    # =====================================================================
+    # EXPORT SECTION - PDF / HTML / Excel for Canvas
+    # =====================================================================
+    _canvas_charts = st.session_state.get('canvas_charts', {})
+    if _canvas_charts:
+        st.markdown("---")
+        st.markdown("""
+        <div style="background: linear-gradient(135deg, #235032 0%, #1a3d25 100%);
+             padding: 1rem; border-radius: 8px; margin-bottom: 1rem;
+             border-left: 4px solid #a08e66;">
+            <h3 style="color: white; margin: 0;">Export Report</h3>
+            <p style="color: rgba(255,255,255,0.8); margin: 0.25rem 0 0 0; font-size: 0.9rem;">
+                Download the current test tab as PDF, HTML, or Excel</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # Preview
+        _n_charts = len(_canvas_charts)
+        _preview_cols = st.columns(3)
+        with _preview_cols[0]:
+            st.metric("Charts", _n_charts)
+        with _preview_cols[1]:
+            _n_ath = len(forcedecks_df['Name'].dropna().unique()) if 'Name' in forcedecks_df.columns else 0
+            st.metric("Athletes", _n_ath)
+        with _preview_cols[2]:
+            st.metric("Tab", selected_test_tab.split(' ', 1)[-1] if selected_test_tab else "N/A")
+
+        with st.expander("Preview Report Contents", expanded=False):
+            if _canvas_charts:
+                st.markdown("**Charts included:**")
+                for i, chart_name in enumerate(_canvas_charts.keys(), 1):
+                    st.markdown(f"  {i}. {chart_name}")
+
+        # Build metadata
+        _canvas_meta = {
+            'sport': 'All Sports',
+            'athlete_count': _n_ath,
+            'test_count': len(forcedecks_df),
+        }
+
+        # Download buttons
+        try:
+            from .report_export import generate_group_pdf_report, generate_group_html_report
+        except ImportError:
+            try:
+                from report_export import generate_group_pdf_report, generate_group_html_report
+            except ImportError:
+                generate_group_pdf_report = None
+                generate_group_html_report = None
+
+        exp_col1, exp_col2, exp_col3 = st.columns(3)
+
+        if generate_group_pdf_report:
+            with exp_col1:
+                try:
+                    _tab_label = selected_test_tab.split(' ', 1)[-1].replace(' ', '_').lower() if selected_test_tab else "canvas"
+                    _pdf_bytes = generate_group_pdf_report(
+                        sport=f"S&C Canvas - {selected_test_tab.split(' ', 1)[-1]}" if selected_test_tab else "S&C Canvas",
+                        charts=_canvas_charts,
+                        metadata=_canvas_meta,
+                    )
+                    st.download_button(
+                        label=f"📥 Download PDF ({_n_charts} charts)",
+                        data=_pdf_bytes,
+                        file_name=f"canvas_{_tab_label}.pdf",
+                        mime="application/pdf",
+                        key="canvas_export_pdf"
+                    )
+                except Exception as e:
+                    st.warning(f"PDF export error: {e}")
+
+        if generate_group_html_report:
+            with exp_col2:
+                try:
+                    _tab_label = selected_test_tab.split(' ', 1)[-1].replace(' ', '_').lower() if selected_test_tab else "canvas"
+                    _html_str = generate_group_html_report(
+                        sport=f"S&C Canvas - {selected_test_tab.split(' ', 1)[-1]}" if selected_test_tab else "S&C Canvas",
+                        charts=_canvas_charts,
+                        metadata=_canvas_meta,
+                    )
+                    st.download_button(
+                        label=f"📥 Download HTML ({_n_charts} charts)",
+                        data=_html_str,
+                        file_name=f"canvas_{_tab_label}.html",
+                        mime="text/html",
+                        key="canvas_export_html"
+                    )
+                except Exception as e:
+                    st.warning(f"HTML export error: {e}")

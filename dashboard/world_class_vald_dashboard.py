@@ -1559,15 +1559,23 @@ st.sidebar.metric("Sports", filtered_df['athlete_sport'].nunique() if 'athlete_s
 
 # New tab order: Home, Reports, ForceFrame, NordBord, Data Entry, Trace, Data
 # Throws moved under Reports tab
-tabs = st.tabs([
-    "🏠 Home", "📊 Reports", "🔲 ForceFrame", "🦵 NordBord", "✏️ Data Entry", "📉 Trace", "📋 Data"
-])
+# Using segmented_control instead of st.tabs - tabs reset on any widget interaction
+_main_tab_options = ["🏠 Home", "📊 Reports", "🔲 ForceFrame", "🦵 NordBord", "✏️ Data Entry", "📉 Trace", "📋 Data"]
+selected_main_tab = st.segmented_control(
+    "Navigation",
+    options=_main_tab_options,
+    default=st.session_state.get('main_tab_selector', _main_tab_options[0]),
+    key="main_tab_selector",
+    label_visibility="collapsed"
+)
+if selected_main_tab is None:
+    selected_main_tab = _main_tab_options[0]
 
 # ============================================================================
 # PAGE: OVERVIEW
 # ============================================================================
 
-with tabs[0]:  # Home
+if selected_main_tab == "🏠 Home":  # Home
     st.markdown("## 🏠 Performance Overview")
 
     # Refresh data button
@@ -1783,7 +1791,7 @@ with tabs[0]:  # Home
 # TAB 4: DATA ENTRY - Training Distances & External Data
 # ============================================================================
 
-with tabs[4]:  # Data Entry
+elif selected_main_tab == "✏️ Data Entry":  # Data Entry
     st.markdown("## ✏️ Data Entry")
     st.markdown("*Record training distances, S&C metrics, and other external data*")
 
@@ -3426,13 +3434,22 @@ with tabs[4]:  # Data Entry
     elif current_entry_tab_index == 7:  # View Data
         st.markdown("### 📊 Recorded Training Data")
 
-        # Create sub-tabs for different data types
-        view_data_tabs = st.tabs(["🥏 Throws", "💪 S&C Upper Body", "🦵 S&C Lower Body"])
+        # Create sub-tabs for different data types (persisted)
+        _view_data_options = ["🥏 Throws", "💪 S&C Upper Body", "🦵 S&C Lower Body"]
+        selected_data_view = st.segmented_control(
+            "Data Type",
+            options=_view_data_options,
+            default=st.session_state.get('view_data_tab_selector', _view_data_options[0]),
+            key="view_data_tab_selector",
+            label_visibility="collapsed"
+        )
+        if selected_data_view is None:
+            selected_data_view = _view_data_options[0]
 
         # -----------------------------------------------------------------
         # VIEW DATA SUB-TAB: Throws
         # -----------------------------------------------------------------
-        with view_data_tabs[0]:
+        if selected_data_view == "🥏 Throws":
             training_df = st.session_state.training_distances
 
             if not training_df.empty:
@@ -3681,7 +3698,7 @@ with tabs[4]:  # Data Entry
         # -----------------------------------------------------------------
         # VIEW DATA SUB-TAB: S&C Upper Body
         # -----------------------------------------------------------------
-        with view_data_tabs[1]:
+        elif selected_data_view == "💪 S&C Upper Body":
             upper_df = st.session_state.sc_upper_body
 
             if not upper_df.empty:
@@ -3771,7 +3788,7 @@ with tabs[4]:  # Data Entry
         # -----------------------------------------------------------------
         # VIEW DATA SUB-TAB: S&C Lower Body
         # -----------------------------------------------------------------
-        with view_data_tabs[2]:
+        elif selected_data_view == "🦵 S&C Lower Body":
             lower_df = st.session_state.sc_lower_body
 
             if not lower_df.empty:
@@ -3864,13 +3881,22 @@ with tabs[4]:  # Data Entry
     elif current_entry_tab_index == 8:  # Charts
         st.markdown("### 📈 Training Charts")
 
-        # Create sub-tabs for different chart types
-        chart_sub_tabs = st.tabs(["🥏 Throws", "💪 S&C Upper Body", "🦵 S&C Lower Body"])
+        # Create sub-tabs for different chart types (persisted)
+        _chart_sub_options = ["🥏 Throws", "💪 S&C Upper Body", "🦵 S&C Lower Body"]
+        selected_chart_sub = st.segmented_control(
+            "Chart Type",
+            options=_chart_sub_options,
+            default=st.session_state.get('chart_sub_tab_selector', _chart_sub_options[0]),
+            key="chart_sub_tab_selector",
+            label_visibility="collapsed"
+        )
+        if selected_chart_sub is None:
+            selected_chart_sub = _chart_sub_options[0]
 
         # -----------------------------------------------------------------
         # CHARTS SUB-TAB: Throws
         # -----------------------------------------------------------------
-        with chart_sub_tabs[0]:
+        if selected_chart_sub == "🥏 Throws":
             throws_chart_df = st.session_state.training_distances
 
             if not throws_chart_df.empty and 'date' in throws_chart_df.columns:
@@ -4040,7 +4066,7 @@ with tabs[4]:  # Data Entry
         # -----------------------------------------------------------------
         # CHARTS SUB-TAB: S&C Upper Body
         # -----------------------------------------------------------------
-        with chart_sub_tabs[1]:
+        elif selected_chart_sub == "💪 S&C Upper Body":
             upper_chart_df = st.session_state.sc_upper_body
 
             if not upper_chart_df.empty and 'date' in upper_chart_df.columns:
@@ -4141,7 +4167,7 @@ with tabs[4]:  # Data Entry
         # -----------------------------------------------------------------
         # CHARTS SUB-TAB: S&C Lower Body
         # -----------------------------------------------------------------
-        with chart_sub_tabs[2]:
+        elif selected_chart_sub == "🦵 S&C Lower Body":
             lower_chart_df = st.session_state.sc_lower_body
 
             if not lower_chart_df.empty and 'date' in lower_chart_df.columns:
@@ -4243,7 +4269,7 @@ with tabs[4]:  # Data Entry
 # TAB 11: FORCE TRACE ANALYSIS
 # ============================================================================
 
-with tabs[5]:  # Trace
+elif selected_main_tab == "📉 Trace":  # Trace
     st.markdown("## 📉 Force Trace Analysis")
     st.markdown("""
     <div style="background: linear-gradient(135deg, #255035 0%, #1C3D28 100%); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
@@ -5433,7 +5459,7 @@ Tenant: {env_creds['tenant_id']}
 # TAB 14: DATA TABLE
 # ============================================================================
 
-with tabs[6]:  # Data
+elif selected_main_tab == "📋 Data":  # Data
     st.markdown("## 📋 Data Table View")
     st.markdown("Browse and export all testing data in table format")
 
@@ -5555,7 +5581,7 @@ with tabs[6]:  # Data
 # PAGE: SPORT REPORTS (NEW)
 # ============================================================================
 
-with tabs[1]:  # Reports
+elif selected_main_tab == "📊 Reports":  # Reports
     st.markdown("## 📊 Sport Reports")
     st.markdown("""
     <div style="background: linear-gradient(135deg, #255035 0%, #1C3D28 100%); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
@@ -5732,10 +5758,19 @@ with tabs[1]:  # Reports
                         sport_dynamo['athlete_sport'] = sport_dynamo['Name'].map(athlete_sport_map)
 
             if selected_report_tab == "💪 Strength":
-                # View toggle - Canvas vs Classic vs Group V2 vs Individual layout
-                view_tabs = st.tabs(["📊 S&C Canvas (12 Tests)", "📋 Classic Layout", "👥 Group V2 (Summary)", "🏃 Individual"])
+                # View toggle - persisted selector (st.tabs resets on widget interaction)
+                _view_options = ["📊 S&C Canvas (12 Tests)", "📋 Classic Layout", "👥 Group V2 (Summary)", "🏃 Individual"]
+                selected_strength_view = st.segmented_control(
+                    "View",
+                    options=_view_options,
+                    default=st.session_state.get('strength_view_selector', _view_options[0]),
+                    key="strength_view_selector",
+                    label_visibility="collapsed"
+                )
+                if selected_strength_view is None:
+                    selected_strength_view = _view_options[0]
 
-                with view_tabs[0]:  # S&C Canvas
+                if selected_strength_view == "📊 S&C Canvas (12 Tests)":  # S&C Canvas
                     # S&C Diagnostics Canvas - Full 12-tab system
                     # Includes: IMTP, CMJ, SL Tests, NordBord, 10:5 Hop, Quadrant Tests,
                     #           Strength RM, Broad Jump, Fitness Tests, Plyo Pushup, DynaMo, Balance
@@ -5749,7 +5784,7 @@ with tabs[1]:  # Reports
                     else:
                         st.warning("S&C Diagnostics module not available.")
 
-                with view_tabs[1]:  # Classic Layout
+                elif selected_strength_view == "📋 Classic Layout":  # Classic Layout
                     # Classic Strength Diagnostics layout
                     create_group_report(
                         sport_data,
@@ -5806,6 +5841,9 @@ with tabs[1]:  # Reports
                                     fig_trunk.update_xaxes(showgrid=False)
                                     fig_trunk.update_yaxes(showgrid=True, gridwidth=1, gridcolor='#e9ecef')
                                     st.plotly_chart(fig_trunk, width='stretch')
+                                    # Collect for export
+                                    if 'report_charts' in st.session_state and isinstance(st.session_state.get('report_charts'), dict):
+                                        st.session_state['report_charts']['Trunk Endurance'] = fig_trunk
 
                                     col1, col2, col3 = st.columns(3)
                                     with col1:
@@ -5872,6 +5910,9 @@ with tabs[1]:  # Reports
                                     margin=dict(l=10, r=10, t=40, b=10)
                                 )
                                 st.plotly_chart(fig_bj, width='stretch')
+                                # Collect for export
+                                if 'report_charts' in st.session_state and isinstance(st.session_state.get('report_charts'), dict):
+                                    st.session_state['report_charts']['Broad Jump'] = fig_bj
                             else:
                                 st.info("No broad jump data for the selected sport.")
                         except Exception as e:
@@ -5938,13 +5979,16 @@ with tabs[1]:  # Reports
                                     margin=dict(l=10, r=10, t=40, b=10)
                                 )
                                 st.plotly_chart(fig_aero, width='stretch')
+                                # Collect for export
+                                if 'report_charts' in st.session_state and isinstance(st.session_state.get('report_charts'), dict):
+                                    st.session_state['report_charts']['6 Min Aerobic'] = fig_aero
                         else:
                             st.info("No aerobic test data available.")
                     else:
                         st.info("📭 No fitness test data. Use ✏️ Data Entry to add.")
 
                     # =====================================================================
-                    # EXPORT BUTTONS (PDF / HTML / Excel)
+                    # EXPORT BUTTONS (PDF / HTML / Excel) with Preview
                     # =====================================================================
                     if REPORT_EXPORT_AVAILABLE:
                         st.markdown("---")
@@ -5957,6 +6001,9 @@ with tabs[1]:  # Reports
                                 Download this Classic Layout report as PDF, HTML, or Excel</p>
                         </div>
                         """, unsafe_allow_html=True)
+
+                        # Collect charts from session_state (populated by _display_and_collect_chart)
+                        _collected_charts = st.session_state.get('report_charts', {})
 
                         # Build summary data table for export
                         try:
@@ -6013,16 +6060,43 @@ with tabs[1]:  # Reports
                             'test_count': len(sport_data),
                         }
 
+                        # --- Preview Section ---
+                        _n_charts = len(_collected_charts)
+                        _n_athletes = _export_meta['athlete_count']
+                        _preview_cols = st.columns(4)
+                        with _preview_cols[0]:
+                            st.metric("Charts", _n_charts)
+                        with _preview_cols[1]:
+                            st.metric("Athletes", _n_athletes)
+                        with _preview_cols[2]:
+                            st.metric("Tests", _export_meta['test_count'])
+                        with _preview_cols[3]:
+                            st.metric("Tables", 1 if not _export_summary.empty else 0)
+
+                        with st.expander("Preview Report Contents", expanded=False):
+                            if _collected_charts:
+                                st.markdown("**Charts included:**")
+                                for i, chart_name in enumerate(_collected_charts.keys(), 1):
+                                    st.markdown(f"  {i}. {chart_name}")
+                            else:
+                                st.info("No charts collected. Report will contain summary table only.")
+
+                            if not _export_summary.empty:
+                                st.markdown("**Summary Table:**")
+                                st.dataframe(_export_summary, width='stretch', hide_index=True)
+
+                        # --- Download Buttons ---
                         exp_col1, exp_col2, exp_col3 = st.columns(3)
                         with exp_col1:
                             try:
                                 _pdf_bytes = generate_group_pdf_report(
                                     sport=selected_report_sport or 'All Sports',
+                                    charts=_collected_charts if _collected_charts else None,
                                     data_tables={'Athlete Summary': _export_summary} if not _export_summary.empty else {},
                                     metadata=_export_meta,
                                 )
                                 st.download_button(
-                                    label="📥 Download PDF",
+                                    label=f"📥 Download PDF ({_n_charts} charts)",
                                     data=_pdf_bytes,
                                     file_name=f"classic_report_{(selected_report_sport or 'all').replace(' ', '_').lower()}.pdf",
                                     mime="application/pdf",
@@ -6035,11 +6109,12 @@ with tabs[1]:  # Reports
                             try:
                                 _html_str = generate_group_html_report(
                                     sport=selected_report_sport or 'All Sports',
+                                    charts=_collected_charts if _collected_charts else None,
                                     data_tables={'Athlete Summary': _export_summary} if not _export_summary.empty else {},
                                     metadata=_export_meta,
                                 )
                                 st.download_button(
-                                    label="📥 Download HTML",
+                                    label=f"📥 Download HTML ({_n_charts} charts)",
                                     data=_html_str,
                                     file_name=f"classic_report_{(selected_report_sport or 'all').replace(' ', '_').lower()}.html",
                                     mime="text/html",
@@ -6059,7 +6134,7 @@ with tabs[1]:  # Reports
                                     key="classic_export_csv"
                                 )
 
-                with view_tabs[2]:  # Group V2 (Summary)
+                elif selected_strength_view == "👥 Group V2 (Summary)":  # Group V2 (Summary)
                     # Group Report v2 - Summary table with RAG status
                     st.markdown("### Team Summary View")
                     st.caption("Summary table with RAG status indicators")
@@ -6071,7 +6146,7 @@ with tabs[1]:  # Reports
                         nordbord_df=sport_nb if not sport_nb.empty else None
                     )
 
-                with view_tabs[3]:  # Individual
+                elif selected_strength_view == "🏃 Individual":  # Individual
                     # Individual Report - Single athlete analysis
                     st.markdown("### Individual Athlete Analysis")
 
@@ -6103,14 +6178,23 @@ with tabs[1]:  # Reports
                 st.markdown("### 🎯 10m Pistol - Balance Analysis")
                 st.caption("Quiet Standing Balance tests for shooting athletes")
 
-                # Create sub-tabs for Group and Individual
-                shooting_tabs = st.tabs(["👥 Group Report", "🏃 Individual Report"])
+                # View toggle for Shooting (persisted)
+                _shooting_views = ["👥 Group Report", "🏃 Individual Report"]
+                selected_shooting_view = st.segmented_control(
+                    "Shooting View",
+                    options=_shooting_views,
+                    default=st.session_state.get('shooting_view_selector', _shooting_views[0]),
+                    key="shooting_view_selector",
+                    label_visibility="collapsed"
+                )
+                if selected_shooting_view is None:
+                    selected_shooting_view = _shooting_views[0]
 
-                with shooting_tabs[0]:  # Group Report
+                if selected_shooting_view == "👥 Group Report":
                     # Group Shooting Report - use original df to always show shooting athletes
                     create_shooting_group_report(df, "Shooting")
 
-                with shooting_tabs[1]:  # Individual Report
+                elif selected_shooting_view == "🏃 Individual Report":
                     # Individual Shooting Report
                     # Use original df so shooting athletes always appear
                     # Get athletes who have QSB data (flexible matching)
@@ -6409,7 +6493,7 @@ with tabs[1]:  # Reports
 # PAGE: FORCEFRAME
 # ============================================================================
 
-with tabs[2]:  # ForceFrame
+elif selected_main_tab == "🔲 ForceFrame":  # ForceFrame
     st.markdown("## 🔲 ForceFrame Isometric Strength Analysis")
     st.markdown("""
     <div style="background: linear-gradient(135deg, #255035 0%, #2d6a5a 100%); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
@@ -6433,10 +6517,19 @@ with tabs[2]:  # ForceFrame
     if ff_data.empty:
         st.warning("No ForceFrame data available. Upload data or check data/forceframe_allsports.csv")
     else:
-        # Create subtabs for ForceFrame - reorganized for better workflow
-        ff_tabs = st.tabs(["📊 Overview", "🦴 Body Region", "🏃 Individual Athlete", "⚖️ Asymmetry Dashboard", "📈 Progression"])
+        # Create subtabs for ForceFrame - persisted selector
+        _ff_tab_options = ["📊 Overview", "🦴 Body Region", "🏃 Individual Athlete", "⚖️ Asymmetry Dashboard", "📈 Progression"]
+        selected_ff_tab = st.segmented_control(
+            "ForceFrame View",
+            options=_ff_tab_options,
+            default=st.session_state.get('ff_tab_selector', _ff_tab_options[0]),
+            key="ff_tab_selector",
+            label_visibility="collapsed"
+        )
+        if selected_ff_tab is None:
+            selected_ff_tab = _ff_tab_options[0]
 
-        with ff_tabs[0]:  # Overview
+        if selected_ff_tab == "📊 Overview":  # Overview
             # Overview metrics
             col1, col2, col3, col4 = st.columns(4)
 
@@ -6517,7 +6610,7 @@ with tabs[2]:  # ForceFrame
                               f"forceframe_data_{datetime.now().strftime('%Y%m%d')}.csv", "text/csv")
 
         # ========== BODY REGION TAB ==========
-        with ff_tabs[1]:  # Body Region
+        elif selected_ff_tab == "🦴 Body Region":  # Body Region
             st.markdown("### 🦴 Body Region Analysis")
             st.markdown("*Grouped by anatomical region - Lower Body, Upper Body, Core/Neck*")
 
@@ -6646,7 +6739,7 @@ with tabs[2]:  # ForceFrame
                 st.warning("Test type information not available for body region grouping.")
 
         # ========== INDIVIDUAL ATHLETE TAB ==========
-        with ff_tabs[2]:  # Individual Athlete
+        elif selected_ff_tab == "🏃 Individual Athlete":  # Individual Athlete
             st.markdown("### 🏃 Individual Athlete Analysis")
             st.markdown("*Select an athlete and test type to view their ForceFrame performance profile with traffic light indicators*")
 
@@ -6908,7 +7001,7 @@ with tabs[2]:  # ForceFrame
                 st.info("No athlete names available in ForceFrame data.")
 
         # ========== YEARLY PROGRESSION TAB ==========
-        with ff_tabs[4]:  # Progression
+        elif selected_ff_tab == "📈 Progression":  # Progression
             st.markdown("### 📈 Yearly Progression Analysis")
             st.markdown("*Track force development across the year*")
 
@@ -6982,7 +7075,7 @@ with tabs[2]:  # ForceFrame
                 st.info("Date or athlete information not available for progression analysis.")
 
         # ========== ASYMMETRY DASHBOARD TAB ==========
-        with ff_tabs[3]:  # Asymmetry Dashboard
+        elif selected_ff_tab == "⚖️ Asymmetry Dashboard":  # Asymmetry Dashboard
             st.markdown("### ⚖️ Bilateral Asymmetry Dashboard")
             st.markdown("""
             **Asymmetry Risk Thresholds:**
@@ -7135,7 +7228,7 @@ with tabs[2]:  # ForceFrame
 # PAGE: NORDBORD
 # ============================================================================
 
-with tabs[3]:  # NordBord
+elif selected_main_tab == "🦵 NordBord":  # NordBord
     st.markdown("## 🦵 NordBord Hamstring Analysis")
     st.markdown("""
     <div style="background: linear-gradient(135deg, #c0392b 0%, #e74c3c 100%); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
@@ -7163,9 +7256,18 @@ with tabs[3]:  # NordBord
         st.warning("No NordBord data available. Upload data or check data/nordbord_allsports.csv")
     else:
         # Create subtabs for NordBord - enhanced structure
-        nb_tabs = st.tabs(["📊 Overview", "🎯 Strength Benchmarks", "🏃 Individual Athlete", "⚖️ Asymmetry Dashboard", "📈 Progression"])
+        _nb_tab_options = ["📊 Overview", "🎯 Strength Benchmarks", "🏃 Individual Athlete", "⚖️ Asymmetry Dashboard", "📈 Progression"]
+        selected_nb_tab = st.segmented_control(
+            "NordBord View",
+            options=_nb_tab_options,
+            default=st.session_state.get('nb_tab_selector', _nb_tab_options[0]),
+            key="nb_tab_selector",
+            label_visibility="collapsed"
+        )
+        if selected_nb_tab is None:
+            selected_nb_tab = _nb_tab_options[0]
 
-        with nb_tabs[0]:  # Overview
+        if selected_nb_tab == "📊 Overview":  # Overview
             # Overview metrics
             col1, col2, col3, col4 = st.columns(4)
 
@@ -7223,7 +7325,7 @@ with tabs[3]:  # NordBord
                               f"nordbord_data_{datetime.now().strftime('%Y%m%d')}.csv", "text/csv")
 
         # ========== STRENGTH BENCHMARKS TAB ==========
-        with nb_tabs[1]:  # Strength Benchmarks
+        elif selected_nb_tab == "🎯 Strength Benchmarks":  # Strength Benchmarks
             st.markdown("### 🎯 Hamstring Strength Benchmarks")
             st.markdown("""
             **Research-Based Injury Risk Thresholds:**
@@ -7431,7 +7533,7 @@ with tabs[3]:  # NordBord
                 st.warning("Force data columns not available for benchmarking.")
 
         # ========== INDIVIDUAL ATHLETE TAB ==========
-        with nb_tabs[2]:  # Individual Athlete
+        elif selected_nb_tab == "🏃 Individual Athlete":  # Individual Athlete
             st.markdown("### 🏃 Individual Athlete Analysis")
             st.markdown("*Select an athlete to view their Nordic hamstring profile with risk assessment*")
 
@@ -7641,7 +7743,7 @@ with tabs[3]:  # NordBord
                 st.info("No athlete names available in NordBord data.")
 
         # ========== YEARLY PROGRESSION TAB ==========
-        with nb_tabs[4]:  # Progression
+        elif selected_nb_tab == "📈 Progression":  # Progression
             st.markdown("### 📈 Yearly Progression Analysis")
             st.markdown("*Track hamstring strength development across the year*")
 
@@ -7710,7 +7812,7 @@ with tabs[3]:  # NordBord
                 st.info("Date or athlete information not available.")
 
         # ========== ASYMMETRY ANALYSIS TAB ==========
-        with nb_tabs[3]:  # Asymmetry Dashboard
+        elif selected_nb_tab == "⚖️ Asymmetry Dashboard":  # Asymmetry Dashboard
             st.markdown("### ⚖️ Bilateral Hamstring Asymmetry")
             st.markdown("""
             **Hamstring Injury Risk Thresholds:**
