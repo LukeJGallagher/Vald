@@ -10,14 +10,9 @@ CLIENT_SECRET = os.getenv('CLIENT_SECRET')
 TENANT_ID = os.getenv('TENANT_ID')
 REGION = os.getenv('VALD_REGION', 'euw')
 
-# Get token
-token_url = 'https://security.valdperformance.com/connect/token'
-r = requests.post(token_url, data={
-    'grant_type': 'client_credentials',
-    'client_id': CLIENT_ID,
-    'client_secret': CLIENT_SECRET
-})
-token = r.json()['access_token']
+# Get token (Auth0 with caching)
+from config.vald_config import get_vald_token
+token = get_vald_token(client_id=CLIENT_ID, client_secret=CLIENT_SECRET)
 print('Token obtained')
 
 # Fetch groups

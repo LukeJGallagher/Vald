@@ -284,16 +284,24 @@ def get_performance_metric_columns(numeric_cols):
 
 
 def get_oauth_token(client_id, client_secret, region='euw'):
-    """Get OAuth token from VALD API."""
+    """Get OAuth token from VALD Auth0 (with caching)."""
     try:
-        # Use the correct VALD security token URL
-        token_url = "https://security.valdperformance.com/connect/token"
-        data = {
-            'grant_type': 'client_credentials',
-            'client_id': client_id,
-            'client_secret': client_secret
-        }
-        response = requests.post(token_url, data=data, timeout=30)
+        from config.vald_config import get_vald_token
+        return get_vald_token(client_id=client_id, client_secret=client_secret)
+    except ImportError:
+        pass
+    # Fallback: direct Auth0 request
+    try:
+        response = requests.post(
+            'https://auth.prd.vald.com/oauth/token',
+            data={
+                'grant_type': 'client_credentials',
+                'client_id': client_id,
+                'client_secret': client_secret,
+                'audience': 'vald-api-external',
+            },
+            timeout=30
+        )
         if response.status_code == 200:
             return response.json().get('access_token', '')
         return ''

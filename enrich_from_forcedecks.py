@@ -72,20 +72,9 @@ TENANT_ID = os.getenv('TENANT_ID')
 
 
 def get_oauth_token():
-    """Get OAuth token from VALD security endpoint."""
-    token_url = 'https://security.valdperformance.com/connect/token'
-
-    response = requests.post(token_url, data={
-        'grant_type': 'client_credentials',
-        'client_id': CLIENT_ID,
-        'client_secret': CLIENT_SECRET
-    })
-
-    if response.status_code == 200:
-        return response.json().get('access_token')
-    else:
-        print(f"    Token request failed: {response.status_code}")
-        return None
+    """Get OAuth token from VALD Auth0 (with caching)."""
+    from config.vald_config import get_vald_token
+    return get_vald_token(client_id=CLIENT_ID, client_secret=CLIENT_SECRET)
 
 
 def fetch_groups_mapping(token):

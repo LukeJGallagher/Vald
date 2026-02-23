@@ -4,6 +4,8 @@ Production-ready settings for Team Saudi VALD Data System
 """
 
 import os
+import time
+import requests
 from dataclasses import dataclass, field
 from typing import Dict, Optional, List
 from dotenv import load_dotenv
@@ -13,10 +15,12 @@ from dotenv import load_dotenv
 class ValdConfig:
     """Centralized configuration for VALD API system"""
 
-    # Authentication
+    # Authentication (Auth0 - Updated Feb 2026)
     CLIENT_ID: str
     CLIENT_SECRET: str
     TENANT_ID: str
+    TOKEN_URL: str = 'https://auth.prd.vald.com/oauth/token'
+    AUDIENCE: str = 'vald-api-external'
     MANUAL_TOKEN: Optional[str] = None
 
     # Region
@@ -98,6 +102,8 @@ class ValdConfig:
             CLIENT_ID=os.getenv('CLIENT_ID', ''),
             CLIENT_SECRET=os.getenv('CLIENT_SECRET', ''),
             TENANT_ID=os.getenv('TENANT_ID', ''),
+            TOKEN_URL=os.getenv('TOKEN_URL', 'https://auth.prd.vald.com/oauth/token'),
+            AUDIENCE=os.getenv('VALD_AUDIENCE', 'vald-api-external'),
             MANUAL_TOKEN=os.getenv('MANUAL_TOKEN'),
             REGION=os.getenv('VALD_REGION', 'euw'),
             ENABLE_EMAIL_NOTIFICATIONS=os.getenv('ENABLE_EMAIL', 'false').lower() == 'true',
@@ -125,7 +131,7 @@ class ValdConfig:
             'profiles': f'https://prd-{self.REGION}-api-externalprofile.valdperformance.com/',
             'athletes': f'https://prd-{self.REGION}-api-athlete.valdperformance.com/',  # Note: singular 'athlete'
             'tenants': f'https://prd-{self.REGION}-api-externaltenants.valdperformance.com/',
-            'security': 'https://security.valdperformance.com/'
+            'security': self.TOKEN_URL.rsplit('/', 1)[0] + '/'  # Auth0: https://auth.prd.vald.com/
         }
 
         base_url = endpoints.get(service)
@@ -149,6 +155,85 @@ class ValdConfig:
 
         for d in dirs:
             os.makedirs(d, exist_ok=True)
+
+
+# ============================================================================
+# CENTRALIZED TOKEN MANAGEMENT (Auth0 - Feb 2026)
+# ============================================================================
+# All scripts and dashboard should use get_vald_token() instead of
+# making their own token requests. Auth0 rate-limits token requests,
+# so caching is mandatory.
+
+_token_cache = {
+    'access_token': None,
+    'expires_at': 0,  # Unix timestamp
+}
+
+
+def get_vald_token(
+    client_id: Optional[str] = None,
+    client_secret: Optional[str] = None,
+    token_url: str = 'https://auth.prd.vald.com/oauth/token',
+    audience: str = 'vald-api-external',
+) -> str:
+    """Get a cached OAuth token from VALD Auth0.
+
+    Uses in-memory cache. Auth0 rate-limits token requests, so tokens
+    are reused until 5 minutes before expiry.
+
+    Args:
+        client_id: VALD client ID. Falls back to CLIENT_ID env var.
+        client_secret: VALD client secret. Falls back to CLIENT_SECRET env var.
+        token_url: Auth0 token endpoint.
+        audience: Auth0 audience parameter.
+
+    Returns:
+        Access token string.
+
+    Raises:
+        Exception: If token request fails.
+    """
+    global _token_cache
+
+    # Return cached token if still valid (with 5 min buffer)
+    if _token_cache['access_token'] and time.time() < _token_cache['expires_at'] - 300:
+        return _token_cache['access_token']
+
+    # Resolve credentials from env if not provided
+    cid = client_id or os.getenv('CLIENT_ID', '') or os.getenv('VALD_CLIENT_ID', '')
+    csecret = client_secret or os.getenv('CLIENT_SECRET', '') or os.getenv('VALD_CLIENT_SECRET', '')
+    url = os.getenv('TOKEN_URL', token_url)
+    aud = os.getenv('VALD_AUDIENCE', audience)
+
+    if not cid or not csecret:
+        raise ValueError("Missing VALD credentials (CLIENT_ID / CLIENT_SECRET)")
+
+    response = requests.post(
+        url,
+        data={
+            'grant_type': 'client_credentials',
+            'client_id': cid,
+            'client_secret': csecret,
+            'audience': aud,
+        },
+        headers={'Content-Type': 'application/x-www-form-urlencoded'},
+        timeout=30,
+    )
+
+    if response.status_code != 200:
+        raise Exception(f"Auth0 token error {response.status_code}: {response.text}")
+
+    token_data = response.json()
+    access_token = token_data['access_token']
+    expires_in = token_data.get('expires_in', 7200)
+
+    # Cache the token
+    _token_cache = {
+        'access_token': access_token,
+        'expires_at': time.time() + expires_in,
+    }
+
+    return access_token
 
 
 # Device-specific settings

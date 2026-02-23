@@ -93,7 +93,7 @@ class OAuthTokenManager:
         self.config = config
         self.logger = logger
         self.token_cache_file = config.TOKEN_CACHE_FILE
-        self.token_url = config.get_endpoint('security') + 'connect/token'
+        self.token_url = config.TOKEN_URL
 
         # Ensure cache directory exists
         os.makedirs(os.path.dirname(self.token_cache_file), exist_ok=True)
@@ -139,7 +139,8 @@ class OAuthTokenManager:
         data = {
             'grant_type': 'client_credentials',
             'client_id': self.config.CLIENT_ID,
-            'client_secret': self.config.CLIENT_SECRET
+            'client_secret': self.config.CLIENT_SECRET,
+            'audience': self.config.AUDIENCE,
         }
 
         try:

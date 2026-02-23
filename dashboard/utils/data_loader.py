@@ -43,15 +43,22 @@ def _get_vald_credentials():
 
 
 def _get_oauth_token(client_id: str, client_secret: str) -> Optional[str]:
-    """Get OAuth token from VALD security endpoint."""
+    """Get OAuth token from VALD Auth0 endpoint (with caching)."""
     try:
-        # Use empty scope - VALD API requires no scope for client credentials
+        from config.vald_config import get_vald_token
+        return get_vald_token(client_id=client_id, client_secret=client_secret)
+    except ImportError:
+        pass
+    # Fallback: direct Auth0 request (Streamlit Cloud where config module may not be on path)
+    try:
+        token_url = 'https://auth.prd.vald.com/oauth/token'
         response = requests.post(
-            'https://security.valdperformance.com/connect/token',
+            token_url,
             data={
                 'grant_type': 'client_credentials',
                 'client_id': client_id,
                 'client_secret': client_secret,
+                'audience': 'vald-api-external',
             },
             timeout=30
         )

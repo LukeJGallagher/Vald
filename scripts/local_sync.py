@@ -80,22 +80,9 @@ from config.vald_categories import get_sport_from_groups
 
 
 def get_token():
-    """Get OAuth token."""
-    client_id = os.environ.get('CLIENT_ID', '') or os.environ.get('VALD_CLIENT_ID', '')
-    client_secret = os.environ.get('CLIENT_SECRET', '') or os.environ.get('VALD_CLIENT_SECRET', '')
-
-    response = requests.post(
-        'https://security.valdperformance.com/connect/token',
-        data={
-            'grant_type': 'client_credentials',
-            'client_id': client_id,
-            'client_secret': client_secret
-        },
-        timeout=30
-    )
-    if response.status_code != 200:
-        raise Exception(f"Token error: {response.status_code} - {response.text}")
-    return response.json()['access_token']
+    """Get OAuth token from VALD Auth0 (with caching)."""
+    from config.vald_config import get_vald_token
+    return get_vald_token()
 
 
 def fetch_groups(token, region, tenant_id):

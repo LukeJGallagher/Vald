@@ -67,8 +67,8 @@ GITHUB_TOKEN = "github_pat_..."
 DATA_REPO = "LukeJGallagher/vald-data"
 
 [vald]
-CLIENT_ID = "..."
-CLIENT_SECRET = "..."
+CLIENT_ID = "..."          # Auth0 client ID (updated Feb 2026)
+CLIENT_SECRET = "..."      # Auth0 client secret (updated Feb 2026)
 TENANT_ID = "..."
 VALD_REGION = "euw"
 ```
@@ -81,17 +81,17 @@ VALD_REGION = "euw"
 ## API Endpoints
 
 ```
-OAuth: https://security.valdperformance.com/connect/token (use empty scope!)
-ForceDecks: https://prd-{REGION}-api-extforcedecks.valdperformance.com/
-ForceFrame: https://prd-{REGION}-api-externalforceframe.valdperformance.com/
-NordBord: https://prd-{REGION}-api-externalnordbord.valdperformance.com/
-DynaMo: https://prd-{REGION}-api-extdynamo.valdperformance.com/
-Profiles: https://prd-{REGION}-api-externalprofile.valdperformance.com/
-Tenants: https://prd-{REGION}-api-externaltenants.valdperformance.com/
+OAuth (Auth0): https://auth.prd.vald.com/oauth/token (audience: "vald-api-external")
+ForceDecks:    https://prd-{REGION}-api-extforcedecks.valdperformance.com/
+ForceFrame:    https://prd-{REGION}-api-externalforceframe.valdperformance.com/
+NordBord:      https://prd-{REGION}-api-externalnordbord.valdperformance.com/
+DynaMo:        https://prd-{REGION}-api-extdynamo.valdperformance.com/
+Profiles:      https://prd-{REGION}-api-externalprofile.valdperformance.com/
+Tenants:       https://prd-{REGION}-api-externaltenants.valdperformance.com/
 ```
 Regions: `euw` (Europe), `use` (US East), `aue` (Australia)
 
-**OAuth Note**: Use empty scope for client credentials grant. DO NOT include scope parameter.
+**OAuth Note (Auth0 - Updated Feb 2026)**: Token URL is `https://auth.prd.vald.com/oauth/token`. Requires `audience: 'vald-api-external'` parameter. Auth0 rate-limits token requests - use `get_vald_token()` from `config/vald_config.py` which caches tokens automatically. Old URL `security.valdperformance.com/connect/token` no longer works after March 2026.
 
 ### API Key Methods (from Kenny's vald-aspire)
 - **Get Profiles**: `/profiles?TenantId={tenant_id}` - Returns all athlete profiles with names
