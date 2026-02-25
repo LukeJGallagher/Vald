@@ -8,7 +8,12 @@ import time
 import requests
 from dataclasses import dataclass, field
 from typing import Dict, Optional, List
-from dotenv import load_dotenv
+try:
+    from dotenv import load_dotenv
+except ImportError:
+    # dotenv not available (e.g. GitHub Actions) - env vars set directly
+    def load_dotenv(*args, **kwargs):
+        pass
 
 
 @dataclass
