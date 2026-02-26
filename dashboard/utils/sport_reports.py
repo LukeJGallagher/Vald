@@ -364,7 +364,7 @@ def get_dynamic_benchmarks(gender: str = "male", source: str = "VALD") -> Dict:
 # Supports both legacy API format (with _Trial suffix) and local_sync format (UPPERCASE)
 METRIC_COLUMNS = {
     'cmj_height': [
-        'JUMP_HEIGHT_IMP_MOM',  # local_sync format (meters) - preferred (more accurate)
+        'JUMP_HEIGHT_IMP_MOM',  # local_sync format (cm) - preferred (more accurate)
         'Jump Height (Imp-Mom)_Trial',  # legacy API format
         # Note: JUMP_HEIGHT (flight-time method) intentionally excluded - gives different
         # values than impulse-momentum (e.g., 78.8cm vs 48cm) and causes confusion
@@ -898,7 +898,7 @@ def create_group_report(df: pd.DataFrame,
 
     # Optionally filter by gender if not "All"
     if selected_gender != 'All' and 'athlete_sex' in sport_df.columns:
-        sport_df = sport_df[sport_df['athlete_sex'].str.lower() == selected_gender.lower()]
+        sport_df = sport_df[sport_df['athlete_sex'].astype(str).str.lower() == selected_gender.lower()]
 
     if sport_df.empty:
         st.warning(f"No data available for {sport} with current filters")
@@ -2484,7 +2484,7 @@ def create_group_report_v2(df: pd.DataFrame,
                 sport_df = sport_df[sport_mask]
 
     if selected_gender != 'All' and 'athlete_sex' in sport_df.columns:
-        sport_df = sport_df[sport_df['athlete_sex'].str.lower() == selected_gender.lower()]
+        sport_df = sport_df[sport_df['athlete_sex'].astype(str).str.lower() == selected_gender.lower()]
 
     if sport_df.empty:
         st.warning(f"No data available for {sport if sport else 'selected filters'} with current filters")
@@ -3226,7 +3226,7 @@ def _create_lollipop_chart(df: pd.DataFrame, metric_col: str, name_col: str,
     fig.add_vline(x=excellent, line_dash="dash", line_color=TEAL_PRIMARY,
                   annotation_text="Excellent", annotation_position="top")
     fig.add_vline(x=good, line_dash="dot", line_color="#4DB6AC",
-                  annotation_text="Good", annotation_position="top")
+                  annotation_text="Good", annotation_position="bottom")
 
     fig.update_layout(
         title=dict(text=title, font=dict(size=14)),
