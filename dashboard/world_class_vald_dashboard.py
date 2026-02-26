@@ -290,6 +290,8 @@ def get_oauth_token(client_id, client_secret, region='euw'):
         return get_vald_token(client_id=client_id, client_secret=client_secret)
     except ImportError:
         pass
+    except Exception:
+        pass  # Auth failed via vald_config, fall through to direct request
     # Fallback: direct Auth0 request
     try:
         response = requests.post(
@@ -5660,10 +5662,12 @@ elif selected_main_tab == "📊 Reports":  # Reports
             # Settings always last
             report_tab_options.append("⚙️ Settings")
 
+            _prev_report_tab = st.session_state.get('report_tab_selector')
+            _report_default = _prev_report_tab if _prev_report_tab in report_tab_options else report_tab_options[0]
             selected_report_tab = st.segmented_control(
                 "Report Section",
                 options=report_tab_options,
-                default=report_tab_options[0],
+                default=_report_default,
                 key="report_tab_selector",
                 label_visibility="collapsed"
             )
