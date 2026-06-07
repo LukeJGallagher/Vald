@@ -175,32 +175,15 @@ st.sidebar.markdown(
 all_groups_raw = sorted(df["athlete_sport"].dropna().unique().tolist())
 clean_groups = [g for g in all_groups_raw if g and g != "Unknown"]
 
-PRESETS = {
-    "all":       clean_groups,
-    "combat":    [g for g in clean_groups if any(s in g for s in ("Fencing", "Taekwondo", "Karate", "Wrestling", "Judo", "Jiu"))],
-    "athletics": [g for g in clean_groups if g.startswith("Athletics") or g.startswith("Para")],
-    "clear":     [],
-}
-
 GROUPS_KEY = "fm_groups"
 if GROUPS_KEY not in st.session_state:
     st.session_state[GROUPS_KEY] = []  # empty == all
 
-def _apply_preset(preset_key: str):
-    st.session_state[GROUPS_KEY] = PRESETS[preset_key]
-
-qa, qb, qc, qd = st.sidebar.columns(4)
-qa.button("All",       use_container_width=True, key="fm_qp_all",       on_click=_apply_preset, args=("all",))
-qb.button("Combat",    use_container_width=True, key="fm_qp_combat",    on_click=_apply_preset, args=("combat",))
-qc.button("Athletics", use_container_width=True, key="fm_qp_athletics", on_click=_apply_preset, args=("athletics",))
-qd.button("Clear",     use_container_width=True, key="fm_qp_clear",     on_click=_apply_preset, args=("clear",))
-
 selected_groups = st.sidebar.multiselect(
-    "Groups (refine)",
+    "Groups",
     clean_groups,
     key=GROUPS_KEY,
     placeholder="Empty = all groups",
-    help="Click a quick-pick above, then refine here if needed.",
 )
 effective_groups = selected_groups if selected_groups else clean_groups
 
